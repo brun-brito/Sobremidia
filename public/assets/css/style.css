@@ -1,0 +1,279 @@
+html {
+    scroll-behavior: smooth;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    color: #333;
+    background-color: #f8f8f8;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+/* Seção hero com bg1 */
+.hero-bg {
+    background: url('../images/bg1.png') no-repeat top center/cover;
+    position: relative;
+    height: 330vh;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}    
+
+/* Ajuste responsivo da altura da hero-bg */
+@media (max-width: 1024px) {
+    .hero-bg {
+        height: 120vh; /* Ajuste para tablets */
+    }
+}
+    
+/* Seção CTA com bg2 */
+.cta-bg {
+    background: url('../images/bg2.png') no-repeat top center/cover;
+    height: 60vh; /* Reduzindo a altura da bg2 para 60% da viewport */
+    width: 100%;
+}
+
+/* Estilos para os textos ocultos */
+.hidden-text {
+    visibility: hidden;
+    height: 0;
+    width: 0;
+    overflow: hidden;
+}
+
+/* Header */
+header {
+    background: transparent;
+    padding: 20px 50px;
+    position: absolute;
+    top: 0;
+    left: 10%; /* Desloca o header para a direita */
+    width: 80%;
+    z-index: 1000;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.container-logo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.logo img {
+    width: 200px;
+    height: auto;
+}
+
+header nav ul {
+    list-style: none;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 20px;
+    margin-right: 20px;
+}
+
+nav ul {
+list-style: none;
+display: flex;
+justify-content: flex-end;
+align-items: center;
+gap: 20px;
+margin-right: 20px;
+flex-wrap: wrap; /* Permite que os itens fiquem em múltiplas linhas, se necessário */
+}
+
+nav ul li a {
+    color: #fff;
+    text-decoration: none;
+    padding: 10px;
+    font-size: 1.2rem;
+    transition: color 0.3s ease;
+    background-color: rgb(42, 125, 42);
+    border-radius: 10px;
+}
+
+nav ul li a:hover {
+    color: #27ae60;
+}   
+
+.hero-content {
+    position: relative;
+    left: 50%;
+    top: -630px;
+}   
+
+.hero-content .btn {
+    background-color: #24b24e;
+    color: white;
+    padding: 5px 30px;
+    text-align: center;
+    text-decoration: none;
+    font-size: 18px;
+    border-radius: 50px;
+    display: inline-block;
+    transition: background-color 0.3s ease;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+.hero-content .btn:hover {
+    background-color: #1e923f;
+}
+
+
+.menu-toggle {
+    display: none;
+}
+    
+.login-button {
+    background-color: #fff;
+    color: #27ae60;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-transform: uppercase;
+    font-weight: 600;
+    border: 1px solid transparent;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.login-button:hover {
+    background-color: #1e7a45;
+    color: #fff;
+    transform: scale(1.05);
+}
+
+/* Footer */
+footer {
+    background-color: #162415;
+    color: #ffffff;
+    padding: 50px 20px;
+    text-align: center;
+}
+
+.footer-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.footer-logo-container img {
+    width: 200px;
+    height: auto;
+}
+
+.footer-message {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin: 20px 0;
+    color: #f1f1f1;
+}
+
+.footer-social {
+    display: flex;
+    gap: 30px;
+    margin: 20px 0;
+}
+
+.footer-social .social-icon {
+    font-size: 2rem;
+    color: #ffffff;
+    transition: color 0.3s ease;
+}
+
+.footer-social .social-icon:hover {
+    color: #27ae60;
+}
+
+.footer-copyright {
+    font-size: 0.9rem;
+    color: #b3b3b3;
+}
+
+/* Responsividade para o header em telas menores */
+@media (max-width: 1024px) {
+    header {
+        left: 5%; /* Ajusta o header em telas menores */
+        width: 90%;
+    }
+}
+
+@media (max-width: 768px) {
+    .logo img {
+        width: 80px;
+        height: auto;
+    }
+    header nav ul {
+        display: none;
+    }
+
+    /* Exibe o menu quando a classe 'showing' estiver ativa */
+    header nav ul.showing {
+        display: flex;
+        flex-direction: column;
+    }
+    nav ul {
+        flex-direction: column;
+        background-color: rgba(0, 0, 0, 0.8);
+        padding: 20px;
+        position: fixed;
+        top: 60px;
+        right: 0;
+        width: 200px;
+        transition: transform 0.3s ease;
+        z-index: 1000;
+    }
+
+    nav ul.showing {
+        transform: translateX(0); /* Exibe o menu */
+    }
+
+    .menu-toggle {
+        display: block;
+        cursor: pointer;
+        color: #fff;
+        font-size: 1.8rem;
+        position: fixed;
+        top: 8px;
+        right: 20px;
+        z-index: 1001;
+    }
+
+    nav ul li a {
+        color: #fff;
+        font-size: 1.2rem;
+        padding: 15px 0;
+        text-align: right;
+        display: block;
+    }
+
+    .hero-bg {
+        height: 100vh;
+    }
+    
+    .hero-content {
+        left: 50%;
+        top: -180px;
+    }
+
+    .hero-content .btn {
+        padding: 3px 10px;
+        font-size: 10px;
+    }
+}

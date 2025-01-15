@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login / Cadastro - Sobremídia</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="assets/images/color.png" type="image/x-icon">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/login-style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+
+<body>
+    <header>
+        <div class="container-logo">
+            <div class="logo">
+                <a href="index.html"><img src="assets/images/Verde_Fundo Branco.png" alt="Logo Sobremídia"></a>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="index.html#inicio">Início</a></li>
+                    <li><a href="index.html#sobre">Sobre</a></li>
+                    <li><a href="index.html#servicos">Serviços</a></li>
+                    <li><a href="index.html#paineis">Painéis</a></li>
+                    <li><a href="index.html#planos">Planos</a></li>
+                </ul>
+            </nav>
+            <div class="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+    </header>
+
+    <section class="auth-section">
+        <div class="container auth-container">
+            <div class="auth-forms">
+
+                <form id="login-form" class="form active">
+                    <h2>Login</h2>
+                    <input type="email" id="login-email" placeholder="Email" required>
+                    <div class="password-container">
+                        <input type="password" id="login-password" placeholder="Senha" required style="width: 100%;">
+                        <i class="fas fa-eye eye-icon" onclick="togglePasswordVisibility('login-password')"></i>
+                    </div>
+                    <p class="forgot-password"><a href="#" id="forgot-password-link">Esqueci minha senha</a></p>
+                    <button id="login-button" type="submit">Entrar</button>
+                    <div id="login-loading" style="display:none;">Carregando...</div>
+                    <p id="login-error" class="error" style="display:none;"></p>
+                    <!-- <button class="google-login-btn" type="button" id="google-login">
+                        <i class="fab fa-google"></i> Entre com sua conta Google
+                    </button> -->
+                    <p class="auth-switch">Não tem uma conta? <span id="switch-to-register">Cadastre-se</span></p>
+                    <p id="login-error" class="error"></p>
+                </form>
+                
+
+                <form id="register-form" class="form">
+                    <h2>Cadastro</h2>
+                    <div style="display: flex; align-items: center;">
+                        <input oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);"
+                        type="number" id="register-cnpj" placeholder="CNPJ (Somente números)" maxlength="14" required>
+                        <button type="button" id="verify-cnpj-button" ><i class="fas fa-search" style="margin-right: 5px;"></i>Verificar CNPJ</button>
+                        <span id="verify-loading" style="display:none; margin-left: 10px; color: #27ae60;">Verificando...</span>
+                    </div>
+                    <input type="text" id="register-razao" placeholder="Razão Social" required readonly>
+                    <input type="email" id="register-email" placeholder="Email" required>
+                    <input type="email" id="confirm-email" placeholder="Confirmar email" required>
+                    <div class="password-container" style="position: relative;">
+                        <input type="password" id="register-password" placeholder="Cadastre sua senha" required style="width: 100%;">
+                        <i class="fas fa-eye eye-icon" onclick="togglePasswordVisibility('register-password')"></i>
+                    </div>
+                    <div class="password-container" style="position: relative;">
+                        <input type="password" id="confirm-password" placeholder="Confirme a senha" required style="width: 100%;">
+                        <i class="fas fa-eye eye-icon" onclick="togglePasswordVisibility('confirm-password')"></i>
+                    </div>
+                    <div class="register-button-container">
+                        <button id="register-button" type="submit">Cadastrar</button>
+                        <div id="register-loading" style="display:none;">Carregando...</div>
+                    </div>
+                    <p class="auth-switch">Já tem uma conta? <span id="switch-to-login">Faça login</span></p>
+                    <p id="register-error" class="error" style="display:none;"></p>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-container">
+            <div class="footer-logo-container">
+                <img src="assets/images/teste-footer.png" alt="Logo Sobremídia" class="footer-logo">
+            </div>
+            <p class="footer-message">
+                Transformamos ideias em espetáculos luminosos
+            </p>
+            <div class="footer-social">
+                <a href="https://www.instagram.com/sobremidiace" target="_blank" class="social-icon">
+                    <i class="fab fa-instagram"></i>
+                </a>
+                <a href="https://www.facebook.com/p/Sobremidia-61558538060640/" target="_blank" class="social-icon">
+                    <i class="fab fa-facebook-f"></i>
+                </a>
+                <a href="https://wa.me/5585991080611" target="_blank" class="social-icon">
+                    <i class="fab fa-whatsapp"></i>
+                </a>
+            </div>
+            <p class="footer-copyright">
+                &copy; 2024 Sobremídia. Todos os direitos reservados.
+            </p>
+        </div>
+    </footer>    
+
+    <script src="https://www.gstatic.com/firebasejs/3.7.4/firebase.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/5.4.1/firebase-firestore.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="firebase/firebase-config.js"></script>
+    <script src="assets/js/login-script.js"></script>
+
+
+</body>
+
+</html>
