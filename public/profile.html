@@ -8,9 +8,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="icon" href="assets/images/color.png" type="image/x-icon">
     <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="stylesheet" href="assets/css/profile-style.css">    
+    <link rel="stylesheet" href="assets/css/profile-style.css">   
+    <link rel="stylesheet" href="assets/css/midias-style.css">    
     <link rel="stylesheet" href="assets/css/report-style.css">    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 </head>
 
 <body>
@@ -26,6 +28,7 @@
                         <li><a href="#" class="disabled-link" data-section="">Criar campanha</a></li>
                         <li><a href="#relatorio" class="nav-link" data-section="reports-section">Relatórios</a></li>
                         <li><a href="#" class="nav-link" data-section="profile-section">Meu perfil</a></li>
+                        <li><a href="#" class="nav-link" data-section="filters-section">Mídias</a></li>
                         <li><button id="logout-btn" class="logout-btn">Sair</button></li>
                     </ul>
                     <div class="menu-toggle">
@@ -114,11 +117,21 @@
         <section id="reports-section" class="content-section" style="display: none;">
             <div class="container">
                 <h2>Relatórios</h2>
-                <p>Aqui você pode acessar e gerar relatórios personalizados.</p>
+                <p>
+                    Para gerar um relatório personalizado, siga os passos abaixo:
+                </p>
+                <ul>
+                    <li>Selecione as mídias desejadas ou marque "Todas".</li>
+                    <li>Selecione os painéis desejados ou marque "Todos".</li>
+                    <li>Escolha o intervalo de data e hora para o relatório.</li>
+                    <li>Clique em "Gerar Relatório" e aguarde. O resultado aparecerá logo abaixo.</li>
+                </ul>
         
                 <!-- Formulário de Filtros -->
                 <form id="report-form">
+                    <!-- Filtro de Data e Hora -->
                     <div class="filters">
+                        <h3>Intervalo de Data e Hora</h3>
                         <div class="filter-group">
                             <label for="startDate">Data de Início:</label>
                             <input type="date" id="startDate" name="startDate" value="2025-01-01">
@@ -135,32 +148,114 @@
                             <label for="endTime">Hora de Fim:</label>
                             <input type="time" id="endTime" name="endTime" value="23:59">
                         </div>
-                        <div class="filter-group">
-                            <label for="mediaId">ID das Mídias:</label>
-                            <input type="text" id="mediaId" name="mediaId" placeholder="Ex: 57, 58">
-                        </div>
-                        <div class="filter-group">
-                            <label for="playerId">ID dos Painéis:</label>
-                            <input type="text" id="playerId" name="playerId" placeholder="Ex: 5, 6">
-                        </div>
                     </div>
-                    <button class="button-gerar" type="submit">Gerar Relatório</button>
+        
+                    <!-- Escolha de Mídias -->
+                    <div class="filters">
+                        <h3>Escolha as Mídias</h3>
+                        <input type="text" id="media-search" placeholder="Pesquisar mídias..." class="search-bar">
+                        <label>
+                            <input type="checkbox" id="allMedia" checked>
+                            Todas
+                        </label>
+                        <div id="media-list" class="media-list">
+                            <!-- As mídias serão carregadas dinamicamente aqui -->
+                        </div>
+                        <button id="toggle-media" class="toggle-button" type="button">
+                            Expandir <span class="toggle-icon">↓</span>
+                        </button>                    
+                    </div>
+        
+                    <!-- Escolha de Painéis -->
+                    <div class="filters">
+                        <h3>Escolha os Painéis</h3>
+                        <input type="text" id="panel-search" placeholder="Pesquisar painéis..." class="search-bar">
+                        <label>
+                            <input type="checkbox" id="allPanels" checked>
+                            Todos
+                        </label>
+                        <div id="panel-list" class="panel-list">
+                            <!-- Os painéis serão carregados dinamicamente aqui -->
+                        </div>
+                        <button id="toggle-panels" class="toggle-button" type="button">
+                            Expandir <span class="toggle-icon">↓</span>
+                        </button>
+                    </div>
+        
+                    <!-- Botão de Geração -->
+                    <button id="button-gerar" class="button-gerar" type="submit">
+                        <i class="fas fa-chart-line"></i> Gerar Relatório
+                    </button>
                 </form>
         
                 <!-- Loading -->
-                <div id="loading-spinner" class="loading-spinner" style="display: none;">
-                    <p>Carregando...</p>
+                <div id="loading-div" class="loading-div" style="display: none;">
                 </div>
         
                 <!-- Resultado -->
                 <div id="report-result" style="display: none;">
                     <h3>Resultado do Relatório</h3>
                     <div id="report-content"></div>
+                    
+                    <!-- Canvas para os Gráficos -->
+                    <div class="chart-container">
+                        <h4>Gráfico de Exibições por Mídia</h4>
+                        <canvas id="mediaChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h4>Gráfico de Exibições por Painel</h4>
+                        <canvas id="playerChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Modal para Detalhes -->
+                <div id="detailsModal" class="modal" style="display: none;">
+                    <div class="modal-content">
+                        <span class="close" id="closeModal">&times;</span>
+                        <h3 id="modalTitle">Detalhes</h3>
+                        <div id="modalBody"></div>
+                    </div>
                 </div>
             </div>
-        </section>
+        </section>        
         
         
+        <section id="filters-section" class="content-section">
+            <div class="container">
+              <h2>Filtros</h2>
+          
+              <!-- Escolha de Mídias -->
+              <div class="filter-group">
+                <h3>Escolha as Mídias</h3>
+                <input type="text" id="media-search" placeholder="Pesquisar mídias..." class="search-bar">
+                <label>
+                  <input type="checkbox" id="allMedia" checked>
+                  Todas
+                </label>
+                <div id="media-list" class="media-list">
+                  <!-- As mídias serão carregadas dinamicamente aqui -->
+                </div>
+                <button id="toggle-media" class="toggle-button">Expandir</button>
+              </div>
+          
+              <!-- Escolha de Painéis -->
+              <div class="filter-group">
+                <h3>Escolha os Painéis</h3>
+                <input type="text" id="panel-search" placeholder="Pesquisar painéis..." class="search-bar">
+                <label>
+                  <input type="checkbox" id="allPanels" checked>
+                  Todos
+                </label>
+                <div id="panel-list" class="panel-list">
+                  <!-- Os painéis serão carregados dinamicamente aqui -->
+                </div>
+                <button id="toggle-panels" class="toggle-button">Expandir</button>
+              </div>
+          
+              <button id="button-gerar" type="submit" class="button-gerar">Gerar Relatório</button>
+            </div>
+          </section>
+                  
     </div>
 
     <footer>
@@ -184,6 +279,8 @@
     <script src="assets/js/profile-script.js"></script>  
     <script src="assets/js/campanhas.js"></script>  
     <script src="assets/js/relatorios.js"></script> 
+    <script src="assets/js/midias.js"></script> 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </body>
 
