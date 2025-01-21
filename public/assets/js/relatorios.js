@@ -1,87 +1,146 @@
 const API_URL_MEDIA = "https://api.4yousee.com.br/v1/medias";
 const API_URL_PANELS = "https://api.4yousee.com.br/v1/players";
-const API_URL_REPORT = "http://localhost:3000/reports/generate";
-//https://us-central1-sobremidia-ce.cloudfunctions.net/api/
+const API_URL_REPORT = "https://2ckh7b03-3000.brs.devtunnels.ms/reports/generate";
+// const API_URL_REPORT = "http://localhost:3000/reports/generate";
+// const API_URL_REPORT = "https://us-central1-sobremidia-ce.cloudfunctions.net/api/reports/generate";
+
+let startDate = null;
+let startTime = null;
+let endDate = null;
+let endTime = null;
+let mediaNames = null;
+let panelNames = null;
+let reportSummary = null;
+let reportMediaDetails = null;
+let reportPlayerDetails = null;
 
 document.addEventListener("DOMContentLoaded", async () => {
   await loadFilters();
 });
 
 async function loadFilters() {
+    const mediaList = document.getElementById("media-list");
+    const panelList = document.getElementById("panel-list");
+  
+    try {
+      // Carregar mídias
+      const mediaResponse = await fetch(API_URL_MEDIA, {
+        headers: { "Secret-Token": "67c7c2b91bcb315098bb733c07ce8b90" },
+      });
+      const mediaData = await mediaResponse.json();
+  
+      // Agrupar mídias por cliente
+      const clients = groupMediaByClient(mediaData.results);
+  
+      // Gerar HTML dos clientes
+      const clientHTML = Object.entries(clients).map(([clientName, mediaIds]) => `
+        <label class="media-item">
+          <input type="checkbox" name="client" value="${mediaIds.join(',')}">
+          <p>${clientName}</p>
+        </label>
+      `).join("");
+      mediaList.innerHTML = clientHTML;
+  
+      // Carregar painéis
+      const panelResponse = await fetch(API_URL_PANELS, {
+        headers: { "Secret-Token": "a59202bc005fa4305916bca8aa7e31d0" },
+      });
+      const panelData = await panelResponse.json();
+  
+      const panelHTML = panelData.results.map(panel => `
+        <label class="panel-item">
+          <input type="checkbox" name="panel" value="${panel.id}">
+          <div class="panel-icon">
+            <i class="fas fa-tv"></i> <!-- Ícone de player -->
+          </div>
+          <p>${panel.name}</p>
+        </label>
+      `).join("");
+      panelList.innerHTML = panelHTML;
+  
+      setupCheckboxLogic();
+      setupToggleLogic();
+      setupSearchLogic();
+    } catch (error) {
+      console.error("[ERROR] Falha ao carregar mídias e painéis:", error);
+    }
+  }  
+
+function groupMediaByClient(mediaArray) {
+    const clients = {};
+
+    mediaArray.forEach(media => {
+        const [clientName] = media.name.split("-"); // Extrair cliente antes do primeiro hífen
+        if (!clients[clientName]) {
+        clients[clientName] = [];
+        }
+        clients[clientName].push(media.id); // Adicionar ID da mídia ao cliente
+    });
+
+    return clients;
+}  
+
+function setupCheckboxLogic() { 
+  const allMediaCheckbox = document.getElementById("allMedia");
+  const allPanelsCheckbox = document.getElementById("allPanels");
   const mediaList = document.getElementById("media-list");
   const panelList = document.getElementById("panel-list");
 
-  try {
-    // Carregar mídias
-    const mediaResponse = await fetch(API_URL_MEDIA, { headers: { "Secret-Token": "67c7c2b91bcb315098bb733c07ce8b90" } });
-    const mediaData = await mediaResponse.json();
-    const mediaHTML = mediaData.results.map(media => `
-      <label class="media-item">
-        <input type="checkbox" name="media" value="${media.id}">
-        <img src="https://sobremidia.4yousee.com.br/common/videos/thumbnails/i_${media.id}.png" alt="${media.name}">
-        <p>${media.name}</p>
-      </label>
-    `).join("");
-    mediaList.innerHTML = mediaHTML;
+  // Atualiza a lógica sempre que os checkboxes são carregados
+  function updateMediaCheckboxLogic() {
+    const mediaCheckboxes = mediaList.querySelectorAll('input[type="checkbox"]');
 
-    // Carregar painéis
-    const panelResponse = await fetch(API_URL_PANELS, { headers: { "Secret-Token": "a59202bc005fa4305916bca8aa7e31d0" } });
-    const panelData = await panelResponse.json();
-    const panelHTML = panelData.results.map(panel => `
-      <label class="panel-item">
-        <input type="checkbox" name="panel" value="${panel.id}">
-        <p>${panel.name}</p>
-      </label>
-    `).join("");
-    panelList.innerHTML = panelHTML;
+    // Lógica para selecionar/deselecionar todas as mídias
+    allMediaCheckbox.addEventListener("change", () => {
+      if (allMediaCheckbox.checked) {
+        mediaCheckboxes.forEach(checkbox => checkbox.checked = false);
+      }
+    });
 
-    setupCheckboxLogic();
-    setupToggleLogic();
-    setupSearchLogic();
-  } catch (error) {
-    console.error("[ERROR] Falha ao carregar mídias e painéis:", error);
+    mediaCheckboxes.forEach(checkbox => {
+      checkbox.addEventListener("change", () => {
+        if (Array.from(mediaCheckboxes).some(checkbox => checkbox.checked)) {
+          allMediaCheckbox.checked = false;
+        } else {
+          allMediaCheckbox.checked = true;
+        }
+      });
+    });
   }
-}
 
-function setupCheckboxLogic() {
-  const allMediaCheckbox = document.getElementById("allMedia");
-  const mediaCheckboxes = document.querySelectorAll('input[name="media"]');
-  const allPanelsCheckbox = document.getElementById("allPanels");
-  const panelCheckboxes = document.querySelectorAll('input[name="panel"]');
+  function updatePanelCheckboxLogic() {
+    const panelCheckboxes = panelList.querySelectorAll('input[type="checkbox"]');
 
-  // Lógica para mídias
-  allMediaCheckbox.addEventListener("change", () => {
-    if (allMediaCheckbox.checked) {
-      mediaCheckboxes.forEach(checkbox => checkbox.checked = false);
-    }
-  });
-
-  mediaCheckboxes.forEach(checkbox => {
-    checkbox.addEventListener("change", () => {
-      if (Array.from(mediaCheckboxes).some(checkbox => checkbox.checked)) {
-        allMediaCheckbox.checked = false;
-      } else {
-        allMediaCheckbox.checked = true;
+    // Lógica para selecionar/deselecionar todos os painéis
+    allPanelsCheckbox.addEventListener("change", () => {
+      if (allPanelsCheckbox.checked) {
+        panelCheckboxes.forEach(checkbox => checkbox.checked = false);
       }
     });
-  });
 
-  // Lógica para painéis
-  allPanelsCheckbox.addEventListener("change", () => {
-    if (allPanelsCheckbox.checked) {
-      panelCheckboxes.forEach(checkbox => checkbox.checked = false);
-    }
-  });
-
-  panelCheckboxes.forEach(checkbox => {
-    checkbox.addEventListener("change", () => {
-      if (Array.from(panelCheckboxes).some(checkbox => checkbox.checked)) {
-        allPanelsCheckbox.checked = false;
-      } else {
-        allPanelsCheckbox.checked = true;
-      }
+    panelCheckboxes.forEach(checkbox => {
+      checkbox.addEventListener("change", () => {
+        if (Array.from(panelCheckboxes).some(checkbox => checkbox.checked)) {
+          allPanelsCheckbox.checked = false;
+        } else {
+          allPanelsCheckbox.checked = true;
+        }
+      });
     });
+  }
+
+  // Adicionar lógica inicial
+  updateMediaCheckboxLogic();
+  updatePanelCheckboxLogic();
+
+  // Se as mídias ou painéis forem carregados dinamicamente
+  const observer = new MutationObserver(() => {
+    updateMediaCheckboxLogic();
+    updatePanelCheckboxLogic();
   });
+
+  observer.observe(mediaList, { childList: true, subtree: true });
+  observer.observe(panelList, { childList: true, subtree: true });
 }
 
 function setupToggleLogic() {
@@ -90,30 +149,51 @@ function setupToggleLogic() {
   const toggleMediaButton = document.getElementById("toggle-media");
   const togglePanelButton = document.getElementById("toggle-panels");
 
-  let isMediaExpanded = false;
-  let isPanelExpanded = false;
+  let mediaVisibleCount = 5; // Quantidade de mídias visíveis inicialmente
+  let panelVisibleCount = 5; // Quantidade de painéis visíveis inicialmente
+
+  // Configuração inicial para exibir 5 primeiros itens
+  toggleItems(mediaList, mediaVisibleCount);
+  toggleItems(panelList, panelVisibleCount);
 
   toggleMediaButton.addEventListener("click", () => {
-    isMediaExpanded = !isMediaExpanded;
-    toggleItems(mediaList, isMediaExpanded, 5);
-    toggleMediaButton.innerHTML = `${isMediaExpanded ? 'Recolher' : 'Expandir'} <span class="toggle-icon">${isMediaExpanded ? '↑' : '↓'}</span>`;
+    const totalMediaItems = mediaList.children.length;
+
+    if (mediaVisibleCount < totalMediaItems) {
+      mediaVisibleCount += 5; // Incrementar em 5
+      toggleItems(mediaList, mediaVisibleCount);
+      if (mediaVisibleCount >= totalMediaItems) {
+        toggleMediaButton.innerHTML = `Recolher <span class="toggle-icon">↑</span>`;
+      }
+    } else {
+      mediaVisibleCount = 5; // Recolher para 5 itens
+      toggleItems(mediaList, mediaVisibleCount);
+      toggleMediaButton.innerHTML = `Mostrar mais <span class="toggle-icon">↓</span>`;
+    }
   });
 
   togglePanelButton.addEventListener("click", () => {
-    isPanelExpanded = !isPanelExpanded;
-    toggleItems(panelList, isPanelExpanded, 5);
-    togglePanelButton.innerHTML = `${isPanelExpanded ? 'Recolher' : 'Expandir'} <span class="toggle-icon">${isPanelExpanded ? '↑' : '↓'}</span>`;
-  });
+    const totalPanelItems = panelList.children.length;
 
-  // Mostrar os 5 primeiros itens por padrão
-  toggleItems(mediaList, false, 5);
-  toggleItems(panelList, false, 5);
+    if (panelVisibleCount < totalPanelItems) {
+      panelVisibleCount += 5; // Incrementar em 5
+      toggleItems(panelList, panelVisibleCount);
+      if (panelVisibleCount >= totalPanelItems) {
+        togglePanelButton.innerHTML = `Recolher <span class="toggle-icon">↑</span>`;
+      }
+    } else {
+      panelVisibleCount = 5; // Recolher para 5 itens
+      toggleItems(panelList, panelVisibleCount);
+      togglePanelButton.innerHTML = `Mostrar mais <span class="toggle-icon">↓</span>`;
+    }
+  });
 }
 
-function toggleItems(list, expanded, limit) {
+// Função para exibir itens gradativamente
+function toggleItems(list, visibleCount) {
   const items = Array.from(list.children);
   items.forEach((item, index) => {
-    item.style.display = expanded || index < limit ? "block" : "none";
+    item.style.display = index < visibleCount ? "block" : "none";
   });
 }
 
@@ -134,73 +214,96 @@ function filterItems(className, searchTerm) {
   });
 }
 
-document.getElementById('report-form').addEventListener('submit', async function (event) {
-    event.preventDefault();
+document.getElementById("report-form").addEventListener("submit", async function (event) {
+  event.preventDefault();
 
-    // Obter as mídias e painéis selecionados
-    const selectedMedia = Array.from(document.querySelectorAll('input[name="media"]:checked')).map(input => input.value);
-    const selectedPanels = Array.from(document.querySelectorAll('input[name="panel"]:checked')).map(input => input.value);
+  // Obter os clientes e painéis selecionados
+  const selectedClients = Array.from(document.querySelectorAll('input[name="client"]:checked')).map(input => input.value);
+  const selectedPanels = Array.from(document.querySelectorAll('input[name="panel"]:checked')).map(input => input.value);
 
-    // Mostrar o spinner de carregamento
-    const loadingSpinner = document.getElementById('loading-div');
-    const reportResult = document.getElementById('report-result');
-    const reportContent = document.getElementById('report-content');
-    const buttonGerar = document.getElementById('button-gerar');
-    
-    toggleButtonState(buttonGerar, true);
-    loadingSpinner.style.display = "block";
-    reportResult.style.display = "none";
+  // Concatenar todos os IDs de mídias de clientes selecionados
+  const selectedMedia = selectedClients.length
+    ? selectedClients.flatMap(clientMediaIds => clientMediaIds.split(","))
+    : [];
 
-    // Coletar valores do formulário
-    const startDate = document.getElementById('startDate').value || null;
-    const startTime = document.getElementById('startTime').value || null;
-    const endDate = document.getElementById('endDate').value || null;
-    const endTime = document.getElementById('endTime').value || null;
+  // Elementos de carregamento
+  const loadingSpinner = document.getElementById("loading-div");
+  const progressPercentage = document.getElementById("progress-percentage");
+  const progressBar = document.getElementById("progress-bar");
+  const progressMessage = document.getElementById("progress-message");
+  const reportResult = document.getElementById("report-result");
+  const reportContent = document.getElementById("report-content");
+  const buttonGerar = document.getElementById("button-gerar");
 
-    // Criar o corpo da requisição sem campos vazios
-    const requestBody = {
-        ...(startDate && { startDate }),
-        ...(startTime && { startTime }),
-        ...(endDate && { endDate }),
-        ...(endTime && { endTime }),
-        ...(selectedMedia.length > 0 && { mediaId: selectedMedia.map(Number) }),
-        ...(selectedPanels.length > 0 && { playerId: selectedPanels.map(Number) }),
-    };
+  function updateProgress(percentage, message) {
+      progressPercentage.innerText = `${percentage}%`;
+      progressBar.style.width = `${percentage}%`;
+      progressMessage.innerText = message;
+  }
 
-    try {
-        console.log(`[INFO] Enviando requisição para o backend... \n\n${JSON.stringify(requestBody)}`);
-        const response = await fetch(API_URL_REPORT, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody),
-        });
+  toggleButtonState(buttonGerar, true);
+  loadingSpinner.style.display = "block";
+  reportResult.style.display = "none";
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.warn("[WARN] Erro retornado pela API:", errorData);
-            throw {
-                status: response.status,
-                message: errorData.error || "Erro desconhecido ao gerar o relatório.",
-            };
-        }
+  // Coletar valores do formulário
+  startDate = document.getElementById("startDate").value || null;
+  startTime = document.getElementById("startTime").value || null;
+  endDate = document.getElementById("endDate").value || null;
+  endTime = document.getElementById("endTime").value || null;
 
-        const result = await response.json();
-        console.log("[INFO] Dados do relatório:", result);
+  // Criar o corpo da requisição sem campos vazios
+  const requestBody = {
+    ...(startDate && { startDate }),
+    ...(startTime && { startTime }),
+    ...(endDate && { endDate }),
+    ...(endTime && { endTime }),
+    ...(selectedMedia.length > 0 && { mediaId: selectedMedia.map(Number) }),
+    ...(selectedPanels.length > 0 && { playerId: selectedPanels.map(Number) }),
+  };
 
-        // Exibir os dados processados no DOM
-        displayReport(result);
-    } catch (error) {
-        console.error("[ERROR] Falha ao gerar relatório:", error);
+  try {
+    updateProgress(10, "Criando relatório...");
+    console.log(`[INFO] Enviando requisição para o backend... \n\n${JSON.stringify(requestBody)}`);
 
-        const errorMessage = error.message || "Erro desconhecido.";
-        const userFriendlyMessage = getFriendlyErrorMessage(error.status, errorMessage);
+    const response = await fetch(API_URL_REPORT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(requestBody),
+    });
 
-        reportContent.innerHTML = `<p style="color: red;">${userFriendlyMessage}</p>`;
-        reportResult.style.display = "block";
-    } finally {
-        toggleButtonState(buttonGerar, false);
-        loadingSpinner.style.display = "none";
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.warn("[WARN] Erro retornado pela API:", errorData);
+      throw {
+        status: response.status,
+        message: errorData.error || "Erro desconhecido ao gerar o relatório.",
+      };
     }
+
+    updateProgress(50, "Organizando dados obtidos...");
+    const result = await response.json();
+    console.log("[INFO] Dados do relatório:", result);
+
+    updateProgress(70, "Processando os dados...");
+    await displayReport(result);
+
+    updateProgress(100, "Sucesso! Relatório concluído.");
+  } catch (error) {
+    console.error("[ERROR] Falha ao gerar relatório:", error);
+
+    const errorMessage = error.message || "Erro desconhecido.";
+    const userFriendlyMessage = getFriendlyErrorMessage(error.status, errorMessage);
+
+    reportContent.innerHTML = `<p style="color: red;">${userFriendlyMessage}</p>`;
+    reportResult.style.display = "block";
+    updateProgress(100, "Erro ao processar o relatório.");
+  } finally {
+    toggleButtonState(buttonGerar, false);
+    setTimeout(() => {
+      loadingSpinner.style.display = "none"; // Oculta o spinner após um pequeno intervalo
+      updateProgress(0, ""); // Reseta o progresso e mensagem
+    }, 1000);
+  }
 });
 
 function toggleButtonState(button, isDisabled) {
@@ -251,19 +354,23 @@ async function displayReport(data) {
         const mediaIds = Object.keys(mediaDetails);
         const panelIds = Object.keys(playerDetails);
 
-        const mediaNames = await fetchMediaNames(mediaIds);
-        const panelNames = await fetchPanelNames(panelIds);
+        mediaNames = await fetchMediaNames(mediaIds);
+        panelNames = await fetchPanelNames(panelIds);
 
         const BASE_THUMBNAIL_URL = "https://sobremidia.4yousee.com.br/common/videos/thumbnails/i_";
 
-        // Gerar HTML das mídias
         const mediaHTMLArray = Object.entries(mediaDetails).map(([mediaId, mediaData]) => {
             const { totalExhibitions, players } = mediaData;
             const thumbnailUrl = `${BASE_THUMBNAIL_URL}${mediaId}.png`;
-            const mediaName = mediaNames[mediaId] || `Mídia ${mediaId}`;
+            const mediaName = mediaNames[mediaId]
+                ? (mediaNames[mediaId].includes("-")
+                    ? mediaNames[mediaId].split("-").slice(1).join("-") // Remove o nome da empresa
+                    : mediaNames[mediaId]) // Nome completo caso não tenha hífen
+                : `Mídia ${mediaId}`;
 
+                        
             return `
-                <li class="media-item expandable">
+                <li class="media-item">
                     <div class="media-summary">
                         <img src="${thumbnailUrl}" alt="${mediaName}" class="media-thumbnail">
                         <div class="media-info">
@@ -272,53 +379,70 @@ async function displayReport(data) {
                                 <strong>Total de Exibições:</strong> ${totalExhibitions}
                             </p>
                         </div>
+                        <button class="details-button">
+                            Ver detalhes <i class="fas fa-chevron-right"></i>
+                        </button>
                     </div>
-                    <div class="media-details details">
-                        <ul>
-                            ${Object.entries(players).map(([playerId, logs]) => `
-                                <li>
-                                    <strong>Player:</strong> ${panelNames[playerId] || `Painel ${playerId}`}
+                    <div class="media-details details" style="display: none;">
+                        ${Object.entries(players).map(([playerId, logs]) => {
+                            const logsByDate = groupLogsByDate(logs); // Agrupar logs por data
+                            return `
+                                <div class="panel-details">
+                                    <p><strong>${panelNames[playerId] || `Painel ${playerId}`}:</strong></p>
                                     <ul>
-                                        ${logs.map(log => `
-                                            <li>${log.date} ${log.time}</li>
+                                        ${Object.entries(logsByDate).map(([date, times]) => `
+                                            <li>
+                                                ${date}: <a href="#" class="view-times-link" data-player-id="${playerId}" data-date="${date}" data-times="${times.join(',')}">${times.length} aparições</a>
+                                            </li>
                                         `).join("")}
                                     </ul>
-                                </li>
-                            `).join("")}
-                        </ul>
+                                </div>
+                                <hr>
+                            `;
+                        }).join("")}
                     </div>
                 </li>
             `;
-        }).join("");
+        }).join("");            
 
         // Gerar HTML dos painéis
         const panelHTMLArray = Object.entries(playerDetails).map(([playerId, playerData]) => {
             const { totalExhibitions, media } = playerData;
             const panelName = panelNames[playerId] || `Painel ${playerId}`;
-
+      
             return `
-                <li class="panel-item expandable">
+                <li class="panel-item">
                     <div class="panel-summary">
                         <div class="panel-info">
+                            <div class="panel-icon">
+                                <i class="fas fa-tv"></i> <!-- Ícone de player -->
+                            </div>
                             <p>
                                 <strong>Nome:</strong> ${panelName}<br>
                                 <strong>Total de Exibições:</strong> ${totalExhibitions}
                             </p>
                         </div>
+                        <button class="details-button">
+                            Ver detalhes <i class="fas fa-chevron-right"></i>
+                        </button>
                     </div>
-                    <div class="panel-details details">
-                        <ul>
-                            ${Object.entries(media).map(([mediaId, logs]) => `
-                                <li>
-                                    <strong>Mídia:</strong> ${mediaNames[mediaId] || `Mídia ${mediaId}`}
+                    <div class="panel-details details" style="display: none;">
+                        ${Object.entries(media).map(([mediaId, logs]) => {
+                            const logsByDate = groupLogsByDate(logs); // Agrupar logs por data
+                            return `
+                                <div class="media-details">
+                                    <p><strong>${mediaNames[mediaId] || `Mídia ${mediaId}`}:</strong></p>
                                     <ul>
-                                        ${logs.map(log => `
-                                            <li>${log.date} ${log.time}</li>
+                                        ${Object.entries(logsByDate).map(([date, times]) => `
+                                            <li>
+                                                ${date}: <a href="#" class="view-times-link" data-media-id="${mediaId}" data-date="${date}" data-times="${times.join(',')}">${times.length} aparições</a>
+                                            </li>
                                         `).join("")}
                                     </ul>
-                                </li>
-                            `).join("")}
-                        </ul>
+                                </div>
+                                <hr>
+                            `;
+                        }).join("")}
                     </div>
                 </li>
             `;
@@ -327,6 +451,7 @@ async function displayReport(data) {
         // Dados do resumo
         const summaryHTML = `
             <div class="summary-info">
+                <p><strong>Intervalo de Datas:</strong> ${startDate} (${startTime}) - ${endDate} (${endTime})</p>
                 <p><strong>Total de Exibições:</strong> ${summary.totalExhibitions || 0}</p>
                 <p><strong>Total de Mídias:</strong> ${summary.totalMedia || 0}</p>
                 <p><strong>Total de Painéis:</strong> ${summary.totalPlayers || 0}</p>
@@ -360,6 +485,9 @@ async function displayReport(data) {
         // Renderizar gráficos
         renderMediaChart(mediaDetails);
         renderPlayerChart(playerDetails);
+        reportSummary = summary;
+        reportMediaDetails = mediaDetails;
+        reportPlayerDetails = playerDetails;
     } catch (error) {
         console.error("[ERROR] Falha ao exibir o relatório:", error);
         reportContent.innerHTML = `<p style="color: red;">Erro ao exibir o relatório. Tente novamente mais tarde.</p>`;
@@ -375,133 +503,69 @@ function groupLogsByDate(logs) {
     }, {});
 }
 
-function showDetailsModal(id, type, mediaDetails, playerDetails) {
-    const modal = document.createElement("div");
-    modal.classList.add("modal");
+document.addEventListener("click", (event) => {
+  const button = event.target.closest(".details-button");
+  if (button) {
+      // Verifica se é mídia ou painel
+      const mediaItem = button.closest(".media-item");
+      const panelItem = button.closest(".panel-item");
+      const details = mediaItem 
+          ? mediaItem.querySelector(".media-details") 
+          : panelItem.querySelector(".panel-details");
+      const buttonIcon = button.querySelector("i");
 
-    let detailsHTML = "";
+      if (!details || !buttonIcon) return;
 
-    if (type === "media") {
-        const mediaData = mediaDetails[id];
-        detailsHTML = `
-            <h4>Detalhes da Mídia ${mediaData.name || id}</h4>
+      details.style.display = details.style.display === "none" ? "block" : "none";
+
+      if (details.style.display === "none") {
+          buttonIcon.classList.remove("fa-chevron-down");
+          buttonIcon.classList.add("fa-chevron-right");
+      } else {
+          buttonIcon.classList.remove("fa-chevron-right");
+          buttonIcon.classList.add("fa-chevron-down");
+      }
+  }
+});
+
+document.addEventListener("click", (event) => {
+    if (event.target.classList.contains("view-times-link")) {
+        event.preventDefault();
+
+        const times = event.target.dataset.times.split(",");
+        const playerId = event.target.dataset.playerId;
+        const date = event.target.dataset.date;
+
+        const modal = document.getElementById("timesModal");
+        const timesList = document.getElementById("timesList");
+        const panelName = panelNames[playerId] || `Painel ${playerId}`;
+
+        // Adiciona os horários no modal
+        timesList.innerHTML = `
+            <h4>Painel: ${panelName}</h4>
+            <h4>Data: ${date}</h4>
             <ul>
-                ${Object.entries(mediaData.players).map(([playerId, logs]) => {
-                    const groupedLogs = groupLogsByDate(logs);
-                    return `
-                        <li>
-                            <strong>Player ${playerId}:</strong>
-                            <ul>
-                                ${Object.entries(groupedLogs).map(([date, times]) => `
-                                    <li>
-                                        <strong>${date}:</strong>
-                                        <ul>
-                                            ${times.map(time => `<li>${time}</li>`).join("")}
-                                        </ul>
-                                    </li>
-                                `).join("")}
-                            </ul>
-                        </li>
-                    `;
-                }).join("")}
+                ${times.map(time => `<li>${time}</li>`).join("")}
             </ul>
         `;
+
+        // Mostra o modal
+        modal.style.display = "block";
     }
 
-    modal.innerHTML = `
-        <div class="modal-content">
-            <button class="close-btn">Fechar</button>
-            ${detailsHTML}
-        </div>
-    `;
-
-    document.body.appendChild(modal);
-
-    modal.querySelector(".close-btn").addEventListener("click", () => {
-        modal.remove();
-    });
-}
-
-let mediaChartInstance = null;
-
-function renderMediaChart(mediaDetails) {
-    const ctx = document.getElementById("mediaChart").getContext("2d");
-
-    // Verificar e destruir o gráfico existente, se necessário
-    if (mediaChartInstance) {
-        mediaChartInstance.destroy();
+    // Fecha o modal ao clicar no "X"
+    if (event.target.id === "closeModal") {
+        const modal = document.getElementById("timesModal");
+        modal.style.display = "none";
     }
+});
 
-    const labels = Object.keys(mediaDetails).map(mediaId => `Mídia ${mediaId}`);
-    const data = Object.values(mediaDetails).map(media => media.totalExhibitions);
-
-    // Criar um novo gráfico
-    mediaChartInstance = new Chart(ctx, {
-        type: "bar",
-        data: {
-            labels,
-            datasets: [
-                {
-                    label: "Exibições por Mídia",
-                    data,
-                    backgroundColor: "rgba(75, 192, 192, 0.2)",
-                    borderColor: "rgba(75, 192, 192, 1)",
-                    borderWidth: 1,
-                },
-            ],
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                },
-            },
-        },
-    });
-}
-
-let playerChartInstance = null;
-
-function renderPlayerChart(playerDetails) {
-    const ctx = document.getElementById("playerChart").getContext("2d");
-
-    // Verificar e destruir o gráfico existente, se necessário
-    if (playerChartInstance) {
-        playerChartInstance.destroy();
+window.addEventListener("click", (event) => {
+    const modal = document.getElementById("timesModal");
+    if (event.target === modal) {
+        modal.style.display = "none";
     }
-
-    const labels = Object.keys(playerDetails).map(playerId => `Player ${playerId}`);
-    const data = Object.values(playerDetails).map(player => player.totalExhibitions);
-
-    // Criar um novo gráfico
-    playerChartInstance = new Chart(ctx, {
-        type: "pie",
-        data: {
-            labels,
-            datasets: [
-                {
-                    label: "Exibições por Player",
-                    data,
-                    backgroundColor: [
-                        "rgba(255, 99, 132, 0.2)",
-                        "rgba(54, 162, 235, 0.2)",
-                        "rgba(255, 206, 86, 0.2)",
-                    ],
-                    borderColor: [
-                        "rgba(255, 99, 132, 1)",
-                        "rgba(54, 162, 235, 1)",
-                        "rgba(255, 206, 86, 1)",
-                    ],
-                    borderWidth: 1,
-                },
-            ],
-        },
-        options: {
-            responsive: true,
-        },
-    });
-}
+});
 
 async function fetchMediaNames(mediaIds) {
     const API_URL = `https://api.4yousee.com.br/v1/medias?id=${mediaIds.join(',')}`;
@@ -548,3 +612,4 @@ document.querySelectorAll(".expandable").forEach(item => {
         item.classList.toggle("expanded");
     });
 });
+

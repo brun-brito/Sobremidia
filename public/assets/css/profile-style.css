@@ -524,3 +524,7 @@ header {
 #report-result #download-link:hover {
     text-decoration: underline;
 }
+
+.menu-toggle {
+    color: black;
+}
