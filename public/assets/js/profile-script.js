@@ -1,6 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const reportNavLink = document.getElementById('reports-id');
-    const campanhaNavLink = document.getElementById('campanha-id');
+    const reportNavLink = document.getElementById('reports-a-id');
+    const campanhaNavLink = document.getElementById('campanha-a-id');
+    const criarCampanhaNav = document.getElementById('criar-campanha-id');
+    const campanhaNav = document.getElementById('campanha-id');
+    const checkinNav = document.getElementById('checkin-id');
     const loadingSpinnerContainer = document.getElementById('loading-spinner2');
     const listaInicio = document.getElementById('profile-info-list');
     
@@ -27,10 +30,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Permitir acesso total para o administrador
             if (user.email === 'admin@admin.com') {
+                checkinNav.style.display = 'block';
+                criarCampanhaNav.style.display = 'none';
+                campanhaNav.style.display = 'none';
                 campanhaNavLink.className = 'disabled-link';
                 document.querySelectorAll('.nav-link').forEach(link => {
                     link.classList.remove('disabled-link');
                     link.addEventListener('click', function (e) {
+                        const href = this.getAttribute('href');
+                        if (href && href !== '#') {
+                            return; // Permitir redirecionamento para links externos
+                        }
                         e.preventDefault();
                         const sectionToShow = this.getAttribute('data-section');
                         document.querySelectorAll('.content-section').forEach(section => {
@@ -69,6 +79,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (user.emailVerified || user.email === 'admin@admin.com') {
                 document.querySelectorAll('.nav-link').forEach(link => {
                     link.addEventListener('click', function (e) {
+                        const href = this.getAttribute('href');
+                        if (href && href !== '#') {
+                            // Permite redirecionamento se o href está definido (ex: checkin.html)
+                            return;
+                        }
                         e.preventDefault();
                         const sectionToShow = this.getAttribute('data-section');
                         document.querySelectorAll('.content-section').forEach(section => {

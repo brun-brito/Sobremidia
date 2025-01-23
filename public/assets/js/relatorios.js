@@ -1,8 +1,9 @@
 const API_URL_MEDIA = "https://api.4yousee.com.br/v1/medias";
 const API_URL_PANELS = "https://api.4yousee.com.br/v1/players";
-const API_URL_REPORT = "https://2ckh7b03-3000.brs.devtunnels.ms/reports/generate";
-// const API_URL_REPORT = "http://localhost:3000/reports/generate";
-// const API_URL_REPORT = "https://us-central1-sobremidia-ce.cloudfunctions.net/api/reports/generate";
+const API_URL = "https://2ckh7b03-3000.brs.devtunnels.ms";
+// const API_URL = "http://localhost:3000";
+// const API_URL = "https://us-central1-sobremidia-ce.cloudfunctions.net/api";
+const BASE_THUMBNAIL_URL = "https://s3.amazonaws.com/4yousee-files/sobremidia/common/videos/thumbnails/i_";
 
 let startDate = null;
 let startTime = null;
@@ -265,7 +266,7 @@ document.getElementById("report-form").addEventListener("submit", async function
     updateProgress(10, "Criando relatório...");
     console.log(`[INFO] Enviando requisição para o backend... \n\n${JSON.stringify(requestBody)}`);
 
-    const response = await fetch(API_URL_REPORT, {
+    const response = await fetch(`${API_URL}/reports/generate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(requestBody),
@@ -357,8 +358,6 @@ async function displayReport(data) {
         mediaNames = await fetchMediaNames(mediaIds);
         panelNames = await fetchPanelNames(panelIds);
 
-        const BASE_THUMBNAIL_URL = "https://sobremidia.4yousee.com.br/common/videos/thumbnails/i_";
-
         const mediaHTMLArray = Object.entries(mediaDetails).map(([mediaId, mediaData]) => {
             const { totalExhibitions, players } = mediaData;
             const thumbnailUrl = `${BASE_THUMBNAIL_URL}${mediaId}.png`;
@@ -369,30 +368,42 @@ async function displayReport(data) {
                 : `Mídia ${mediaId}`;
 
                         
-            return `
+              return `
                 <li class="media-item">
                     <div class="media-summary">
                         <img src="${thumbnailUrl}" alt="${mediaName}" class="media-thumbnail">
                         <div class="media-info">
-                            <p>
-                                <strong>Nome:</strong> ${mediaName}<br>
-                                <strong>Total de Exibições:</strong> ${totalExhibitions}
-                            </p>
+                            <strong>Nome: </strong><p id="media-name-${mediaId}">${mediaName}</p>
+                            <p><strong>Total de Exibições:</strong> ${totalExhibitions}</p>
                         </div>
-                        <button class="details-button">
+                        <button class="details-button" data-media-id="${mediaId}">
                             Ver detalhes <i class="fas fa-chevron-right"></i>
                         </button>
                     </div>
                     <div class="media-details details" style="display: none;">
                         ${Object.entries(players).map(([playerId, logs]) => {
                             const logsByDate = groupLogsByDate(logs); // Agrupar logs por data
+                            const datesCount = Object.keys(logsByDate).length;
+            
                             return `
                                 <div class="panel-details">
                                     <p><strong>${panelNames[playerId] || `Painel ${playerId}`}:</strong></p>
                                     <ul>
+                                        ${
+                                            datesCount > 1 
+                                                ? `<li><strong>Total:</strong> ${logs.length} aparições</li>`
+                                                : ""
+                                        }
                                         ${Object.entries(logsByDate).map(([date, times]) => `
                                             <li>
-                                                ${date}: <a href="#" class="view-times-link" data-player-id="${playerId}" data-date="${date}" data-times="${times.join(',')}">${times.length} aparições</a>
+                                                ${date}: 
+                                                <a href="#" class="view-times-link"
+                                                  data-player-id="${playerId}" 
+                                                  data-media-id="${mediaId}" 
+                                                  data-date="${date}" 
+                                                  data-times="${times.join(',')}">
+                                                    ${times.length} aparições
+                                                </a>
                                             </li>
                                         `).join("")}
                                     </ul>
@@ -410,32 +421,44 @@ async function displayReport(data) {
             const { totalExhibitions, media } = playerData;
             const panelName = panelNames[playerId] || `Painel ${playerId}`;
       
-            return `
+              return `
                 <li class="panel-item">
                     <div class="panel-summary">
                         <div class="panel-info">
                             <div class="panel-icon">
                                 <i class="fas fa-tv"></i> <!-- Ícone de player -->
                             </div>
-                            <p>
-                                <strong>Nome:</strong> ${panelName}<br>
-                                <strong>Total de Exibições:</strong> ${totalExhibitions}
-                            </p>
+                              <strong>Nome: </strong><p id="panel-name-${playerId}">${panelName}</p>
+                              <p><strong>Total de Exibições:</strong> ${totalExhibitions}</p>
                         </div>
-                        <button class="details-button">
+                        <button class="details-button" data-player-id="${playerId}">
                             Ver detalhes <i class="fas fa-chevron-right"></i>
                         </button>
                     </div>
                     <div class="panel-details details" style="display: none;">
                         ${Object.entries(media).map(([mediaId, logs]) => {
                             const logsByDate = groupLogsByDate(logs); // Agrupar logs por data
+                            const datesCount = Object.keys(logsByDate).length;
+
                             return `
                                 <div class="media-details">
                                     <p><strong>${mediaNames[mediaId] || `Mídia ${mediaId}`}:</strong></p>
                                     <ul>
+                                        ${
+                                            datesCount > 1 
+                                                ? `<li><strong>Total:</strong> ${logs.length} aparições</li>`
+                                                : ""
+                                        }
                                         ${Object.entries(logsByDate).map(([date, times]) => `
                                             <li>
-                                                ${date}: <a href="#" class="view-times-link" data-media-id="${mediaId}" data-date="${date}" data-times="${times.join(',')}">${times.length} aparições</a>
+                                                ${date}: 
+                                                <a href="#" class="view-times-link" 
+                                                  data-player-id="${playerId}" 
+                                                  data-media-id="${mediaId}" 
+                                                  data-date="${date}" 
+                                                  data-times="${times.join(',')}">
+                                                    ${times.length} aparições
+                                                </a>
                                             </li>
                                         `).join("")}
                                     </ul>
@@ -529,35 +552,54 @@ document.addEventListener("click", (event) => {
 });
 
 document.addEventListener("click", (event) => {
-    if (event.target.classList.contains("view-times-link")) {
-        event.preventDefault();
+  if (event.target.classList.contains("view-times-link")) {
+      event.preventDefault();
 
-        const times = event.target.dataset.times.split(",");
-        const playerId = event.target.dataset.playerId;
-        const date = event.target.dataset.date;
+      const times = event.target.dataset.times.split(",").sort(); // Ordenar os horários
+      const date = event.target.dataset.date;
+      const playerId = event.target.dataset.playerId;
+      const mediaId = event.target.dataset.mediaId;
 
-        const modal = document.getElementById("timesModal");
-        const timesList = document.getElementById("timesList");
-        const panelName = panelNames[playerId] || `Painel ${playerId}`;
+      const modal = document.getElementById("timesModal");
+      const timesList = document.getElementById("timesList");
 
-        // Adiciona os horários no modal
-        timesList.innerHTML = `
-            <h4>Painel: ${panelName}</h4>
-            <h4>Data: ${date}</h4>
+      let entityName;
+      if (playerId) {
+          entityName = panelNames[playerId] || `Painel ${playerId}`;
+      } else if (mediaId) {
+          entityName = mediaNames[mediaId] || `Mídia ${mediaId}`;
+      } else {
+          entityName = "Indefinido";
+      }
+
+      // Adiciona os horários enumerados no modal com o botão de exportação
+      timesList.innerHTML = `
+        <div>
+            <h4 id="entity-name">${entityName}</h4>
+            <h4 id="report-date">Data: ${date}</h4>
+            <button id="export-pdf-button" class="export-pdf-button" 
+                    data-player-id="${playerId || ''}" 
+                    data-media-id="${mediaId || ''}">
+                <i class="fas fa-file-pdf"></i> Exportar PDF
+            </button>
+            <div id="loading-pdf2" class="loading-pdf2" style="display: none;">
+              <i class="fas fa-spinner fa-spin"></i> Gerando PDF...
+            </div>
             <ul>
-                ${times.map(time => `<li>${time}</li>`).join("")}
+                ${times.map((time, index) => `<li>${index + 1} - ${time}</li>`).join("")}
             </ul>
-        `;
+        </div>
+    `;
 
-        // Mostra o modal
-        modal.style.display = "block";
-    }
+      // Mostra o modal
+      modal.style.display = "block";
+  }
 
-    // Fecha o modal ao clicar no "X"
-    if (event.target.id === "closeModal") {
-        const modal = document.getElementById("timesModal");
-        modal.style.display = "none";
-    }
+  // Fecha o modal ao clicar no "X"
+  if (event.target.id === "closeModal") {
+      const modal = document.getElementById("timesModal");
+      modal.style.display = "none";
+  }
 });
 
 window.addEventListener("click", (event) => {
@@ -568,9 +610,8 @@ window.addEventListener("click", (event) => {
 });
 
 async function fetchMediaNames(mediaIds) {
-    const API_URL = `https://api.4yousee.com.br/v1/medias?id=${mediaIds.join(',')}`;
     try {
-        const response = await fetch(API_URL, {headers: { 'Secret-Token': '67c7c2b91bcb315098bb733c07ce8b90' }});
+        const response = await fetch(`${API_URL_MEDIA}?id=${mediaIds.join(',')}`, {headers: { 'Secret-Token': '67c7c2b91bcb315098bb733c07ce8b90' }});
         if (!response.ok) throw new Error("Erro ao buscar nomes das mídias.");
         const data = await response.json();
 
@@ -587,9 +628,8 @@ async function fetchMediaNames(mediaIds) {
 }
 
 async function fetchPanelNames(panelIds) {
-    const API_URL = `https://api.4yousee.com.br/v1/players/`;
     try {
-        const response = await fetch(API_URL, {headers: { 'Secret-Token': 'a59202bc005fa4305916bca8aa7e31d0' }});
+        const response = await fetch(API_URL_PANELS, {headers: { 'Secret-Token': 'a59202bc005fa4305916bca8aa7e31d0' }});
         if (!response.ok) throw new Error("Erro ao buscar nomes dos painéis.");
         const data = await response.json();
 

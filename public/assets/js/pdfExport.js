@@ -50,7 +50,7 @@ Total de Painéis: ${summary.totalPlayers || 0}
 
     for (const [mediaId, mediaData] of Object.entries(mediaDetails)) {
         const mediaName = mediaNames[mediaId] || `Mídia ${mediaId}`;
-        const thumbnailUrl = `https://2ckh7b03-3000.brs.devtunnels.ms/proxy?url=${encodeURIComponent(`https://s3.amazonaws.com/4yousee-files/sobremidia/common/videos/thumbnails/i_${mediaId}.png`)}`;
+        const thumbnailUrl = `${API_URL}/proxy?url=${encodeURIComponent(`${BASE_THUMBNAIL_URL}${mediaId}.png`)}`;
 
         if (yOffset > 250) {
             doc.addPage();
@@ -178,5 +178,108 @@ document.getElementById("export-pdf").addEventListener("click", async () => {
         // Reativar o botão e esconder o loading
         exportButton.disabled = false;
         loadingDiv.style.display = "none";
+    }
+});
+
+async function generateDetailPDF(button) {
+    const playerId = button.getAttribute("data-player-id");
+    const mediaId = button.getAttribute("data-media-id");
+
+    const nomePainel = playerId
+        ? panelNames[playerId] || `Painel ${playerId}`
+        : "Painel não identificado";
+
+    const mediaName = mediaId
+        ? mediaNames[mediaId] || `Mídia ${mediaId}`
+        : "Mídia não identificada";
+
+    const date = document.querySelector("#report-date")?.innerText.split(": ")[1] || "Data não encontrada";
+    const reportDate = new Date().toLocaleString();
+    const times = Array.from(document.querySelectorAll("#timesList ul li")).map(li => li.innerText);
+
+    const loadingSpinner = document.getElementById("loading-pdf2");
+
+    try {
+        // Exibir o carregamento
+        loadingSpinner.style.display = "inline-block";
+        button.disabled = true;
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        const logoPath = "assets/images/Verde_Fundo Branco.png";
+        const thumbnailUrl = mediaId 
+            ? `${API_URL}/proxy?url=${encodeURIComponent(`${BASE_THUMBNAIL_URL}${mediaId}.png`)}`
+            : null;
+
+        let yOffset = 20; // Espaço após o cabeçalho
+
+        // Adicionar logotipo
+        try {
+            const logoBase64 = await loadImageAsBase64(logoPath);
+            doc.addImage(logoBase64, "PNG", 10, 10, 30, 15);
+        } catch (error) {
+            console.warn("[WARNING] Erro ao carregar o logotipo:", error);
+        }
+
+        // Título do relatório
+        doc.setFontSize(16);
+        doc.text("Relatório de Aparições", 50, 15);
+        doc.setFontSize(10);
+        doc.text(`Gerado em: ${reportDate}`, 50, 20);
+        yOffset = 30;
+
+        // Adicionar informações do painel e mídia
+        doc.setFontSize(12);
+        doc.text(`Painel: ${nomePainel}`, 10, yOffset);
+        yOffset += 10;
+
+        doc.text(`Mídia:`, 10, yOffset);
+        yOffset += 5;
+
+        if (thumbnailUrl) {
+            try {
+                const thumbnailBase64 = await loadImageAsBase64(thumbnailUrl);
+                doc.addImage(thumbnailBase64, "JPEG", 10, yOffset, 20, 15); // Adicionar thumbnail
+            } catch (error) {
+                console.warn("[WARNING] Erro ao carregar a thumbnail:", error);
+            }
+        }
+
+        doc.text(`${mediaName}`, 35, yOffset + 10);
+        yOffset += 20;
+
+        doc.text(`Data: ${date}`, 10, yOffset);
+        yOffset += 10;
+
+        // Lista de horários
+        doc.setFontSize(10);
+        times.forEach((time) => {
+            if (yOffset > 280) {
+                doc.addPage();
+                yOffset = 10;
+            }
+            doc.text(`${time}`, 10, yOffset);
+            yOffset += 7;
+        });
+
+        // Salvar PDF
+        const data = new Date();
+        const dataMesHora = `${data.getDate()}-${data.getMonth() + 1}-${data.getHours()}-${data.getMinutes()}`;
+        const fileName = `relatorio_aparicao_${nomePainel.replace(/ /g, "_")}_${mediaName.replace(/ /g, "_")}_${dataMesHora}.pdf`;
+        doc.save(fileName);
+    } catch (error) {
+        console.error("[ERROR] Falha ao criar o PDF:", error);
+    } finally {
+        // Ocultar carregamento
+        loadingSpinner.style.display = "none";
+        button.disabled = false;
+    }
+}
+
+document.addEventListener("click", async (event) => {
+    if (event.target.id === "export-pdf-button") {
+        const button = event.target;
+        await generateDetailPDF(button);
     }
 });

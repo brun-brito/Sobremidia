@@ -272,7 +272,7 @@ input[type="time"] {
     margin-top: 20px;
 }
 
-.export-button {
+.export-button, .export-pdf-button {
     background-color: #f44336;
     color: white;
     border: none;
@@ -285,11 +285,20 @@ input[type="time"] {
     gap: 10px;
 }
 
-.export-button:hover {
+.export-button:hover, .export-pdf-button {
     background-color: #d32f2f;
 }
 
 .loading-pdf {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #333;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.loading-pdf2 {
     margin-top: 10px;
     font-size: 14px;
     color: #333;

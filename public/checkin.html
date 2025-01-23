@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check-In Semanal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="assets/images/color.png" type="image/x-icon">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/checkin.css">
+    <link rel="stylesheet" href="assets/css/profile-style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+
+<body>
+    <div class="content-wrapper">
+        <header>
+            <div class="container-logo">
+                <div class="logo">
+                    <a href="#"><img src="assets/images/Verde_Fundo Branco.png" alt="Logo Sobremídia"></a>
+                </div>
+                <nav>
+                    <ul class="nav-links">
+                        <li><a href="profile.html" class="nav-link" data-section="reports-section" id="reports-a-id">Relatórios</a></li>
+                        <li><a href="checkin.html" class="nav-link active">Check-In</a></li>
+                        <li><a href="profile.html" class="nav-link">Meu perfil</a></li> 
+                        <li><button id="logout-btn" class="logout-btn">Sair</button></li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+
+        <section id="checkin-section" class="content-section">
+            <div class="container">
+                <h2>Check-In Semanal</h2>
+                <p>
+                    Para realizar um Check-in das mídias, siga os passos abaixo:
+                </p>
+                <ul>
+                    <li><strong>1.</strong> Selecione o painel que deseja realizar o check-in;</li>
+                    <li><strong>2.</strong> Após isso, todas as mídias vinculadas a esse painel serão exibidas;</li>
+                    <li><strong>3.</strong> Junto delas, terá um espaço para anexar as fotos, que será o comprovante de exibição de cada mídia;</li>
+                    <li><strong>4.</strong> Após anexar todas as fotos, é só clicar em 'Enviar Check-In'.</li>
+                </ul>
+                <!-- Botão para abrir modal de seleção de painel -->
+                <button id="select-panel-button" class="button">Selecionar Painel</button>
+
+                <!-- Lista de mídias para o painel selecionado -->
+                <div id="media-checkin-list" style="display: none;">
+                    <h3 id="selected-panel-name">Painel: </h3>
+                    <ul id="media-list"></ul>
+                    <button id="submit-checkin-button" class="button" disabled>Enviar Check-In</button>
+                </div>
+            </div>
+
+            <!-- Modal de seleção de painel -->
+            <div id="panel-selection-modal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <span id="close-panel-modal" class="close">&times;</span>
+                    <h3>Selecione um Painel</h3>
+                    <ul id="modal-panel-list"></ul>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <div class="footer-container">
+            <div class="footer-logo-container">
+                <img src="assets/images/teste-footer.png" alt="Logo Sobremídia" class="footer-logo">
+            </div>
+            <p class="footer-message">Transformamos ideias em espetáculos luminosos</p>
+            <div class="footer-social">
+                <a href="https://www.instagram.com/sobremidiace" target="_blank" class="social-icon"><i class="fab fa-instagram"></i></a>
+                <a href="https://www.facebook.com/p/Sobremidia-61558538060640/" target="_blank" class="social-icon"><i class="fab fa-facebook-f"></i></a>
+                <a href="https://wa.me/5585991080611" target="_blank" class="social-icon"><i class="fab fa-whatsapp"></i></a>
+            </div>
+            <p class="footer-copyright">&copy; 2024 Sobremídia. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <script src="https://www.gstatic.com/firebasejs/3.7.4/firebase.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/5.4.1/firebase-firestore.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
+    <script src="firebase/firebase-config.js"></script>
+    <script src="assets/js/checkin.js"></script>
+    <script src="assets/js/profile-script.js"></script>
+
+</body>
+
+</html>

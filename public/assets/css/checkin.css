@@ -1,0 +1,112 @@
+#media-check-in-list {
+    margin-top: 20px;
+}
+
+#media-check-in-list h3 {
+    color: #007bff;
+    margin-bottom: 10px;
+}
+
+#media-check-in-list ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+#media-check-in-list li {
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Estilo para os inputs de foto */
+.media-photo {
+    border: 1px solid #ddd;
+    padding: 5px;
+    border-radius: 3px;
+    font-size: 14px;
+}
+
+.photo-timestamp {
+    font-size: 12px;
+    color: #555;
+}
+
+/* Modal */
+.modal-content {
+    background-color: #fff;
+    border-radius: 10px;
+    padding: 20px;
+    width: 90%;
+    max-width: 400px;
+    position: relative;
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
+    text-align: center;
+}
+
+.modal-content h3 {
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.modal-content ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.modal-content li {
+    margin-bottom: 10px;
+}
+
+.panel-option {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 10px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.panel-option:hover {
+    background-color: #0056b3;
+}
+
+.close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #999;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #333;
+}
+
+/* Botão de envio */
+#submit-check-in-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .modal-content {
+        width: 95%;
+    }
+
+    #media-check-in-list li {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .media-photo {
+        width: 100%;
+    }
+}
