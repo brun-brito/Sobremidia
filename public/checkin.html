@@ -33,27 +33,55 @@
 
         <section id="checkin-section" class="content-section">
             <div class="container">
-                <h2>Check-In Semanal</h2>
+                <h2>Gestão de Check-Ins</h2>
                 <p>
-                    Para realizar um Check-in das mídias, siga os passos abaixo:
+                    Escolha uma das opções abaixo:
                 </p>
-                <ul>
-                    <li><strong>1.</strong> Selecione o painel que deseja realizar o check-in;</li>
-                    <li><strong>2.</strong> Após isso, todas as mídias vinculadas a esse painel serão exibidas;</li>
-                    <li><strong>3.</strong> Junto delas, terá um espaço para anexar as fotos, que será o comprovante de exibição de cada mídia;</li>
-                    <li><strong>4.</strong> Após anexar todas as fotos, é só clicar em 'Enviar Check-In'.</li>
-                </ul>
-                <!-- Botão para abrir modal de seleção de painel -->
-                <button id="select-panel-button" class="button">Selecionar Painel</button>
-
-                <!-- Lista de mídias para o painel selecionado -->
-                <div id="media-checkin-list" style="display: none;">
-                    <h3 id="selected-panel-name">Painel: </h3>
-                    <ul id="media-list"></ul>
-                    <button id="submit-checkin-button" class="button" disabled>Enviar Check-In</button>
+                <!-- Botões para alternar entre Realizar Check-In e Histórico -->
+                <div class="checkin-options">
+                    <button id="realizar-checkin-button" class="button">
+                        <i class="fas fa-camera"></i> Realizar Check-In
+                    </button>
+                    <button id="view-checkins-button" class="button">
+                        <i class="fas fa-history"></i> Histórico de Check-Ins
+                    </button>
+                    
                 </div>
-            </div>
+        
+                <!-- Seção para realizar Check-In -->
+                <div id="realizar-checkin" style="display: none;">
+                    <h3>Realizar Check-In</h3>
+                    <ul>
+                        <li><strong>1.</strong> Clique em 'Selecionar Painel', e escolha o que deseja realizar o check-in;</li>
+                        <li><strong>2.</strong> Após isso, todas as mídias vinculadas a esse painel serão exibidas;</li>
+                        <li><strong>3.</strong> Junto delas, terá um espaço para anexar as fotos, que será o comprovante de exibição de cada mídia;</li>
+                        <li><strong>4.</strong> Após anexar todas as fotos, é só clicar em 'Enviar Check-In'.</li>
+                    </ul>
+                    <button id="select-panel-button" class="button">
+                        <i class="fa-regular fa-square-check"></i> Selecionar Painel
+                    </button>
+                    <div id="media-checkin-list" style="display: none;">
+                        <h3 id="selected-panel-name">Painel: </h3>
+                        <ul id="media-list"></ul>
+                        <button id="submit-checkin-button" class="button" disabled>Enviar Check-In</button>
+                    </div>
+                </div>
+        
+                <!-- Seção de Histórico de Check-Ins -->
+                <div id="checkin-history" style="display: none;">
+                    <h3>Histórico de Check-Ins</h3>
+                    <ul id="checkins-list"></ul>
+                </div>
 
+                <div id="image-modal" class="image-modal" style="display: none;">
+                    <div class="modal-content">
+                        <span id="close-modal" class="close">&times;</span>
+                        <img id="modal-image" src="" alt="Imagem Ampliada" style="width: 100%; height: auto;">
+                    </div>
+                </div>
+                
+            </div>
+        
             <!-- Modal de seleção de painel -->
             <div id="panel-selection-modal" class="modal" style="display: none;">
                 <div class="modal-content">
@@ -62,7 +90,16 @@
                     <ul id="modal-panel-list"></ul>
                 </div>
             </div>
+        
+            <!-- Loading Overlay -->
+            <div id="loading-overlay" style="display: none;">
+                <div class="loading-content">
+                    <span id="loading-message">Carregando...</span>
+                    <div class="spinner"></div>
+                </div>
+            </div>
         </section>
+        
     </div>
 
     <footer>
@@ -85,6 +122,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
     <script src="firebase/firebase-config.js"></script>
     <script src="assets/js/checkin.js"></script>
+    <script src="assets/js/formatDate.js"></script>
     <script src="assets/js/profile-script.js"></script>
 
 </body>
