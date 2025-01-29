@@ -53,7 +53,7 @@
                     <h3>Realizar Check-In</h3>
                     <ul>
                         <li><strong>1.</strong> Clique em 'Selecionar Painel', e escolha o que deseja realizar o check-in;</li>
-                        <li><strong>2.</strong> Após isso, todas as mídias vinculadas a esse painel serão exibidas;</li>
+                        <li><strong>2.</strong> Após isso, todas as mídias ativas vinculadas a esse painel serão exibidas;</li>
                         <li><strong>3.</strong> Junto delas, terá um espaço para anexar as fotos, que será o comprovante de exibição de cada mídia;</li>
                         <li><strong>4.</strong> Após anexar todas as fotos, é só clicar em 'Enviar Check-In'.</li>
                     </ul>
@@ -70,8 +70,16 @@
                 <!-- Seção de Histórico de Check-Ins -->
                 <div id="checkin-history" style="display: none;">
                     <h3>Histórico de Check-Ins</h3>
+                    <input
+                        type="text"
+                        id="search-input"
+                        placeholder="Pesquise pelo nome do painel..."
+                        style="margin-bottom: 15px; padding: 8px; width: 100%; border: 1px solid #ccc; border-radius: 5px;"
+                    />
                     <ul id="checkins-list"></ul>
-                </div>
+                    
+                    <div id="pagination" class="pagination-container"></div>
+                </div>                
 
                 <div id="image-modal" class="image-modal" style="display: none;">
                     <div class="modal-content">

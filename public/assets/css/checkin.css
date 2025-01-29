@@ -461,3 +461,28 @@
         flex-direction: column
     }
 }
+
+.pagination-container {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.pagination-button {
+    background: #007bff;
+    color: white;
+    padding: 8px 15px;
+    margin: 2px 5px;
+    font-size: 14px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.pagination-button.active {
+    background-color: #0056b3;
+}
+
+.pagination-button:hover:not(.active) {
+    background-color: #0056b3;
+}

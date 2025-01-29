@@ -97,7 +97,7 @@ function hideLoading() {
 function getPlaylistForToday(playlists) {
     const currentDay = new Date().getDay().toString(); // 0 = Domingo, 1 = Segunda, etc.
     const playlistForToday = playlists[currentDay];
-    console.log("[INFO] Playlist ativa para hoje (dia atual):", playlistForToday);
+    // console.log("[INFO] Playlist ativa para hoje (dia atual):", playlistForToday);
     return playlistForToday;
 }
 
@@ -113,7 +113,7 @@ document.getElementById("realizar-checkin-button").addEventListener("click", asy
     if (!initializedCheckIn) {
         try {
             checkInPanelNames = await fetchCheckInPanels();
-            console.log("[INFO] Painéis carregados:", checkInPanelNames);
+            // console.log("[INFO] Painéis carregados:", checkInPanelNames);
             initializedCheckIn = true;
         } catch (error) {
             console.error("[ERROR] Falha ao inicializar Check-In:", error);
@@ -122,23 +122,45 @@ document.getElementById("realizar-checkin-button").addEventListener("click", asy
 });
 
 // Alternar para a aba "Histórico de Check-Ins"
+let currentPage = 1;
+const itemsPerPage = 5;
+let sortedCheckIns;
+let totalPages;
+
 document.getElementById("view-checkins-button").addEventListener("click", async () => {
     document.getElementById("realizar-checkin").style.display = "none";
     document.getElementById("checkin-history").style.display = "block";
 
     const checkIns = await fetchCheckIns();
+    sortedCheckIns = checkIns.sort((a, b) => b.createdAt._seconds - a.createdAt._seconds);
+
+    setupPagination(sortedCheckIns);
+    renderPaginatedCheckIns(sortedCheckIns, currentPage);
+    
+    // Configurar filtro de busca
+    document.getElementById("search-input").addEventListener("input", () => {
+        filterCheckIns(sortedCheckIns);
+    });
+});
+
+function renderPaginatedCheckIns(checkIns, page) {
     const checkinsList = document.getElementById("checkins-list");
     checkinsList.innerHTML = ""; // Limpar a lista anterior
 
-    if (checkIns.length === 0) {
+    const startIndex = (page - 1) * itemsPerPage;
+    const endIndex = page * itemsPerPage;
+    const paginatedCheckIns = checkIns.slice(startIndex, endIndex);
+
+    if (paginatedCheckIns.length === 0) {
         checkinsList.innerHTML = "<p>Nenhum check-in encontrado.</p>";
         return;
     }
 
-    checkIns.forEach((checkIn) => {
+    paginatedCheckIns.forEach((checkIn) => {
         const listItem = document.createElement("li");
         listItem.classList.add("checkin-item");
         listItem.setAttribute("data-checkin-id", checkIn.id);
+        listItem.setAttribute("data-panel-name", checkIn.panelName.toLowerCase());
         listItem.innerHTML = `
             <div>
                 <p><strong>Painel:</strong> ${checkIn.panelName || checkIn.panelId}</p>
@@ -151,19 +173,95 @@ document.getElementById("view-checkins-button").addEventListener("click", async 
         checkinsList.appendChild(listItem);
     });
 
-    checkinsList.addEventListener("click", (event) => {
+    // Reconfigurar os eventos de "Ver detalhes" para os itens renderizados
+    setupDetailsToggle();
+}
+
+
+function setupPagination(checkIns) {
+    totalPages = Math.ceil(checkIns.length / itemsPerPage);
+    const paginationContainer = document.getElementById("pagination");
+    paginationContainer.innerHTML = ""; // Limpar paginação anterior
+
+    renderPagination(totalPages, currentPage);
+}
+
+function renderPagination(totalPages, currentPage) {
+    const paginationContainer = document.querySelector(".pagination-container");
+    paginationContainer.innerHTML = "";
+
+    const createButton = (page, text = page, isActive = false) => {
+        const button = document.createElement("button");
+        button.textContent = text;
+        button.className = `pagination-button${isActive ? " active" : ""}`;
+        button.addEventListener("click", () => {
+            goToPage(page);
+        });
+        return button;
+    };
+
+    // Botões de paginação compacta
+    if (currentPage > 2) paginationContainer.appendChild(createButton(1));
+    if (currentPage > 3) paginationContainer.appendChild(createDots());
+
+    if (currentPage > 1) paginationContainer.appendChild(createButton(currentPage - 1));
+    paginationContainer.appendChild(createButton(currentPage, currentPage, true));
+    if (currentPage < totalPages) paginationContainer.appendChild(createButton(currentPage + 1));
+
+    if (currentPage < totalPages - 2) paginationContainer.appendChild(createDots());
+    if (currentPage < totalPages - 1) paginationContainer.appendChild(createButton(totalPages));
+}
+
+function goToPage(page) {
+    currentPage = page;
+    renderPaginatedCheckIns(sortedCheckIns, currentPage);
+    renderPagination(totalPages, currentPage);
+}
+
+function createDots() {
+    const dots = document.createElement("span");
+    dots.textContent = "...";
+    dots.className = "pagination-dots";
+    return dots;
+}
+
+function setupDetailsToggle() {
+    const checkinsList = document.getElementById("checkins-list");
+
+    // Remover qualquer listener antigo para evitar conflitos
+    const newCheckinsList = checkinsList.cloneNode(true);
+    checkinsList.parentNode.replaceChild(newCheckinsList, checkinsList);
+
+    // Adicionar o listener atualizado
+    newCheckinsList.addEventListener("click", (event) => {
         const detailsButton = event.target.closest(".view-details-button");
         if (!detailsButton) return;
 
         const listItem = detailsButton.closest(".checkin-item");
         const checkInId = detailsButton.getAttribute("data-checkin-id");
-        const selectedCheckIn = checkIns.find((checkIn) => checkIn.id === checkInId);
 
-        if (selectedCheckIn) {
-            toggleCheckInDetails(selectedCheckIn, listItem, detailsButton);
+        const selectedCheckIn = sortedCheckIns.find((checkIn) => checkIn.id === checkInId);
+
+        if (!selectedCheckIn) {
+            console.warn(`Nenhum check-in encontrado para o ID: ${checkInId}`);
+            return;
         }
+
+        toggleCheckInDetails(selectedCheckIn, listItem, detailsButton);
     });
-});
+}
+
+// Função para filtrar os check-ins com base na pesquisa
+function filterCheckIns(checkIns) {
+    const searchInput = document.getElementById("search-input").value.toLowerCase();
+    const filteredCheckIns = checkIns.filter((checkIn) =>
+        checkIn.panelName.toLowerCase().includes(searchInput)
+    );
+
+    currentPage = 1; // Reiniciar para a primeira página
+    setupPagination(filteredCheckIns);
+    renderPaginatedCheckIns(filteredCheckIns, currentPage);
+}
 
 function toggleCheckInDetails(checkIn, listItem, detailsButton) {
     // Verificar se os detalhes já estão visíveis
@@ -171,6 +269,7 @@ function toggleCheckInDetails(checkIn, listItem, detailsButton) {
     if (existingDetails && existingDetails.classList.contains("checkin-details")) {
         existingDetails.remove(); // Remover os detalhes se já estiverem abertos
         detailsButton.classList.remove("open");
+        detailsButton.innerHTML = `Ver detalhes <i class="fas fa-chevron-right"></i>`; // Alterar texto para "Ver detalhes"
         return;
     }
 
@@ -233,6 +332,7 @@ function toggleCheckInDetails(checkIn, listItem, detailsButton) {
 
     // Alterar o ícone do botão
     detailsButton.classList.add("open");
+    detailsButton.innerHTML = `Recolher detalhes <i class="fas fa-chevron-right"></i>`;
 }
 
 function openImageModal(imageSrc) {
@@ -288,7 +388,7 @@ async function handlePanelSelection(event) {
     const panelName = panelData.name;
     const playlists = panelData.playlists;
 
-    console.log("[INFO] Painel selecionado:", { panelId, panelName, playlists });
+    // console.log("[INFO] Painel selecionado:", { panelId, panelName, playlists });
 
     // Obter playlist ativa
     const playlistForToday = getPlaylistForToday(playlists);
@@ -323,7 +423,7 @@ async function handlePanelSelection(event) {
         return item.items;
     });
 
-    console.log("[INFO] Mídias ativas para o painel:", activeMedia);
+    // console.log("[INFO] Mídias ativas para o painel:", activeMedia);
 
     if (activeMedia.length === 0) {
         mediaList.innerHTML = "<p>Nenhuma mídia ativa para este painel no momento.</p>";
@@ -527,8 +627,8 @@ async function handleSubmitCheckIn() {
         const groupedMediaPhotos = groupByMediaId(mediaPhotos);
 
         // console.log(`Mídia: \n\n${JSON.stringify(mediaPhotos)}`);
-        console.log(`Mídia GRUPO:`);
-        console.log(groupedMediaPhotos);
+        // console.log(`Mídia GRUPO:`);
+        // console.log(groupedMediaPhotos);
 
         await sendCheckInData(panelId, panelName, groupedMediaPhotos);
         alert("Check-In enviado com sucesso!");
