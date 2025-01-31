@@ -22,8 +22,8 @@
                 </div>
                 <nav>
                     <ul class="nav-links">
-                        <li><a href="checkin.html" class="nav-link active">Check-In</a></li>
-                        <li><a href="profile.html" class="nav-link" data-section="reports-section" id="reports-a-id">Relatórios</a></li>
+                        <li><a href="#" class="nav-link active">Check-In</a></li>
+                        <li><a href="relatorios.html" class="nav-link" data-section="reports-section" id="reports-a-id">Relatórios</a></li>
                         <li><a href="profile.html" class="nav-link">Meu perfil</a></li> 
                         <li><button id="logout-btn" class="logout-btn">Sair</button></li>
                     </ul>
@@ -70,16 +70,43 @@
                 <!-- Seção de Histórico de Check-Ins -->
                 <div id="checkin-history" style="display: none;">
                     <h3>Histórico de Check-Ins</h3>
-                    <input
-                        type="text"
-                        id="search-input"
-                        placeholder="Pesquise pelo nome do painel..."
-                        style="margin-bottom: 15px; padding: 8px; width: 100%; border: 1px solid #ccc; border-radius: 5px;"
-                    />
+                
+                    <div class="search-data">
+                        <input
+                            type="text"
+                            id="search-input"
+                            placeholder="Pesquise pelo nome do painel..."
+                            style="flex: 2; padding: 8px; border: 1px solid #ccc; border-radius: 5px;"
+                        />
+                
+                        <input 
+                            type="date" 
+                            id="start-date" 
+                            placeholder="Data inicial"
+                            style="width: fit-content; padding: 8px; border: 1px solid #ccc; border-radius: 5px;"
+                        />
+                
+                        <input 
+                            type="date" 
+                            id="end-date" 
+                            placeholder="Data final"
+                            style="width: fit-content; padding: 8px; border: 1px solid #ccc; border-radius: 5px;"
+                        />
+                        
+                        <div>
+                            <button id="apply-date-filter" style="width: fit-content; padding: 8px 12px; border: none; background-color: #4CAF50; color: white; border-radius: 5px; cursor: pointer;">
+                                Filtrar
+                            </button>
+
+                            <a id="clear-filters" style="cursor: pointer; text-decoration: underline;">
+                                Limpar Filtros
+                            </a>
+                        </div>
+                    </div>
+                
                     <ul id="checkins-list"></ul>
-                    
                     <div id="pagination" class="pagination-container"></div>
-                </div>                
+                </div>                                
 
                 <div id="image-modal" class="image-modal" style="display: none;">
                     <div class="modal-content">
@@ -121,9 +148,13 @@
                 <a href="https://www.facebook.com/p/Sobremidia-61558538060640/" target="_blank" class="social-icon"><i class="fab fa-facebook-f"></i></a>
                 <a href="https://wa.me/5585991080611" target="_blank" class="social-icon"><i class="fab fa-whatsapp"></i></a>
             </div>
-            <p class="footer-copyright">&copy; 2024 Sobremídia. Todos os direitos reservados.</p>
+             <p class="footer-copyright">&copy; <span id="current-year"></span> Sobremídia. Todos os direitos reservados.</p>
         </div>
     </footer>
+
+    <script>
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+    </script>
 
     <script src="https://www.gstatic.com/firebasejs/3.7.4/firebase.js"></script>
     <script src="https://www.gstatic.com/firebasejs/5.4.1/firebase-firestore.js"></script>

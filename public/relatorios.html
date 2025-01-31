@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="assets/images/color.png" type="image/x-icon">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/profile-style.css">   
+    <link rel="stylesheet" href="assets/css/midias-style.css">    
+    <link rel="stylesheet" href="assets/css/report-style.css">    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <header>
+        <div class="container-logo">
+            <div class="logo">
+                <a href="#"><img src="assets/images/Verde_Fundo Branco.png" alt="Logo Sobremídia"></a>
+            </div>
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="checkin.html" class="nav-link">Check-in</a></li>
+                    <li><a href="#" class="nav-link active">Relatórios</a></li>
+                    <li><a href="profile.html" class="nav-link">Meu perfil</a></li>
+                    <li><button id="logout-btn" class="logout-btn">Sair</button></li>
+                </ul>
+                <div class="menu-toggle">
+                    <i class="fas fa-bars"></i>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="content-wrapper">
+        <section id="reports-section" class="content-section" >
+            <div class="container">
+                <h2>Relatórios</h2>
+                <p>
+                    Para gerar um relatório personalizado, siga os passos abaixo:
+                </p>
+                <ul>
+                    <li><strong>1.</strong> Selecione os clientes desejados ou marque "Todos";</li>
+                    <li><strong>2.</strong> Selecione os painéis desejados ou marque "Todos";</li>
+                    <li><strong>3.</strong> Escolha um intervalo de data e hora para o relatório;</li>
+                    <li><strong>4.</strong> Clique em "Gerar Relatório" e aguarde*. O resultado aparecerá logo abaixo.</li>
+                    <li><small><em>*A geração do relatório pode levar algum tempo, dependendo da quantidade de dados solicitados. Seja paciente.</em></small></li>
+                </ul>
+        
+                <!-- Formulário de Filtros -->
+                <form id="report-form">
+                    <!-- Escolha de Mídias -->
+                    <div class="filters">
+                        <h3>Escolha o(s) Cliente(s)</h3>
+                        <input type="text" id="media-search" placeholder="Pesquisar por clientes..." class="search-bar">
+                        <br>
+                        <label>
+                            <input type="checkbox" id="allMedia" checked>
+                            Todos
+                        </label>
+                        <div id="media-list" class="media-list">
+                            <!-- As mídias serão carregadas dinamicamente aqui -->
+                        </div>
+                        <button id="toggle-media" class="toggle-button" type="button">
+                            Mostrar mais <span class="toggle-icon">↓</span>
+                        </button>                    
+                    </div>
+        
+                    <!-- Escolha de Painéis -->
+                    <div class="filters">
+                        <h3>Escolha o(s) Painel(éis)</h3>
+                        <input type="text" id="panel-search" placeholder="Pesquisar por painéis..." class="search-bar">
+                        <br>
+                        <label>
+                            <input type="checkbox" id="allPanels" checked>
+                            Todos
+                        </label>
+                        <div id="panel-list" class="panel-list">
+                            <!-- Os painéis serão carregados dinamicamente aqui -->
+                        </div>
+                        <button id="toggle-panels" class="toggle-button" type="button">
+                            Mostrar mais <span class="toggle-icon">↓</span>
+                        </button>
+                    </div>
+
+                    <!-- Filtro de Data e Hora -->
+                    <div class="filters-date">
+                        <h3>Intervalo de Data e Hora</h3>
+                        <div class="inputs-date">
+                            <div class="filter-group-date">
+                                <label for="startDate">Data de Início:</label>
+                                <input type="date" id="startDate" name="startDate" value="2025-01-01">
+                            </div>
+                            <div class="filter-group-date">
+                                <label for="startTime">Hora de Início:</label>
+                                <input type="time" id="startTime" name="startTime" value="00:00">
+                            </div>
+                            <div class="filter-group-date">
+                                <label for="endDate">Data de Fim:</label>
+                                <input type="date" id="endDate" name="endDate" value="2025-01-01">
+                            </div>
+                            <div class="filter-group-date">
+                                <label for="endTime">Hora de Fim:</label>
+                                <input type="time" id="endTime" name="endTime" value="23:59">
+                            </div>
+                        </div>
+                    </div>
+        
+                    <!-- Botão de Geração -->
+                    <button id="button-gerar" class="button-gerar" type="submit">
+                        <i class="fas fa-chart-line"></i> Gerar Relatório
+                    </button>
+                </form>
+        
+                <!-- Loading -->
+                <div id="loading-div" style="display: none; text-align: center;">
+                    <p id="progress-message">Criando relatório...</p>
+                    <p><span id="progress-percentage">0%</span></p>
+                    <div style="width: 100%; background: #ddd; border-radius: 5px; overflow: hidden;">
+                      <div id="progress-bar" style="width: 0%; height: 10px; background: #4caf50;"></div>
+                    </div>
+                </div>
+                  
+                <!-- Resultado -->
+                <div id="report-result" style="display: none;">
+                    <button id="export-pdf" class="export-button">
+                        <i class="fas fa-file-pdf"></i> Exportar PDF
+                    </button>
+                    <div id="loading-pdf" class="loading-pdf" style="display: none;">
+                        <i class="fas fa-spinner fa-spin"></i> Gerando PDF...
+                    </div>                    
+        
+                    <h3>Resultado do Relatório</h3>
+                    <div id="report-content"></div>
+                    
+                    <!-- Canvas para os Gráficos -->
+                    <div class="chart-container">
+                        <h4>Gráfico de Exibições por Mídia</h4>
+                        <canvas id="mediaChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h4>Gráfico de Exibições por Painel</h4>
+                        <canvas id="playerChart"></canvas>
+                    </div>
+                </div>
+                
+                <div id="timesModal" class="modal" style="display: none;">
+                    <div class="modal-content">
+                        <span id="closeModal" class="close">&times;</span>
+                        <h3>Horários Detalhados</h3>
+                        <ul id="timesList"></ul>
+                    </div>
+                </div>
+                
+            </div>
+        </section>  
+    </main>
+
+    <footer>
+        <div class="footer-container">
+            <div class="footer-logo-container">
+                <img src="assets/images/teste-footer.png" alt="Logo Sobremídia" class="footer-logo">
+            </div>
+            <p class="footer-message">Transformamos ideias em espetáculos luminosos</p>
+            <div class="footer-social">
+                <a href="https://www.instagram.com/sobremidiace" target="_blank" class="social-icon"><i class="fab fa-instagram"></i></a>
+                <a href="https://www.facebook.com/p/Sobremidia-61558538060640/" target="_blank" class="social-icon"><i class="fab fa-facebook-f"></i></a>
+                <a href="https://wa.me/5585991080611" target="_blank" class="social-icon"><i class="fab fa-whatsapp"></i></a>
+            </div>
+             <p class="footer-copyright">&copy; <span id="current-year"></span> Sobremídia. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <script src="assets/js/relatorios.js"></script>
+    <script src="assets/js/graficos.js"></script> 
+    <script src="assets/js/pdfExport.js"></script> 
+</body>
+
+</html>

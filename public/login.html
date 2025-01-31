@@ -105,11 +105,13 @@
                     <i class="fab fa-whatsapp"></i>
                 </a>
             </div>
-            <p class="footer-copyright">
-                &copy; 2024 Sobremídia. Todos os direitos reservados.
-            </p>
+            <p class="footer-copyright">&copy; <span id="current-year"></span> Sobremídia. Todos os direitos reservados.</p>
         </div>
-    </footer>    
+    </footer>
+
+    <script>
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+    </script>  
 
     <script src="https://www.gstatic.com/firebasejs/3.7.4/firebase.js"></script>
     <script src="https://www.gstatic.com/firebasejs/5.4.1/firebase-firestore.js"></script>

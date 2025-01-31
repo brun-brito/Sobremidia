@@ -1,7 +1,9 @@
+const logoPath = "assets/images/Verde_Fundo Branco.png";
+
 async function generatePDF(summary, mediaDetails, playerDetails) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    const logoPath = "assets/images/Verde_Fundo Branco.png";
+    // const logoPath = "assets/images/Verde_Fundo Branco.png";
     const title = "Relatório de Exibições";
     const reportDate = new Date().toLocaleString();
     const data = new Date();
@@ -207,7 +209,7 @@ async function generateDetailPDF(button) {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
 
-        const logoPath = "assets/images/Verde_Fundo Branco.png";
+        // const logoPath = "assets/images/Verde_Fundo Branco.png";
         const thumbnailUrl = mediaId 
             ? `${API_URL}/proxy?url=${encodeURIComponent(`${BASE_THUMBNAIL_URL}${mediaId}.png`)}`
             : null;
@@ -277,10 +279,9 @@ async function generateDetailPDF(button) {
     }
 }
 
-async function generateCheckinPDF(checkIn) {
+async function generateCheckinPDF(checkIn, selectedClient) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF("p", "mm", "a4");
-    const logoPath = "assets/images/Verde_Fundo Branco.png";
 
     let yOffset = 20;
 
@@ -307,34 +308,58 @@ async function generateCheckinPDF(checkIn) {
     doc.text("Data: ", 10, yOffset + 7);
     doc.setFont("helvetica", "normal");
     doc.text(new Date(checkIn.createdAt._seconds * 1000).toLocaleString(), 30, yOffset + 7);
-    
-    yOffset += 15;    
+
+    // Exibir o cliente no cabeçalho se for específico
+    if (selectedClient !== "Todos") {
+        doc.setFont("helvetica", "bold");
+        doc.text("Cliente: ", 10, yOffset + 14);
+        doc.setFont("helvetica", "normal");
+        doc.text(selectedClient, 30, yOffset + 14);
+        yOffset += 22;  // Ajustar o espaçamento após o cabeçalho
+    } else {
+        yOffset += 17;  // Ajuste normal para 'Todos'
+    }
 
     let mediaIndex = 1;
 
-    for (const photo of checkIn.photos) {
+    // Filtrar as fotos pelo cliente selecionado
+    const filteredPhotos = selectedClient === "Todos"
+        ? checkIn.photos
+        : checkIn.photos.filter(photo => {
+            const client = photo.mediaName ? photo.mediaName.split("-")[0] : "Desconhecido";
+            return client === selectedClient;
+        });
+
+    // Gerar o conteúdo para cada foto filtrada
+    for (const photo of filteredPhotos) {
         if (yOffset + 80 > 280) {
             doc.addPage();
             yOffset = 20;
         }
-        const indexOffset = String(mediaIndex) == 1 ? 0 : 2 * String(mediaIndex).length; // Adiciona espaço de acordo com o número
+
+        const indexOffset = String(mediaIndex) === "1" ? 0 : 2 * String(mediaIndex).length;
+
         // Índice da mídia
         doc.setFontSize(12);
         doc.setFont("helvetica", "bold");
         doc.text(`${mediaIndex})`, 10, yOffset);
         mediaIndex++;
 
-        // Informações da mídia e cliente
+        // Informações da mídia
         doc.text("Mídia: ", 15 + indexOffset, yOffset);
         doc.setFont("helvetica", "normal");
         doc.text(photo.mediaName || photo.mediaId, 35, yOffset);
 
-        doc.setFont("helvetica", "bold");
-        doc.text("Cliente: ", 15 + indexOffset, yOffset + 7);
-        doc.setFont("helvetica", "normal");
-        doc.text(photo.mediaName ? photo.mediaName.split("-")[0] : "-", 40, yOffset + 7);
-        yOffset += 12;
-
+        // Exibir o cliente por mídia apenas se 'Todos' estiver selecionado
+        if (selectedClient === "Todos") {
+            doc.setFont("helvetica", "bold");
+            doc.text("Cliente: ", 15 + indexOffset, yOffset + 7);
+            doc.setFont("helvetica", "normal");
+            doc.text(photo.mediaName ? photo.mediaName.split("-")[0] : "-", 40, yOffset + 7);
+            yOffset += 12;  // Espaçamento ajustado
+        } else {
+            yOffset += 10;
+        }
         // Thumb reduzida
         const thumbnailUrl = photo.mediaId 
             ? `${API_URL}/proxy?url=${encodeURIComponent(`${THUMB_URL}/i_${photo.mediaId}.png`)}`
@@ -372,7 +397,7 @@ async function generateCheckinPDF(checkIn) {
             console.warn("Erro ao carregar imagem do entorno:", error);
         }
 
-        yOffset += 70
+        yOffset += 70;
     }
 
     const now = new Date();

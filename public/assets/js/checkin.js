@@ -253,14 +253,44 @@ function setupDetailsToggle() {
 
 function filterCheckIns(checkIns) {
     const searchInput = document.getElementById("search-input").value.toLowerCase();
-    const filteredCheckIns = checkIns.filter((checkIn) =>
-        checkIn.panelName.toLowerCase().includes(searchInput)
-    );
+    const startDateInput = document.getElementById("start-date").value;
+    const endDateInput = document.getElementById("end-date").value;
+
+    // Converter datas para timestamp (em segundos)
+    const startDate = startDateInput ? new Date(startDateInput).getTime() / 1000 : null;
+    const endDate = endDateInput ? new Date(endDateInput).getTime() / 1000 + 86400 : null;
+
+    // Filtrar check-ins combinando os critérios
+    const filteredCheckIns = checkIns.filter((checkIn) => {
+        const checkInTime = checkIn.createdAt._seconds;
+
+        // Verifica se o nome do painel corresponde à pesquisa
+        const matchesSearch = checkIn.panelName.toLowerCase().includes(searchInput);
+
+        // Verifica o intervalo de datas
+        const isWithinDateRange =
+            (!startDate || checkInTime >= startDate) &&
+            (!endDate || checkInTime <= endDate);
+
+        return matchesSearch && isWithinDateRange;
+    });
 
     currentPage = 1; // Reiniciar para a primeira página
     setupPagination(filteredCheckIns);
     renderPaginatedCheckIns(filteredCheckIns, currentPage);
 }
+
+document.getElementById("apply-date-filter").addEventListener("click", () => {
+    filterCheckIns(sortedCheckIns);
+});
+
+// Limpar os filtros ao clicar no botão "Limpar Filtros"
+document.getElementById("clear-filters").addEventListener("click", () => {
+    document.getElementById("search-input").value = "";
+    document.getElementById("start-date").value = "";
+    document.getElementById("end-date").value = "";
+    filterCheckIns(sortedCheckIns);  // Exibe todos os check-ins
+});
 
 function toggleCheckInDetails(checkIn, listItem, detailsButton) {
     const existingDetails = listItem.nextElementSibling;
@@ -284,11 +314,12 @@ function toggleCheckInDetails(checkIn, listItem, detailsButton) {
     detailsItem.innerHTML = `
         <div class="details-container">
             <h3>Detalhes do Check-In</h3>
-            <label for="client-selector">Filtrar por Cliente:</label>
-            <select id="client-selector">
-                <option value="todos">Todos</option>
-                <!-- As opções de cliente serão preenchidas dinamicamente no JavaScript -->
-            </select>
+            <div>
+                <label for="client-selector-${checkIn.id}">Filtrar por Cliente:</label>
+                <select class="client-selector" id="client-selector-${checkIn.id}">
+                    <!-- clientes ficarão aqui -->
+                </select>
+            </div>
             <div style="margin-bottom: 10px;">
                 <button class="export-button" data-checkin-id="${checkIn.id}">
                     <i class="fas fa-file-pdf"></i> Exportar PDF
@@ -335,16 +366,30 @@ function toggleCheckInDetails(checkIn, listItem, detailsButton) {
         img.addEventListener("click", (event) => {
             openImageModal(event.target.getAttribute("data-src"));
         });
+    })
+    
+    // Inserir os detalhes no DOM antes de adicionar o listener
+    listItem.insertAdjacentElement("afterend", detailsItem);
+
+    // Preencher o seletor de clientes
+    populateClientSelector(checkIn.photos, `client-selector-${checkIn.id}`);
+
+    // Agora podemos adicionar o evento de mudança, pois o elemento já existe no DOM
+    document.getElementById(`client-selector-${checkIn.id}`).addEventListener("change", (event) => {
+        filterCheckInDetails(event.target.value, checkIn);
     });
 
     detailsItem.querySelector(".export-button").addEventListener("click", async () => {
-        const exportButton = document.querySelector(".export-button");
-        const loadingDiv = document.getElementById("loading-pdf");
+        const exportButton = detailsItem.querySelector(".export-button");
+        const loadingDiv = detailsItem.querySelector(".loading-pdf");
+    
+        // Obter o cliente selecionado no seletor
+        const selectedClient = document.getElementById(`client-selector-${checkIn.id}`).value;
     
         try {
             exportButton.disabled = true;
             loadingDiv.style.display = "inline-flex";
-            await generateCheckinPDF(checkIn);
+            await generateCheckinPDF(checkIn, selectedClient);  // Passa o cliente selecionado
         } catch (error) {
             console.error("Erro ao gerar o PDF:", error);
             alert("Erro ao gerar o PDF. Por favor, tente novamente.");
@@ -353,14 +398,89 @@ function toggleCheckInDetails(checkIn, listItem, detailsButton) {
             loadingDiv.style.display = "none";
         }
     });
-
-    // Inserir os detalhes logo após o item clicado
-    listItem.insertAdjacentElement("afterend", detailsItem);
-
+    
     // Alterar o ícone do botão
     detailsButton.classList.add("open");
     detailsButton.innerHTML = `Recolher detalhes <i class="fas fa-chevron-right"></i>`;
 }
+
+function populateClientSelector(photos, selectorId) {
+    const clientSelector = document.getElementById(selectorId);
+    if (!clientSelector) {
+        console.error(`Elemento '${selectorId}' não encontrado no DOM.`);
+        return;
+    }
+
+    const uniqueClients = new Set(["Todos"]); // Começa com 'todos'
+
+    photos.forEach(photo => {
+        const client = photo.mediaName ? photo.mediaName.split("-")[0] : "Desconhecido";
+        uniqueClients.add(client);
+    });
+
+    uniqueClients.forEach(client => {
+        const option = document.createElement("option");
+        option.value = client;
+        option.textContent = client;
+        clientSelector.appendChild(option);
+    });
+}
+
+function filterCheckInDetails(selectedClient, checkIn) {
+    const detailsContainer = document.querySelector(`.checkin-details`);
+    if (!detailsContainer) return;
+
+    // Filtrar as fotos com base no cliente selecionado
+    const filteredPhotos = selectedClient === "Todos"
+        ? checkIn.photos
+        : checkIn.photos.filter(photo => {
+            const client = photo.mediaName ? photo.mediaName.split("-")[0] : "Desconhecido";
+            return client === selectedClient;
+        });
+
+    // Atualizar a lista de fotos
+    const photosList = filteredPhotos.map(photo => `
+        <li>
+            <p><strong>Mídia:</strong> ${photo.mediaName || photo.mediaId}</p>
+            <p><strong>Cliente:</strong> ${photo.mediaName ? photo.mediaName.split("-")[0] : "-"}</p>
+            <div class="detail-item">
+                <div class="photo-group">
+                    <p><strong>Esperada:</strong></p>
+                    <img src="${THUMB_URL}/i_${photo.mediaId}.png" alt="Foto Esperada" class="clickable-image" data-src="${THUMB_URL}/i_${photo.mediaId}.png">
+                </div>
+                <div class="photo-group">
+                    <p><strong>Foto mídia:</strong></p>
+                    <img src="${photo.mediaUrl}" alt="Check-In Foto" class="clickable-image" data-src="${photo.mediaUrl}">
+                    <p class="timestamp">${photo.timestampMedia}</p>
+                </div>
+                <div class="photo-group">
+                    <p><strong>Foto entorno:</strong></p>
+                    <img src="${photo.environmentUrl}" alt="Check-In Foto" class="clickable-image" data-src="${photo.environmentUrl}">
+                    <p class="timestamp">${photo.timestampEnvironment}</p>
+                </div>
+            </div>
+        </li>
+    `).join("");
+
+    detailsContainer.querySelector("ul").innerHTML = photosList;
+
+    // Esperar o DOM atualizar para reanexar os eventos
+    setTimeout(() => {
+        reattachImageClickEvents(detailsContainer);
+    }, 0);
+}
+
+function reattachImageClickEvents(detailsContainer) {
+    detailsContainer.querySelectorAll(".clickable-image").forEach(img => {
+        img.addEventListener("click", (event) => {
+            openImageModal(event.target.getAttribute("data-src"));
+        });
+    });
+}
+
+document.getElementById("apply-date-filter").addEventListener("click", () => {
+    filterCheckIns(sortedCheckIns);
+});
 
 function openImageModal(imageSrc) {
     const modal = document.getElementById("image-modal");
