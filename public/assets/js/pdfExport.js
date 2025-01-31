@@ -277,6 +277,115 @@ async function generateDetailPDF(button) {
     }
 }
 
+async function generateCheckinPDF(checkIn) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF("p", "mm", "a4");
+    const logoPath = "assets/images/Verde_Fundo Branco.png";
+
+    let yOffset = 20;
+
+    try {
+        const logoBase64 = await loadImageAsBase64(logoPath);
+        doc.addImage(logoBase64, "PNG", 10, 10, 40, 20);
+    } catch (error) {
+        console.error("Erro ao carregar o logotipo:", error);
+    }
+
+    doc.setFontSize(16);
+    doc.text("Relatório de Check-In de Mídias", 70, 15);
+    doc.setFontSize(10);
+    doc.text(`Gerado em: ${new Date().toLocaleString()}`, 70, 25);
+    yOffset = 40;
+
+    // Informações principais
+    doc.setFont("helvetica", "bold");
+    doc.text("Painel: ", 10, yOffset);
+    doc.setFont("helvetica", "normal");
+    doc.text(checkIn.panelName || checkIn.panelId, 30, yOffset);
+    
+    doc.setFont("helvetica", "bold");
+    doc.text("Data: ", 10, yOffset + 7);
+    doc.setFont("helvetica", "normal");
+    doc.text(new Date(checkIn.createdAt._seconds * 1000).toLocaleString(), 30, yOffset + 7);
+    
+    yOffset += 15;    
+
+    let mediaIndex = 1;
+
+    for (const photo of checkIn.photos) {
+        if (yOffset + 80 > 280) {
+            doc.addPage();
+            yOffset = 20;
+        }
+        const indexOffset = String(mediaIndex) == 1 ? 0 : 2 * String(mediaIndex).length; // Adiciona espaço de acordo com o número
+        // Índice da mídia
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.text(`${mediaIndex})`, 10, yOffset);
+        mediaIndex++;
+
+        // Informações da mídia e cliente
+        doc.text("Mídia: ", 15 + indexOffset, yOffset);
+        doc.setFont("helvetica", "normal");
+        doc.text(photo.mediaName || photo.mediaId, 35, yOffset);
+
+        doc.setFont("helvetica", "bold");
+        doc.text("Cliente: ", 15 + indexOffset, yOffset + 7);
+        doc.setFont("helvetica", "normal");
+        doc.text(photo.mediaName ? photo.mediaName.split("-")[0] : "-", 40, yOffset + 7);
+        yOffset += 12;
+
+        // Thumb reduzida
+        const thumbnailUrl = photo.mediaId 
+            ? `${API_URL}/proxy?url=${encodeURIComponent(`${THUMB_URL}/i_${photo.mediaId}.png`)}`
+            : null;
+
+        try {
+            const base64Thumb = await loadImageAsBase64(thumbnailUrl);
+            doc.addImage(base64Thumb, "JPEG", 10, yOffset, 30, 20);
+            doc.text("Mídia esperada", 10, yOffset + 25);
+        } catch (error) {
+            console.warn("Erro ao carregar thumb:", error);
+        }
+
+        // Foto da mídia (tamanho maior)
+        const mediaUrl = photo.mediaId
+            ? `${API_URL}/proxy?url=${encodeURIComponent(photo.mediaUrl)}`
+            : null;
+        try {
+            const base64Media = await loadImageAsBase64(mediaUrl);
+            doc.addImage(base64Media, "JPEG", 50, yOffset, 70, 50);
+            doc.text(`Foto mídia - ${photo.timestampMedia || "Sem Timestamp"}`, 50, yOffset + 55);
+        } catch (error) {
+            console.warn("Erro ao carregar imagem da mídia:", error);
+        }
+
+        // Foto do entorno (tamanho maior)
+        const environmentUrl = photo.mediaId
+            ? `${API_URL}/proxy?url=${encodeURIComponent(photo.environmentUrl)}`
+            : null;
+        try {
+            const base64Entorno = await loadImageAsBase64(environmentUrl);
+            doc.addImage(base64Entorno, "JPEG", 130, yOffset, 70, 50);
+            doc.text(`Foto entorno - ${photo.timestampEnvironment || "Sem Timestamp"}`, 130, yOffset + 55);
+        } catch (error) {
+            console.warn("Erro ao carregar imagem do entorno:", error);
+        }
+
+        yOffset += 70
+    }
+
+    const now = new Date();
+    const dia = String(now.getDate()).padStart(2, '0');
+    const mes = String(now.getMonth() + 1).padStart(2, '0');
+    const hora = String(now.getHours()).padStart(2, '0');
+    const minuto = String(now.getMinutes()).padStart(2, '0');
+
+    const fileName = `relatorio_checkin_${checkIn.panelName}_${dia}-${mes}-${hora}-${minuto}.pdf`;
+    doc.save(fileName);
+}
+
+
 document.addEventListener("click", async (event) => {
     if (event.target.id === "export-pdf-button") {
         const button = event.target;

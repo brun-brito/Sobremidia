@@ -285,11 +285,19 @@ input[type="time"] {
     gap: 10px;
 }
 
-.export-button:hover, .export-pdf-button {
+.export-button:hover:not(:disabled), .export-pdf-button:hover:not(:disabled) {
     background-color: #d32f2f;
 }
 
-.loading-pdf {
+.export-button:disabled, .export-pdf-button:disabled {
+    background-color: #cccccc;
+    color: #666666;
+    cursor: not-allowed;
+    border: 1px solid #aaaaaa;
+}
+
+
+.loading-pdf, .loading-pdf2 {
     margin-top: 10px;
     font-size: 14px;
     color: #333;
@@ -298,11 +306,3 @@ input[type="time"] {
     gap: 10px;
 }
 
-.loading-pdf2 {
-    margin-top: 10px;
-    font-size: 14px;
-    color: #333;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-}

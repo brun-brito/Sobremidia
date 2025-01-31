@@ -251,7 +251,6 @@ function setupDetailsToggle() {
     });
 }
 
-// Função para filtrar os check-ins com base na pesquisa
 function filterCheckIns(checkIns) {
     const searchInput = document.getElementById("search-input").value.toLowerCase();
     const filteredCheckIns = checkIns.filter((checkIn) =>
@@ -264,12 +263,11 @@ function filterCheckIns(checkIns) {
 }
 
 function toggleCheckInDetails(checkIn, listItem, detailsButton) {
-    // Verificar se os detalhes já estão visíveis
     const existingDetails = listItem.nextElementSibling;
     if (existingDetails && existingDetails.classList.contains("checkin-details")) {
-        existingDetails.remove(); // Remover os detalhes se já estiverem abertos
+        existingDetails.remove();
         detailsButton.classList.remove("open");
-        detailsButton.innerHTML = `Ver detalhes <i class="fas fa-chevron-right"></i>`; // Alterar texto para "Ver detalhes"
+        detailsButton.innerHTML = `Ver detalhes <i class="fas fa-chevron-right"></i>`;
         return;
     }
 
@@ -286,6 +284,19 @@ function toggleCheckInDetails(checkIn, listItem, detailsButton) {
     detailsItem.innerHTML = `
         <div class="details-container">
             <h3>Detalhes do Check-In</h3>
+            <label for="client-selector">Filtrar por Cliente:</label>
+            <select id="client-selector">
+                <option value="todos">Todos</option>
+                <!-- As opções de cliente serão preenchidas dinamicamente no JavaScript -->
+            </select>
+            <div style="margin-bottom: 10px;">
+                <button class="export-button" data-checkin-id="${checkIn.id}">
+                    <i class="fas fa-file-pdf"></i> Exportar PDF
+                </button>
+                <div id="loading-pdf" class="loading-pdf" style="display: none;">
+                    <i class="fas fa-spinner fa-spin"></i> Gerando PDF...
+                </div>
+            </div>
             <p><strong>Painel:</strong> ${checkIn.panelName || checkIn.panelId}</p>
             <p><strong>Data:</strong> ${new Date(checkIn.createdAt._seconds * 1000).toLocaleString()}</p>
             <ul>
@@ -326,6 +337,22 @@ function toggleCheckInDetails(checkIn, listItem, detailsButton) {
         });
     });
 
+    detailsItem.querySelector(".export-button").addEventListener("click", async () => {
+        const exportButton = document.querySelector(".export-button");
+        const loadingDiv = document.getElementById("loading-pdf");
+    
+        try {
+            exportButton.disabled = true;
+            loadingDiv.style.display = "inline-flex";
+            await generateCheckinPDF(checkIn);
+        } catch (error) {
+            console.error("Erro ao gerar o PDF:", error);
+            alert("Erro ao gerar o PDF. Por favor, tente novamente.");
+        } finally {
+            exportButton.disabled = false;
+            loadingDiv.style.display = "none";
+        }
+    });
 
     // Inserir os detalhes logo após o item clicado
     listItem.insertAdjacentElement("afterend", detailsItem);
@@ -363,6 +390,7 @@ document.getElementById("image-modal").addEventListener("click", (event) => {
 
 // Abrir modal de seleção de painel
 function openPanelSelectionModal() {
+    document.getElementById("media-checkin-list").style.display = "none";
     const modalContent = document.getElementById("modal-panel-list");
     modalContent.innerHTML = Object.entries(checkInPanelNames)
         .map(([id, panelData]) => `
