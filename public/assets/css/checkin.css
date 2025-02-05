@@ -550,3 +550,12 @@
     gap: 10px;
     margin-bottom: 15px;
 }
+
+#suggestions-list li {
+    padding: 8px;
+    border-bottom: 1px solid #ddd;
+}
+
+#suggestions-list li:hover {
+    background-color: #f0f0f0;
+}
