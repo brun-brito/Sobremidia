@@ -53,7 +53,7 @@ async function fetchCheckIns() {
 
 async function fetchPlaylistById(playlistId) {
     try {
-        showLoading("Carregando playlist...");
+        showLoading("Carregando mídias..."); // mesmo carregando a playlist deixar assim pro usuário ver só as mídias
         const response = await fetch(`${API_URL_PLAYLIST}/${playlistId}`, {
             headers: { "Secret-Token": "a59202bc005fa4305916bca8aa7e31d0" },
         });
@@ -202,26 +202,49 @@ async function handlePanelSelection(event) {
                 <img src="${THUMB_URL}/i_${media.id}.png" alt="Prévia da Mídia" 
                     style="width: 100px; height: auto; border: 1px solid #ddd; margin-top: 5px; margin-bottom: 10px;" />
                 
-                <div class="upload-container">
-                    <p><strong>Foto mídia:</strong></p>
-                    <div class="upload-frame" data-media-id="${media.id}" data-type="media-photo">
-                        <i class="fas fa-plus upload-icon"></i>
-                        <input type="file" accept="image/*" class="upload-input" style="display: none;" 
-                            data-media-id="${media.id}" data-media-name="${media.name}" data-type="media-photo">
-                        <img id="preview-media-${media.id}" class="upload-preview" style="display: none;" />
+                <div class="midia-anexos">
+                    <div class="upload-container">
+                        <p><strong>Foto mídia:</strong><span style="color: red;">*</span></p>
+                        <div class="upload-frame" data-media-id="${media.id}" data-type="media-photo">
+                            <i class="fas fa-plus upload-icon"></i>
+                            <img id="preview-media-${media.id}" class="upload-preview" style="display: none;" />
+                            <span id="media-counter-${media.id}" class="media-counter" style="display: none;">+0</span>
+                        </div>
+                        <p class="upload-label">Clique para gerenciar fotos</p>
                     </div>
-                    <span id="timestamp-media-photo-${media.id}" class="timestamp">Sem foto anexada</span>
+
+                    <div class="upload-container">
+                        <p><strong>Foto entorno:</strong><span style="color: red;">*</span></p>
+                        <div class="upload-frame" data-media-id="${media.id}" data-type="environment-photo">
+                            <i class="fas fa-plus upload-icon"></i>
+                            <img id="preview-environment-${media.id}" class="upload-preview" style="display: none;" />
+                            <span id="environment-counter-${media.id}" class="media-counter" style="display: none;">+0</span>
+                        </div>
+                        <p class="upload-label">Clique para gerenciar fotos do entorno</p>
+                    </div>
+
+                    <div class="upload-container">
+                        <p><strong>Vídeo mídia:</strong><span style="color: red;">*</span></p>
+                        <div class="upload-frame" data-media-id="${media.id}" data-type="video-proof">
+                            <i class="fas fa-plus upload-icon"></i>
+                            <img id="preview-video-${media.id}" class="upload-preview" style="display: none;" />
+                            <span id="video-counter-${media.id}" class="media-counter" style="display: none;">+0</span>
+                        </div>
+                        <p class="upload-label">Clique para gerenciar vídeos</p>
+                    </div>
                 </div>
 
-                <div class="upload-container">
-                    <p><strong>Foto entorno:</strong></p>
-                    <div class="upload-frame" data-media-id="${media.id}" data-type="environment-photo">
-                        <i class="fas fa-plus upload-icon"></i>
-                        <input type="file" accept="image/*" class="upload-input" style="display: none;" 
-                            data-media-id="${media.id}" data-media-name="${media.name}" data-type="environment-photo">
-                        <img id="preview-environment-${media.id}" class="upload-preview" style="display: none;" />
+                <!-- Modal genérico para gerenciar mídias -->
+                <div id="modal-midia" class="modal-midia" style="display: none;">
+                    <div class="modal-content-midia">
+                        <span id="close-modal" class="close-midia">&times;</span>
+                        <h3 id="modal-title">Gerenciar Arquivos</h3>
+                        <p id="modal-instructions">Adicione ou exclua as mídias conforme necessário.</p>
+                        <input type="file" id="modal-file-input" accept="image/*,video/*" multiple>
+                        <div id="modal-media-grid" class="modal-photo-grid"></div>
+                        <div id="loading-video-${media.id}" class="loading-spinner" style="display: none;"></div>
+                        <button id="save-modal">Salvar</button>
                     </div>
-                    <span id="timestamp-environment-photo-${media.id}" class="timestamp">Sem foto anexada</span>
                 </div>
             `;
             mediaList.appendChild(listItem);
@@ -235,6 +258,183 @@ async function handlePanelSelection(event) {
     
     closePanelSelectionModal();
     addUploadFrameListeners();
+    initializeUploadFrames();
+}
+
+const mediaData = {};
+
+let currentMediaId = '';
+let currentType = '';
+
+function initializeUploadFrames() {
+    document.querySelectorAll('.upload-frame').forEach(frame => {
+        frame.addEventListener('click', () => {
+            currentMediaId = frame.getAttribute('data-media-id');
+            currentType = frame.getAttribute('data-type');
+            openModal(currentMediaId, currentType);
+        });
+    });
+
+    document.getElementById('modal-file-input').addEventListener('change', handleFileUpload);
+    document.getElementById('close-modal').addEventListener('click', closeModal);
+    document.getElementById('save-modal').addEventListener('click', saveChangesAndCloseModal);
+}
+
+function openModal(mediaId, type) {
+    currentMediaId = mediaId;
+    currentType = type;
+    document.getElementById('modal-midia').style.display = 'flex';
+
+    // Verifica e inicializa corretamente o array de mídia
+    if (!mediaData[type]) {
+        mediaData[type] = {};
+    }
+    if (!mediaData[type][mediaId]) {
+        mediaData[type][mediaId] = [];
+    }
+
+    // Ajusta o título do modal dinamicamente
+    const modalTitle = document.getElementById('modal-title');
+    modalTitle.innerText = type === 'media-photo' ? 'Gerenciar Fotos da Mídia' :
+                           type === 'environment-photo' ? 'Gerenciar Fotos do Entorno' : 'Gerenciar Vídeos';
+
+    // Ajusta o input de arquivo conforme o tipo
+    const fileInput = document.getElementById('modal-file-input');
+    fileInput.accept = type === 'video-proof' ? 'video/*' : 'image/*';
+
+    updateModalMediaGrid(mediaId, type);
+}
+
+function closeModal() {
+    document.getElementById('modal-midia').style.display = 'none';
+}
+
+function handleFileUpload(event) {
+    const files = Array.from(event.target.files);
+
+    // Exibe o loading antes de iniciar o processamento
+    toggleLoading(true);
+
+    files.forEach(file => {
+        // Usamos URL.createObjectURL() para performance otimizada
+        const objectURL = URL.createObjectURL(file);
+        addMediaToData(currentMediaId, currentType, file, objectURL);
+        updateMainPreview(currentMediaId, currentType);
+        updateModalMediaGrid(currentMediaId, currentType);
+    });
+
+    // Oculta o loading após o upload
+    toggleLoading(false);
+    event.target.value = '';  // Limpar a seleção anterior
+}
+
+function addMediaToData(mediaId, type, file, previewSrc) {
+    if (!mediaData[type]) {
+        mediaData[type] = {};
+    }
+    if (!mediaData[type][mediaId]) {
+        mediaData[type][mediaId] = [];
+    }
+
+    const timestamp = new Date(file.lastModified).toISOString();
+    mediaData[type][mediaId].push({
+        file,
+        previewSrc,
+        timestamp
+    });
+}
+
+function updateMainPreview(mediaId, type) {
+    const mediaItems = mediaData[type][mediaId];
+    const containerSelector = type === 'media-photo' ? 'media' : type === 'environment-photo' ? 'environment' : 'video';
+    const previewContainerId = `preview-${containerSelector}-${mediaId}`;
+    let previewContainer = document.getElementById(previewContainerId);
+    const counter = document.getElementById(`${containerSelector}-counter-${mediaId}`);
+
+    // Exibe o loading enquanto atualiza as prévias
+    toggleLoading(true);
+
+    if (mediaItems && mediaItems.length > 0) {
+        if (type === 'video-proof') {
+            // Atualiza o elemento de vídeo sem recriá-lo
+            if (!previewContainer || previewContainer.tagName.toLowerCase() !== 'video') {
+                previewContainer.outerHTML = `
+                    <video id="${previewContainerId}" class="upload-preview video-preview" style="width: 100%; height: 100%;">
+                        <source src="${mediaItems[0].previewSrc}" type="${mediaItems[0].file.type}">
+                    </video>
+                `;
+            } else {
+                // Apenas atualiza a fonte
+                const videoSource = previewContainer.querySelector('source');
+                videoSource.src = mediaItems[0].previewSrc;
+                previewContainer.load();  // Recarrega o vídeo
+                previewContainer.style.display = 'block';
+            }
+        } else {
+            // Atualiza a prévia da imagem
+            previewContainer.src = mediaItems[0].previewSrc;
+            previewContainer.style.display = 'block';
+        }
+
+        // Atualiza o contador
+        counter.innerText = `+${mediaItems.length - 1}`;
+        counter.style.display = mediaItems.length > 1 ? 'block' : 'none';
+    } else {
+        // Se não houver mídias, esconde a prévia e o contador
+        previewContainer.style.display = 'none';
+        counter.style.display = 'none';
+    }
+
+    toggleLoading(false);  // Pequeno atraso para suavizar a experiência
+}
+
+function toggleLoading(isLoading) {
+    const loadingSpinner = document.getElementById(`loading-video-${currentMediaId}`);
+    loadingSpinner.style.display = isLoading ? 'block' : 'none';
+}
+
+function updateModalMediaGrid(mediaId, type) {
+    const modalMediaGrid = document.getElementById('modal-media-grid');
+    modalMediaGrid.innerHTML = '';  // Limpar a grid
+
+    const mediaItems = mediaData[type][mediaId] || [];
+    mediaItems.forEach((item, index) => {
+        const gridItem = document.createElement('div');
+        gridItem.classList.add('grid-item');
+
+        const mediaElement = type === 'video-proof' ? `
+            <video style="width: 125px; height: 100px;" controls>
+                <source src="${item.previewSrc}" type="${item.file.type}">
+            </video>
+        ` : `<img src="${item.previewSrc}" alt="Mídia Anexada">`;
+
+        gridItem.innerHTML = `
+            ${mediaElement}
+            <span class="delete-media" data-index="${index}">&times;</span>
+        `;
+        modalMediaGrid.appendChild(gridItem);
+    });
+
+    document.querySelectorAll('.delete-media').forEach(button => {
+        button.addEventListener('click', (event) => {
+            const index = event.target.getAttribute('data-index');
+            removeMediaFromData(mediaId, type, index);
+            updateMainPreview(mediaId, type);
+            updateModalMediaGrid(mediaId, type);
+        });
+    });
+}
+
+function removeMediaFromData(mediaId, type, index) {
+    mediaData[type][mediaId].splice(index, 1);  // Remover o item do array
+}
+
+function saveChangesAndCloseModal() {
+    toggleLoading(true);
+    updateMainPreview(currentMediaId, currentType);
+    closeModal();
+    toggleLoading(false);
+
 }
 
 // Adicionar eventos para as molduras
@@ -250,13 +450,13 @@ function addUploadFrameListeners() {
 
         // Adiciona evento de mudança para o input
         if (input) {
-            input.addEventListener("change", handlePhotoUpload);
+            input.addEventListener("change", handleMediaUpload);
         }
     });
 }
 
 // Gerenciar upload de fotos
-async function handlePhotoUpload(event) {
+async function handleMediaUpload(event) {
     const input = event.target;
     const file = input.files[0];
     const mediaId = input.getAttribute("data-media-id");
@@ -264,24 +464,36 @@ async function handlePhotoUpload(event) {
 
     if (file) {
         try {
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                // Identificar o ID dinâmico da prévia da imagem
-                const previewId = type === "media-photo"
-                    ? `preview-media-${mediaId}`
-                    : `preview-environment-${mediaId}`;
+            if (type === "media-photo" || type === "environment-photo") {
+                // Lógica existente para imagens
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const previewId = type === "media-photo"
+                        ? `preview-media-${mediaId}`
+                        : `preview-environment-${mediaId}`;
 
-                const preview = document.getElementById(previewId);
-                if (preview) {
-                    preview.src = e.target.result; // Define a imagem como o Base64 gerado
-                    preview.style.display = "block"; // Torna visível
+                    const preview = document.getElementById(previewId);
+                    if (preview) {
+                        preview.src = e.target.result;
+                        preview.style.display = "block";
+                    } else {
+                        console.warn(`[WARN] Prévia de imagem não encontrada para mediaId: ${mediaId}, tipo: ${type}`);
+                    }
+                };
+                reader.readAsDataURL(file);
+            } else if (type === "video-proof") {
+                // Lógica para vídeos
+                const videoPreview = document.getElementById(`preview-video-${mediaId}`);
+                if (videoPreview) {
+                    videoPreview.src = URL.createObjectURL(file);
+                    videoPreview.style.display = "block";
+                    document.getElementById(`timestamp-video-proof-${mediaId}`).innerText = `Vídeo anexado: ${file.name}`;
                 } else {
-                    console.warn(`[WARN] Prévia não encontrada para mediaId: ${mediaId}, tipo: ${type}`);
+                    console.warn(`[WARN] Prévia de vídeo não encontrada para mediaId: ${mediaId}`);
                 }
-            };
+            }
 
-            reader.readAsDataURL(file); // Converte o arquivo em Base64 para exibir a prévia
-
+            // Atualizar o timestamp para ambos os casos
             const timestamp = formatDate(file.lastModified);
             const timestampId = `timestamp-${type}-${mediaId}`;
             const timestampElement = document.getElementById(timestampId);
@@ -292,18 +504,18 @@ async function handlePhotoUpload(event) {
                 console.warn(`[WARN] Elemento timestamp não encontrado para mediaId: ${mediaId}, tipo: ${type}`);
             }
 
-            // Verificar se todos os campos de fotos foram preenchidos
+            // Verificar se todos os campos obrigatórios foram preenchidos
             checkIfAllPhotosUploaded();
 
         } catch (error) {
-            console.error("[ERROR] Falha ao processar foto:", error);
+            console.error("[ERROR] Falha ao processar mídia:", error);
             const timestampElement = document.getElementById(`timestamp-${type}-${mediaId}`);
             if (timestampElement) {
                 timestampElement.innerText = "Erro ao obter data.";
             }
         }
     } else {
-        console.warn("[WARN] Nenhuma foto anexada.");
+        console.warn("[WARN] Nenhuma mídia anexada.");
     }
 }
 
@@ -489,6 +701,5 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("select-panel-button").addEventListener("click", openPanelSelectionModal);
     document.getElementById("close-panel-modal").addEventListener("click", closePanelSelectionModal);
     document.getElementById("modal-panel-list").addEventListener("click", handlePanelSelection);
-    // document.getElementById("media-list").addEventListener("change", handlePhotoUpload);
     document.getElementById("submit-checkin-button").addEventListener("click", handleSubmitCheckIn);
 });

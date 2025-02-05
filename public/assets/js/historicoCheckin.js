@@ -64,7 +64,7 @@ document.getElementById("apply-date-filter").addEventListener("click", () => {
     );
 
     if (!isClientValid) {
-        document.getElementById("error-message").innerText = "Nenhum check-in encontrado para o cliente especificado.";
+        document.getElementById("error-message").innerText = `Nenhum check-in encontrado para o cliente '${searchInput}'.`;
         document.getElementById("checkins-list").innerHTML = "";
         return;
     }
@@ -340,77 +340,3 @@ document.getElementById("image-modal").addEventListener("click", (event) => {
         document.getElementById("image-modal").style.display = "none";
     }
 });
-
-/*
-
-function populateClientSelector(photos, selectorId, preselectedClient = "Todos") {
-    const clientSelector = document.getElementById(selectorId);
-    if (!clientSelector) {
-        console.error(`Elemento '${selectorId}' não encontrado no DOM.`);
-        return;
-    }
-
-    clientSelector.innerHTML = "";  // Limpa as opções anteriores
-
-    const uniqueClients = new Set(["Todos"]); // Começa com 'Todos'
-
-    photos.forEach(photo => {
-        const client = photo.mediaName ? photo.mediaName.split("-")[0] : "Desconhecido";
-        uniqueClients.add(client);
-    });
-
-    uniqueClients.forEach(client => {
-        const option = document.createElement("option");
-        option.value = client;
-        option.textContent = client;
-        clientSelector.appendChild(option);
-    });
-
-    clientSelector.value = preselectedClient;
-}
-
-function filterCheckInDetails(selectedClient, checkIn) {
-    const detailsContainer = document.querySelector(`.checkin-details`);
-    if (!detailsContainer) return;
-
-    // Filtrar as fotos com base no cliente selecionado
-    const filteredPhotos = selectedClient === "Todos"
-        ? checkIn.photos
-        : checkIn.photos.filter(photo => {
-            const client = photo.mediaName ? photo.mediaName.split("-")[0] : "Desconhecido";
-            return client === selectedClient;
-        });
-
-    // Atualizar a lista de fotos
-    const photosList = filteredPhotos.map(photo => `
-        <li>
-            <p><strong>Mídia:</strong> ${photo.mediaName || photo.mediaId}</p>
-            <p><strong>Cliente:</strong> ${photo.mediaName ? photo.mediaName.split("-")[0] : "-"}</p>
-            <div class="detail-item">
-                <div class="photo-group">
-                    <p><strong>Esperada:</strong></p>
-                    <img src="${THUMB_URL}/i_${photo.mediaId}.png" alt="Foto Esperada" class="clickable-image" data-src="${THUMB_URL}/i_${photo.mediaId}.png">
-                </div>
-                <div class="photo-group">
-                    <p><strong>Foto mídia:</strong></p>
-                    <img src="${photo.mediaUrl}" alt="Check-In Foto" class="clickable-image" data-src="${photo.mediaUrl}">
-                    <p class="timestamp">${photo.timestampMedia}</p>
-                </div>
-                <div class="photo-group">
-                    <p><strong>Foto entorno:</strong></p>
-                    <img src="${photo.environmentUrl}" alt="Check-In Foto" class="clickable-image" data-src="${photo.environmentUrl}">
-                    <p class="timestamp">${photo.timestampEnvironment}</p>
-                </div>
-            </div>
-        </li>
-    `).join("");
-
-    detailsContainer.querySelector("ul").innerHTML = photosList;
-
-    // Esperar o DOM atualizar para reanexar os eventos
-    setTimeout(() => {
-        reattachImageClickEvents(detailsContainer);
-    }, 0);
-}
-
-*/

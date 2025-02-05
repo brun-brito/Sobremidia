@@ -27,6 +27,9 @@
                         <li><a href="profile.html" class="nav-link">Meu perfil</a></li> 
                         <li><button id="logout-btn" class="logout-btn">Sair</button></li>
                     </ul>
+                    <div class="menu-toggle">
+                        <i class="fas fa-bars"></i>
+                    </div>
                 </nav>
             </div>
         </header>
@@ -55,7 +58,7 @@
                         <li><strong>1.</strong> Clique em 'Selecionar Painel', e escolha o que deseja realizar o check-in;</li>
                         <li><strong>2.</strong> Após isso, todas as mídias ativas vinculadas a esse painel serão exibidas;</li>
                         <li><strong>3.</strong> Junto delas, terá um espaço para anexar as fotos, que será o comprovante de exibição de cada mídia;</li>
-                        <li><strong>4.</strong> Após anexar todas as fotos, é só clicar em 'Enviar Check-In'.</li>
+                        <li><strong>4.</strong> Após anexar as mídias desejadas, é só clicar em 'Enviar Check-In'.</li>
                     </ul>
                     <button id="select-panel-button" class="button">
                         <i class="fa-regular fa-square-check"></i> Selecionar Painel
@@ -67,6 +70,15 @@
                     </div>
                 </div>
         
+                <!-- Modal de seleção de painel -->
+                <div id="panel-selection-modal" class="modal" style="display: none;">
+                    <div class="modal-content">
+                        <span id="close-panel-modal" class="close">&times;</span>
+                        <h3>Selecione um Painel</h3>
+                        <ul id="modal-panel-list"></ul>
+                    </div>
+                </div>
+
                 <!-- Seção de Histórico de Check-Ins -->
                 <div id="checkin-history" style="display: none;">
                     <h3>Histórico de Check-Ins</h3>
@@ -74,30 +86,37 @@
                     <div style="position: relative; margin-bottom: 15px;">
                     <div class="search-data">
                         <div style="position: relative;">
+                            <label>Nome Cliente*</label>
                             <input
                                 type="text"
                                 id="search-input"
-                                placeholder="Pesquise por cliente..."
+                                placeholder="Pesquise pelo cliente..."
                                 style="flex: 2; padding: 8px; border: 1px solid #ccc; border-radius: 5px;"
                             />
                             <ul id="suggestions-list" style="position: absolute; top: 100%; left: 0; border: 1px solid #ccc; background: white; list-style: none; padding: 0; margin: 0; display: none; z-index: 10;"></ul>
                         </div>
-                
-                        <input 
-                            type="date" 
-                            id="start-date" 
-                            placeholder="Data inicial"
-                            style="width: fit-content; padding: 8px; border: 1px solid #ccc; border-radius: 5px;"
-                        />
-                
-                        <input 
-                            type="date" 
-                            id="end-date" 
-                            placeholder="Data final"
-                            style="width: fit-content; padding: 8px; border: 1px solid #ccc; border-radius: 5px;"
-                        />
                         
-                        <div>
+                        <div style="display: grid;">
+                            <label>Data início</label>
+                            <input 
+                                type="date" 
+                                id="start-date" 
+                                placeholder="Data inicial"
+                                style="width: fit-content; padding: 8px; border: 1px solid #ccc; border-radius: 5px;"
+                            />
+                        </div>
+                
+                        <div style="display: grid;">
+                            <label>Data fim</label>
+                            <input 
+                                type="date" 
+                                id="end-date" 
+                                placeholder="Data final"
+                                style="width: fit-content; padding: 8px; border: 1px solid #ccc; border-radius: 5px;"
+                            />
+                        </div>
+
+                        <div class="filtrar-limpar">
                             <button id="apply-date-filter" style="width: fit-content; padding: 8px 12px; border: none; background-color: #4CAF50; color: white; border-radius: 5px; cursor: pointer;">
                                 Filtrar
                             </button>
@@ -122,14 +141,6 @@
                 
             </div>
         
-            <!-- Modal de seleção de painel -->
-            <div id="panel-selection-modal" class="modal" style="display: none;">
-                <div class="modal-content">
-                    <span id="close-panel-modal" class="close">&times;</span>
-                    <h3>Selecione um Painel</h3>
-                    <ul id="modal-panel-list"></ul>
-                </div>
-            </div>
         
             <!-- Loading Overlay -->
             <div id="loading-overlay" style="display: none;">
