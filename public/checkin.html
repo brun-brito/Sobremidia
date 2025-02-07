@@ -66,18 +66,36 @@
                     <div id="media-checkin-list" style="display: none;">
                         <h3 id="selected-panel-name">Painel: </h3>
                         <ul id="media-list"></ul>
-                        <button id="submit-checkin-button" class="button" disabled>Enviar Check-In</button>
+                        <button disabled id="submit-checkin-button" class="button" >Enviar Tudo</button>
                     </div>
                 </div>
         
                 <!-- Modal de seleção de painel -->
                 <div id="panel-selection-modal" class="modal" style="display: none;">
                     <div class="modal-content">
-                        <span id="close-panel-modal" class="close">&times;</span>
-                        <h3>Selecione um Painel</h3>
-                        <ul id="modal-panel-list"></ul>
+                      <span id="close-panel-modal" class="close">&times;</span>
+                      <h3>Selecione um Painel</h3>
+                      <ul id="modal-panel-list"></ul>
                     </div>
                 </div>
+              
+                  <!-- Modal global para anexar mídias -->
+                <div id="modal-midia" class="modal-midia">
+                    <div class="modal-content-midia">
+                        <span id="close-modal" class="close-midia">&times;</span>
+                        <h3 id="modal-title">Gerenciar Arquivos</h3>
+                        <p id="modal-instructions">Adicione ou exclua os arquivos conforme necessário.</p>
+                        <input type="file" id="modal-file-input" accept="image/*,video/*" multiple>
+                        <div id="modal-media-grid" class="modal-photo-grid"></div>
+                        <button id="save-modal">Salvar</button>
+                    </div>
+                </div>
+
+                <!-- <div id="progressContainer" style="width: 100%; background: #eee; border: 1px solid #ccc; margin-bottom: 10px; height: 25px; position: relative;">
+                    <div id="progressBar" style="height: 100%; background: #4caf50; width: 0%; transition: width 0.3s ease;"></div>
+                    <div id="progressMessage" style="font-family: Arial, sans-serif; margin-top: 10px;"></div>
+                </div> -->
+  
 
                 <!-- Seção de Histórico de Check-Ins -->
                 <div id="checkin-history" style="display: none;">

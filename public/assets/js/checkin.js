@@ -196,8 +196,10 @@ async function handlePanelSelection(event) {
     } else {
         activeMedia.forEach(media => {
             const listItem = document.createElement("li");
+            const nomeMidia = media.name.split("-");
             listItem.innerHTML = `
-                <p><strong>Mídia:</strong> ${media.name}</p>
+                <p><strong>Cliente:</strong> <span id="nome-cliente-${media.id}">${nomeMidia[0]}</span></p>
+                <p><strong>Mídia:</strong> <span id="nome-midia-${media.id}">${nomeMidia.slice(1).join("-")}</span></p>
                 <p><strong>ID:</strong> ${media.id}</p>
                 <img src="${THUMB_URL}/i_${media.id}.png" alt="Prévia da Mídia" 
                     style="width: 100px; height: auto; border: 1px solid #ddd; margin-top: 5px; margin-bottom: 10px;" />
@@ -232,20 +234,9 @@ async function handlePanelSelection(event) {
                         </div>
                         <p class="upload-label">Clique para gerenciar vídeos</p>
                     </div>
+                    <button class="send-checkin-button" data-media-id="${media.id}">Enviar Check-In</button>
                 </div>
-
-                <!-- Modal genérico para gerenciar mídias -->
-                <div id="modal-midia" class="modal-midia" style="display: none;">
-                    <div class="modal-content-midia">
-                        <span id="close-modal" class="close-midia">&times;</span>
-                        <h3 id="modal-title">Gerenciar Arquivos</h3>
-                        <p id="modal-instructions">Adicione ou exclua as mídias conforme necessário.</p>
-                        <input type="file" id="modal-file-input" accept="image/*,video/*" multiple>
-                        <div id="modal-media-grid" class="modal-photo-grid"></div>
-                        <div id="loading-video-${media.id}" class="loading-spinner" style="display: none;"></div>
-                        <button id="save-modal">Salvar</button>
-                    </div>
-                </div>
+            
             `;
             mediaList.appendChild(listItem);
         });        
@@ -257,449 +248,566 @@ async function handlePanelSelection(event) {
     document.getElementById("selected-panel-name").setAttribute("data-panel-name", panelName);
     
     closePanelSelectionModal();
-    addUploadFrameListeners();
     initializeUploadFrames();
+    document.querySelectorAll('.send-checkin-button').forEach(button => {
+        button.addEventListener('click', () => {
+          const mediaId = button.getAttribute('data-media-id');
+          console.log("[DEBUG] Botão enviar checkin clicado para mediaId:", mediaId);
+          sendCheckInForMedia(mediaId);
+        });
+      });
 }
 
-const mediaData = {};
+// Variáveis globais para armazenar os dados e o estado atual
+let mediaData = {};  // Estrutura: { type: { mediaId: [ { file, base64, timestamp, fileName } ] } }
+const chunkSize = 5 * 1024 * 1024;
+let currentMediaId = "";
+let currentType = "";
 
-let currentMediaId = '';
-let currentType = '';
-
+// Função para inicializar os upload frames
 function initializeUploadFrames() {
-    document.querySelectorAll('.upload-frame').forEach(frame => {
-        frame.addEventListener('click', () => {
-            currentMediaId = frame.getAttribute('data-media-id');
-            currentType = frame.getAttribute('data-type');
-            openModal(currentMediaId, currentType);
-        });
+  const frames = document.querySelectorAll('.upload-frame');
+  
+  frames.forEach(frame => {
+    frame.addEventListener('click', () => {
+      const mediaId = frame.getAttribute('data-media-id');
+      const type = frame.getAttribute('data-type');
+      openModal(mediaId, type);
     });
+  });
 
-    document.getElementById('modal-file-input').addEventListener('change', handleFileUpload);
-    document.getElementById('close-modal').addEventListener('click', closeModal);
-    document.getElementById('save-modal').addEventListener('click', saveChangesAndCloseModal);
+  // Listener para o input do modal
+  const modalFileInput = document.getElementById('modal-file-input');
+  if (modalFileInput) {
+    modalFileInput.addEventListener('change', handleFileUpload);
+  } else {
+  }
+  
+  // Listener para fechar o modal
+  const closeModalBtn = document.getElementById('close-modal');
+  if (closeModalBtn) {
+    closeModalBtn.addEventListener('click', closeModal);
+  } else {
+  }
+  
+  // Listener para salvar as mudanças
+  const saveModalBtn = document.getElementById('save-modal');
+  if (saveModalBtn) {
+    saveModalBtn.addEventListener('click', saveChangesAndCloseModal);
+  } else {
+  }
 }
 
+// Função para abrir o modal
 function openModal(mediaId, type) {
-    currentMediaId = mediaId;
-    currentType = type;
-    document.getElementById('modal-midia').style.display = 'flex';
-
-    // Verifica e inicializa corretamente o array de mídia
-    if (!mediaData[type]) {
-        mediaData[type] = {};
+  currentMediaId = mediaId;
+  currentType = type;
+  
+  const modal = document.getElementById('modal-midia');
+  if (modal) {
+    modal.style.display = "flex";
+  } else {
+    return;
+  }
+  
+  // Atualiza o título do modal conforme o tipo
+  const modalTitle = document.getElementById('modal-title');
+  if (modalTitle) {
+    if (type === 'media-photo') {
+      modalTitle.innerText = 'Gerenciar Fotos da Mídia';
+    } else if (type === 'environment-photo') {
+      modalTitle.innerText = 'Gerenciar Fotos do Entorno';
+    } else if (type === 'video-proof') {
+      modalTitle.innerText = 'Gerenciar Vídeos';
     }
-    if (!mediaData[type][mediaId]) {
-        mediaData[type][mediaId] = [];
-    }
-
-    // Ajusta o título do modal dinamicamente
-    const modalTitle = document.getElementById('modal-title');
-    modalTitle.innerText = type === 'media-photo' ? 'Gerenciar Fotos da Mídia' :
-                           type === 'environment-photo' ? 'Gerenciar Fotos do Entorno' : 'Gerenciar Vídeos';
-
-    // Ajusta o input de arquivo conforme o tipo
-    const fileInput = document.getElementById('modal-file-input');
-    fileInput.accept = type === 'video-proof' ? 'video/*' : 'image/*';
-
-    updateModalMediaGrid(mediaId, type);
+  } else {
+    console.error("[DEBUG] Elemento 'modal-title' não encontrado!");
+  }
+  
+  // Atualiza o atributo 'accept' do input do modal
+  const fileInput = document.getElementById('modal-file-input');
+  if (fileInput) {
+    fileInput.accept = (type === 'video-proof') ? 'video/*' : 'image/*';
+  } else {
+    console.error("[DEBUG] Elemento 'modal-file-input' não encontrado!");
+  }
+  
+  // Inicializa a estrutura para o tipo e mediaId, se necessário
+  if (!mediaData[type]) {
+    mediaData[type] = {};
+  }
+  if (!mediaData[type][mediaId]) {
+    mediaData[type][mediaId] = [];
+  }
+  
+  updateModalMediaGrid(mediaId, type);
 }
 
+// Função para fechar o modal
 function closeModal() {
-    document.getElementById('modal-midia').style.display = 'none';
+  const modal = document.getElementById('modal-midia');
+  if (modal) {
+    modal.style.display = "none";
+  }
+  const fileInput = document.getElementById('modal-file-input');
+  if (fileInput) fileInput.value = "";
 }
 
+// Processa o upload de arquivos no modal
 function handleFileUpload(event) {
-    const files = Array.from(event.target.files);
-
-    // Exibe o loading antes de iniciar o processamento
-    toggleLoading(true);
-
-    files.forEach(file => {
-        // Usamos URL.createObjectURL() para performance otimizada
-        const objectURL = URL.createObjectURL(file);
-        addMediaToData(currentMediaId, currentType, file, objectURL);
-        updateMainPreview(currentMediaId, currentType);
-        updateModalMediaGrid(currentMediaId, currentType);
-    });
-
-    // Oculta o loading após o upload
-    toggleLoading(false);
-    event.target.value = '';  // Limpar a seleção anterior
+  const files = Array.from(event.target.files);
+  console.log("[DEBUG] Arquivos selecionados:", files);
+  const mediaId = currentMediaId;
+  const type = currentType;
+  if (!mediaData[type]) mediaData[type] = {};
+  if (!mediaData[type][mediaId]) mediaData[type][mediaId] = [];
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = e.target.result.split(",")[1];
+      mediaData[type][mediaId].push({
+        file: file,
+        base64: base64,
+        timestamp: new Date(file.lastModified).toISOString(),
+        fileName: file.name
+      });
+      updateModalMediaGrid(mediaId, type);
+    };
+    reader.onerror = (err) => console.error("[DEBUG] Erro ao ler arquivo:", file.name, err);
+    reader.readAsDataURL(file);
+  });
 }
 
-function addMediaToData(mediaId, type, file, previewSrc) {
-    if (!mediaData[type]) {
-        mediaData[type] = {};
-    }
-    if (!mediaData[type][mediaId]) {
-        mediaData[type][mediaId] = [];
-    }
-
-    const timestamp = new Date(file.lastModified).toISOString();
-    mediaData[type][mediaId].push({
-        file,
-        previewSrc,
-        timestamp
-    });
-}
-
-function updateMainPreview(mediaId, type) {
-    const mediaItems = mediaData[type][mediaId];
-    const containerSelector = type === 'media-photo' ? 'media' : type === 'environment-photo' ? 'environment' : 'video';
-    const previewContainerId = `preview-${containerSelector}-${mediaId}`;
-    let previewContainer = document.getElementById(previewContainerId);
-    const counter = document.getElementById(`${containerSelector}-counter-${mediaId}`);
-
-    // Exibe o loading enquanto atualiza as prévias
-    toggleLoading(true);
-
-    if (mediaItems && mediaItems.length > 0) {
-        if (type === 'video-proof') {
-            // Atualiza o elemento de vídeo sem recriá-lo
-            if (!previewContainer || previewContainer.tagName.toLowerCase() !== 'video') {
-                previewContainer.outerHTML = `
-                    <video id="${previewContainerId}" class="upload-preview video-preview" style="width: 100%; height: 100%;">
-                        <source src="${mediaItems[0].previewSrc}" type="${mediaItems[0].file.type}">
-                    </video>
-                `;
-            } else {
-                // Apenas atualiza a fonte
-                const videoSource = previewContainer.querySelector('source');
-                videoSource.src = mediaItems[0].previewSrc;
-                previewContainer.load();  // Recarrega o vídeo
-                previewContainer.style.display = 'block';
-            }
-        } else {
-            // Atualiza a prévia da imagem
-            previewContainer.src = mediaItems[0].previewSrc;
-            previewContainer.style.display = 'block';
-        }
-
-        // Atualiza o contador
-        counter.innerText = `+${mediaItems.length - 1}`;
-        counter.style.display = mediaItems.length > 1 ? 'block' : 'none';
-    } else {
-        // Se não houver mídias, esconde a prévia e o contador
-        previewContainer.style.display = 'none';
-        counter.style.display = 'none';
-    }
-
-    toggleLoading(false);  // Pequeno atraso para suavizar a experiência
-}
-
-function toggleLoading(isLoading) {
-    const loadingSpinner = document.getElementById(`loading-video-${currentMediaId}`);
-    loadingSpinner.style.display = isLoading ? 'block' : 'none';
-}
-
+// Atualiza a grid do modal com os arquivos anexados
 function updateModalMediaGrid(mediaId, type) {
-    const modalMediaGrid = document.getElementById('modal-media-grid');
-    modalMediaGrid.innerHTML = '';  // Limpar a grid
-
-    const mediaItems = mediaData[type][mediaId] || [];
-    mediaItems.forEach((item, index) => {
-        const gridItem = document.createElement('div');
-        gridItem.classList.add('grid-item');
-
-        const mediaElement = type === 'video-proof' ? `
-            <video style="width: 125px; height: 100px;" controls>
-                <source src="${item.previewSrc}" type="${item.file.type}">
-            </video>
-        ` : `<img src="${item.previewSrc}" alt="Mídia Anexada">`;
-
+  const grid = document.getElementById('modal-media-grid');
+  if (!grid) {
+    console.error("[DEBUG] Elemento 'modal-media-grid' não encontrado");
+    return;
+  }
+  grid.innerHTML = "";
+  const items = (mediaData[type] && mediaData[type][mediaId]) || [];
+  if (items.length === 0) {
+    grid.innerHTML = "<p>Nenhum arquivo anexado.</p>";
+  } else {
+    items.forEach((item, index) => {
+      const gridItem = document.createElement('div');
+      gridItem.className = 'grid-item';
+      if (type === 'video-proof') {
         gridItem.innerHTML = `
-            ${mediaElement}
-            <span class="delete-media" data-index="${index}">&times;</span>
+          <video width="120" height="90" controls>
+            <source src="data:video/mp4;base64,${item.base64}" type="video/mp4">
+          </video>
+          <span class="delete-media" data-index="${index}">&times;</span>
         `;
-        modalMediaGrid.appendChild(gridItem);
+      } else {
+        gridItem.innerHTML = `
+          <img src="data:image/jpeg;base64,${item.base64}" alt="${item.fileName}" width="120" height="90">
+          <span class="delete-media" data-index="${index}">&times;</span>
+        `;
+      }
+      gridItem.querySelector('.delete-media').addEventListener('click', () => {
+        removeMediaFromData(mediaId, type, index);
+        updateModalMediaGrid(mediaId, type);
+      });
+      grid.appendChild(gridItem);
     });
-
-    document.querySelectorAll('.delete-media').forEach(button => {
-        button.addEventListener('click', (event) => {
-            const index = event.target.getAttribute('data-index');
-            removeMediaFromData(mediaId, type, index);
-            updateMainPreview(mediaId, type);
-            updateModalMediaGrid(mediaId, type);
-        });
-    });
+  }
 }
 
+// Remove um arquivo da estrutura de mídia
 function removeMediaFromData(mediaId, type, index) {
-    mediaData[type][mediaId].splice(index, 1);  // Remover o item do array
+  if (mediaData[type] && mediaData[type][mediaId]) {
+    mediaData[type][mediaId].splice(index, 1);
+  }
 }
 
+// Salva as alterações e fecha o modal
 function saveChangesAndCloseModal() {
-    toggleLoading(true);
-    updateMainPreview(currentMediaId, currentType);
-    closeModal();
-    toggleLoading(false);
-
+  updateMainPreview(currentMediaId, currentType);
+  closeModal();
 }
 
-// Adicionar eventos para as molduras
-function addUploadFrameListeners() {
-    const frames = document.querySelectorAll(".upload-frame");
-    frames.forEach((frame) => {
-        const input = frame.querySelector(".upload-input");
-
-        // Adiciona evento de clique para a moldura
-        frame.addEventListener("click", () => {
-            if (input) input.click();
-        });
-
-        // Adiciona evento de mudança para o input
-        if (input) {
-            input.addEventListener("change", handleMediaUpload);
-        }
-    });
-}
-
-// Gerenciar upload de fotos
-async function handleMediaUpload(event) {
-    const input = event.target;
-    const file = input.files[0];
-    const mediaId = input.getAttribute("data-media-id");
-    const type = input.getAttribute("data-type");
-
-    if (file) {
-        try {
-            if (type === "media-photo" || type === "environment-photo") {
-                // Lógica existente para imagens
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    const previewId = type === "media-photo"
-                        ? `preview-media-${mediaId}`
-                        : `preview-environment-${mediaId}`;
-
-                    const preview = document.getElementById(previewId);
-                    if (preview) {
-                        preview.src = e.target.result;
-                        preview.style.display = "block";
-                    } else {
-                        console.warn(`[WARN] Prévia de imagem não encontrada para mediaId: ${mediaId}, tipo: ${type}`);
-                    }
-                };
-                reader.readAsDataURL(file);
-            } else if (type === "video-proof") {
-                // Lógica para vídeos
-                const videoPreview = document.getElementById(`preview-video-${mediaId}`);
-                if (videoPreview) {
-                    videoPreview.src = URL.createObjectURL(file);
-                    videoPreview.style.display = "block";
-                    document.getElementById(`timestamp-video-proof-${mediaId}`).innerText = `Vídeo anexado: ${file.name}`;
-                } else {
-                    console.warn(`[WARN] Prévia de vídeo não encontrada para mediaId: ${mediaId}`);
-                }
-            }
-
-            // Atualizar o timestamp para ambos os casos
-            const timestamp = formatDate(file.lastModified);
-            const timestampId = `timestamp-${type}-${mediaId}`;
-            const timestampElement = document.getElementById(timestampId);
-
-            if (timestampElement) {
-                timestampElement.innerText = timestamp;
-            } else {
-                console.warn(`[WARN] Elemento timestamp não encontrado para mediaId: ${mediaId}, tipo: ${type}`);
-            }
-
-            // Verificar se todos os campos obrigatórios foram preenchidos
-            checkIfAllPhotosUploaded();
-
-        } catch (error) {
-            console.error("[ERROR] Falha ao processar mídia:", error);
-            const timestampElement = document.getElementById(`timestamp-${type}-${mediaId}`);
-            if (timestampElement) {
-                timestampElement.innerText = "Erro ao obter data.";
-            }
-        }
+// Atualiza a pré-visualização principal no upload-frame
+function updateMainPreview(mediaId, type) {
+  let previewId, counterId;
+  if (type === 'media-photo') {
+    previewId = `preview-media-${mediaId}`;
+    counterId = `media-counter-${mediaId}`;
+  } else if (type === 'environment-photo') {
+    previewId = `preview-environment-${mediaId}`;
+    counterId = `environment-counter-${mediaId}`;
+  } else if (type === 'video-proof') {
+    previewId = `preview-video-${mediaId}`;
+    counterId = `video-counter-${mediaId}`;
+  }
+  const previewElem = document.getElementById(previewId);
+  const counterElem = document.getElementById(counterId);
+  const items = (mediaData[type] && mediaData[type][mediaId]) || [];
+  
+  if (items.length > 0) {
+    if (type === 'video-proof') {
+      const container = document.querySelector(`.upload-frame[data-media-id="${mediaId}"][data-type="${type}"]`);
+      if (container) {
+        container.innerHTML = `
+          <video id="${previewId}" style="width:100%; height:auto;">
+            <source src="data:video/mp4;base64,${items[0].base64}" type="video/mp4">
+          </video>
+          <span id="${counterElem ? counterElem.id : counterId}" class="media-counter" style="display: ${items.length > 1 ? 'block' : 'none'};">+${items.length - 1}</span>
+        `;
+      }
     } else {
-        console.warn("[WARN] Nenhuma mídia anexada.");
+      if (previewElem) {
+        previewElem.src = `data:image/jpeg;base64,${items[0].base64}`;
+        previewElem.style.display = "block";
+      }
+      if (counterElem) {
+        counterElem.innerText = `+${items.length - 1}`;
+        counterElem.style.display = items.length > 1 ? "block" : "none";
+      }
     }
+  } else {
+    if (previewElem) previewElem.style.display = "none";
+    if (counterElem) counterElem.style.display = "none";
+  }
 }
 
-// Verificar se todas as fotos foram anexadas
-function checkIfAllPhotosUploaded() {
-    const mediaItems = Array.from(document.querySelectorAll(".checkin-media-item"));
-    const allUploaded = mediaItems.every((item) => {
-        const mediaPhotoInput = item.querySelector(".upload-input[data-type='media-photo']");
-        const environmentPhotoInput = item.querySelector(".upload-input[data-type='environment-photo']");
-        return mediaPhotoInput.files.length > 0 && environmentPhotoInput.files.length > 0;
-    });
-
-    document.getElementById("submit-checkin-button").disabled = !allUploaded;
-}
-
-function resizeImage(file, maxWidth, maxHeight) {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        const reader = new FileReader();
-
-        reader.onload = (e) => {
-            img.src = e.target.result;
-        };
-
-        img.onload = () => {
-            const canvas = document.createElement("canvas");
-            const ctx = canvas.getContext("2d");
-
-            let width = img.width;
-            let height = img.height;
-
-            if (width > maxWidth || height > maxHeight) {
-                if (width > height) {
-                    height = (height * maxWidth) / width;
-                    width = maxWidth;
-                } else {
-                    width = (width * maxHeight) / height;
-                    height = maxHeight;
-                }
-            }
-
-            canvas.width = width;
-            canvas.height = height;
-
-            ctx.drawImage(img, 0, 0, width, height);
-
-            const resizedBase64 = canvas.toDataURL("image/jpeg", 0.8); // Qualidade de 80%
-            resolve(resizedBase64.split(",")[1]); // Retorna apenas o Base64
-        };
-
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
-}
-
-// Enviar check-in
-async function handleSubmitCheckIn() {
-    const panelId = document.getElementById("selected-panel-name").getAttribute("data-panel-id");
-    const panelName = document.getElementById("selected-panel-name").getAttribute("data-panel-name");
-
-    if (!panelId || !panelName) {
-        alert("Selecione um painel antes de enviar o Check-In.");
-        return;
-    }
-
-    try {
-        showLoading("Enviando Check-in");
-        const mediaPhotos = await Promise.all(
-            Array.from(document.querySelectorAll(".upload-input")).map(async (input) => {
-                const mediaId = input.getAttribute("data-media-id");
-                const mediaName = input.getAttribute("data-media-name");
-                const type = input.getAttribute("data-type"); // media-photo ou environment-photo
-                const file = input.files[0]; // Obtém o arquivo anexado
-    
-                if (!file) {
-                    alert(`[WARN] Nenhuma foto anexada para mídia: ${mediaId}, tipo: ${type}`);
-                }
-    
-                const photoBase64 = await resizeImage(file, 800, 800);
-                const timestampId = `timestamp-${type}-${mediaId}`;
-                const timestamp = document.getElementById(timestampId)?.innerText || "Sem data";
-
-                return { mediaId, mediaName, [`${type}`]: photoBase64, timestamp };
-            })
-        );
-
-        const groupedMediaPhotos = groupByMediaId(mediaPhotos);
-
-        // console.log(`Mídia: \n\n${JSON.stringify(mediaPhotos)}`);
-        // console.log(`Mídia GRUPO:`);
-        // console.log(groupedMediaPhotos);
-
-        await sendCheckInData(panelId, panelName, groupedMediaPhotos);
-        alert("Check-In enviado com sucesso!");
-    } catch (error) {
-        console.error("[ERROR] Falha ao enviar Check-In:", error);
-        alert("Erro ao enviar Check-In. Tente novamente.");
-    }
-    finally {
-        hideLoading();
-    }
-}
-
-// Agrupar as fotos por mediaId
-function groupByMediaId(mediaPhotos) {
+    /*********************** AGRUPAMENTO E ENVIO DO CHECK-IN *************************/
+function groupMediaData() {
     const grouped = {};
-
-    mediaPhotos.forEach((photo) => {
-        if (!photo) return;
-
-        const { mediaId, mediaName } = photo;
-
-        if (!grouped[mediaId]) {
+    Object.keys(mediaData).forEach(type => {
+        Object.keys(mediaData[type]).forEach(mediaId => {
+        if(!grouped[mediaId]) {
+            // Preserva a estrutura de Cliente, Mídia, ID e anexos conforme o snippet
+            const clientElem = document.getElementById("nome-cliente");
+            const mediaNameElem = document.getElementById("nome-midia");
             grouped[mediaId] = {
-                mediaId,
-                mediaName,
-                timestampMedia: null,
-                timestampEnvironment: null,
-                mediaPhoto: null,
-                environmentPhoto: null,
+            cliente: clientElem ? clientElem.innerText.trim() : "",
+            idMidia: mediaId,
+            nomeMidia: mediaNameElem ? mediaNameElem.innerText.trim() : "",
+            fotosMidia: [],
+            fotosEntorno: [],
+            videosMidia: []
             };
         }
-
-        // Atribuir dinamicamente as fotos e timestamps
-        if (photo["media-photo"]) {
-            grouped[mediaId].mediaPhoto = photo["media-photo"];
-            grouped[mediaId].timestampMedia = photo.timestamp; // Timestamp para foto da mídia
-        }
-
-        if (photo["environment-photo"]) {
-            grouped[mediaId].environmentPhoto = photo["environment-photo"];
-            grouped[mediaId].timestampEnvironment = photo.timestamp; // Timestamp para foto do entorno
-        }
+        mediaData[type][mediaId].forEach(item => {
+            const mediaItem = {
+            timestamp: item.timestamp,
+            url: item.base64,  // Em produção, essa URL virá do Storage
+            fileName: item.fileName
+            };
+            if(type === "media-photo") {
+            grouped[mediaId].fotosMidia.push(mediaItem);
+            } else if(type === "environment-photo") {
+            grouped[mediaId].fotosEntorno.push(mediaItem);
+            } else if(type === "video-proof") {
+            grouped[mediaId].videosMidia.push(mediaItem);
+            }
+        });
+        });
     });
-
+    console.log("[INFO] Dados agrupados para envio:", grouped);
     return Object.values(grouped);
 }
 
-// Enviar dados do Check-In
-async function sendCheckInData(panelId, panelName, checkInData) {
+async function sendCheckInData(panelId, panelName, groupedData) {
+    const payload = {
+        panelId,
+        panelName,
+        midias: groupedData.map(media => ({
+        cliente: media.cliente,
+        idMidia: media.idMidia,
+        nomeMidia: media.nomeMidia,
+        fotosMidia: media.fotosMidia.map(item => ({
+            timestamp: item.timestamp,
+            url: item.url
+        })),
+        fotosEntorno: media.fotosEntorno.map(item => ({
+            timestamp: item.timestamp,
+            url: item.url
+        })),
+        videosMidia: media.videosMidia.map(item => ({
+            timestamp: item.timestamp,
+            url: item.url
+        }))
+        }))
+    };
+    console.log("[INFO] Enviando payload para o backend:", payload);
+    const response = await fetch(`${API_URL}/checkin/create`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    });
+    if(!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Erro ao enviar Check-In.");
+    }
+    return response.json();
+}
+
+function showProgressOverlay(totalActions) {
+    let overlay = document.getElementById("progress-overlay");
+    if (!overlay) {
+        overlay = document.createElement("div");
+        overlay.id = "progress-overlay";
+        overlay.style.position = "fixed";
+        overlay.style.top = "0";
+        overlay.style.left = "0";
+        overlay.style.width = "100vw";
+        overlay.style.height = "100vh";
+        overlay.style.background = "rgba(0, 0, 0, 0.8)";
+        overlay.style.display = "flex";
+        overlay.style.flexDirection = "column";
+        overlay.style.justifyContent = "center";
+        overlay.style.alignItems = "center";
+        overlay.style.zIndex = "2000";
+        overlay.style.color = "#fff";
+        overlay.style.fontFamily = "Arial, sans-serif";
+
+        // Container da barra
+        const barContainer = document.createElement("div");
+        barContainer.style.width = "60%";
+        barContainer.style.height = "25px";
+        barContainer.style.background = "#ddd";
+        barContainer.style.borderRadius = "10px";
+        barContainer.style.overflow = "hidden";
+
+        // Barra de progresso
+        const progressBar = document.createElement("div");
+        progressBar.id = "progress-bar";
+        progressBar.style.width = "0%";
+        progressBar.style.height = "100%";
+        progressBar.style.background = "#4caf50";
+        barContainer.appendChild(progressBar);
+
+        // Mensagem de progresso
+        const progressMessage = document.createElement("div");
+        progressMessage.id = "progress-message";
+        progressMessage.style.marginTop = "20px";
+        progressMessage.style.fontSize = "18px";
+
+        // Adiciona os elementos ao overlay
+        overlay.appendChild(barContainer);
+        overlay.appendChild(progressMessage);
+        document.body.appendChild(overlay);
+    } else {
+        overlay.style.display = "flex";  // Mostra o overlay se já existir
+    }
+
+    // Inicializa a barra e a mensagem
+    updateProgressOverlay(0, totalActions, "Iniciando upload...");
+}
+
+function updateProgressOverlay(completedActions, totalActions, message) {
+    const progressBar = document.getElementById("progress-bar");
+    const progressMessage = document.getElementById("progress-message");
+
+    if (progressBar && progressMessage) {
+        const percent = Math.round((completedActions / totalActions) * 100);
+        progressBar.style.width = `${percent}%`;
+        progressMessage.innerText = `${message} (${percent}%)`;
+    }
+    }
+
+    function hideProgressOverlay() {
+    const overlay = document.getElementById("progress-overlay");
+    if (overlay) {
+        overlay.style.display = "none";
+    }
+}      
+/*
+async function uploadPhotos(filesMidia, timestampsMidia, filesEntorno, timestampsEntorno) {
+    const formData = new FormData();
+    filesMidia.forEach((file, index) => {
+        formData.append("files", file);
+        formData.append("fotosMidiaTimestamps", timestampsMidia[index]);
+    });
+
+    filesEntorno.forEach((file, index) => {
+        formData.append("files", file);
+        formData.append("fotosEntornoTimestamps", timestampsEntorno[index]);
+    });
+
     try {
-        // Montar o payload
-        const payload = {
-            panelId,
-            panelName,
-            mediaPhotos: checkInData.map((data) => ({
-                mediaId: data.mediaId,
-                mediaName: data.mediaName,
-                mediaPhoto: data.mediaPhoto,
-                environmentPhoto: data.environmentPhoto,
-                timestampEnvironment: data.timestampEnvironment,
-                timestampMedia: data.timestampMedia,
-            })),
-        };
-
-        console.log(`Payload:`);
-        console.log(payload.mediaPhotos);
-
-        // Enviar para o backend
-        const response = await fetch(`${API_URL}/checkin`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
+        const response = await fetch(`${API_URL}/checkin/upload-photo`, {
+        method: "POST",
+        body: formData
         });
 
         if (!response.ok) {
-            const error = await response.json();
-            console.error("[ERROR] Erro no servidor ao enviar Check-In:", error);
-            throw new Error("Erro no envio do Check-In.");
+        throw new Error("Erro no upload de fotos");
         }
 
-        const result = await response.json();
-        console.log("[INFO] Check-In enviado com sucesso:", result);
-
-        return result;
+        const data = await response.json();
+        return data.urls;
     } catch (error) {
-        console.error("[ERROR] Falha ao enviar Check-In:", error);
+        console.error("Erro ao enviar fotos:", error);
+        throw error;
+    }
+}*/
+
+    // Função para upload de vídeo
+async function uploadVideoChunks(file, timestamp) {
+    const totalChunks = Math.ceil(file.size / chunkSize);
+    const fileId = (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString() + Math.random().toString(36).substring(2, 10));
+
+    for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+        const start = chunkIndex * chunkSize;
+        const end = Math.min(file.size, start + chunkSize);
+        const chunk = file.slice(start, end);
+
+        const formData = new FormData();
+        formData.append("chunk", chunk);
+        formData.append("fileId", fileId);
+        formData.append("chunkIndex", chunkIndex);
+        formData.append("totalChunks", totalChunks);
+        formData.append("originalName", file.name);
+        formData.append("videoTimestamp", timestamp);
+
+        console.log("[DEBUG] Conteúdo do FormData:");
+        formData.forEach((value, key) => {
+        console.log(`  ${key}:`, value);
+        });
+
+        try {
+        const response = await fetch(`${API_URL}/checkin/upload-chunk`, {
+            method: "POST",
+            body: formData,
+        });
+
+        if (!response.ok) {
+            throw new Error(`Erro no envio do chunk ${chunkIndex}`);
+        }
+
+        const data = await response.json();
+        console.log(`[PROGRESS] Chunk ${chunkIndex + 1}/${totalChunks} enviado`);
+        } catch (error) {
+        console.error("Erro ao enviar chunk de vídeo:", error);
+        throw error;
+        }
+    }
+
+    return `https://storage.googleapis.com/sobremidia-ce.firebasestorage.app/checkin/${timestamp}_${file.name}`;
+    //https://storage.googleapis.com/sobremidia-ce.firebasestorage.app/teste/1738960503041_logo.mp4
+    // Esse é o link, mas tem que gerar token
+}
+
+async function sendCheckInForMedia(mediaId) {
+    const panelElem = document.getElementById("selected-panel-name");
+    const panelId = panelElem.getAttribute("data-panel-id");
+    const panelName = panelElem.getAttribute("data-panel-name");
+
+    // Obtem os anexos da mídia
+    const mediaPhotoItems = (mediaData["media-photo"] && mediaData["media-photo"][mediaId]) || [];
+    const environmentPhotoItems = (mediaData["environment-photo"] && mediaData["environment-photo"][mediaId]) || [];
+    const videoItems = (mediaData["video-proof"] && mediaData["video-proof"][mediaId]) || [];
+
+    // Valida os dados
+    if (mediaPhotoItems.length === 0 || environmentPhotoItems.length === 0 || videoItems.length === 0) {
+        alert("Cada mídia deve ter pelo menos um arquivo em cada categoria.");
+        return;
+    }
+
+    const totalActions = mediaPhotoItems.length + environmentPhotoItems.length + videoItems.length;
+    let completedActions = 0;
+
+    // Exibe a barra de progresso
+    showProgressOverlay(totalActions);
+
+    try {
+        // Upload de fotos
+        const fotosMidiaUrls = [];
+        for (let [index, item] of mediaPhotoItems.entries()) {
+            updateProgressOverlay(completedActions, totalActions, `Enviando foto da mídia: ${item.file.name}`);
+            const url = await uploadSinglePhoto(item.file, item.timestamp, "fotosMidiaTimestamps");
+            fotosMidiaUrls.push({ url, timestamp: item.timestamp });
+            completedActions++;
+            updateProgressOverlay(completedActions, totalActions, `Foto enviada: ${item.file.name}`);
+        }
+
+        const fotosEntornoUrls = [];
+        for (let [index, item] of environmentPhotoItems.entries()) {
+            updateProgressOverlay(completedActions, totalActions, `Enviando foto do entorno: ${item.file.name}`);
+            const url = await uploadSinglePhoto(item.file, item.timestamp, "fotosEntornoTimestamps");
+            fotosEntornoUrls.push({ url, timestamp: item.timestamp });
+            completedActions++;
+            updateProgressOverlay(completedActions, totalActions, `Foto enviada: ${item.file.name}`);
+        }
+
+        // Upload de vídeos
+        const videosMidia = [];
+        for (let [index, videoItem] of videoItems.entries()) {
+            updateProgressOverlay(completedActions, totalActions, `Enviando vídeo: ${videoItem.file.name}`);
+            const urlVideo = await uploadVideoChunks(videoItem.file, videoItem.timestamp);
+            videosMidia.push({ timestamp: videoItem.timestamp, url: urlVideo });
+            completedActions++;
+            updateProgressOverlay(completedActions, totalActions, `Vídeo enviado: ${videoItem.file.name}`);
+        }
+
+        // Constrói o payload final
+        const mediaPayload = {
+            cliente: document.getElementById(`nome-cliente-${mediaId}`).innerText.trim(),
+            idMidia: mediaId,
+            nomeMidia: document.getElementById(`nome-midia-${mediaId}`).innerText.trim(),
+            fotosMidia: fotosMidiaUrls,
+            fotosEntorno: fotosEntornoUrls,
+            videosMidia: videosMidia
+        };
+
+        const payload = {
+            panelId,
+            panelName,
+            midias: [mediaPayload]
+        };
+
+        console.log("[INFO] Payload final enviado:", payload);
+
+        // Envia o payload para o Firestore
+        const response = await fetch(`${API_URL}/checkin/create`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+        throw new Error("Erro ao criar check-in.");
+        }
+
+        alert("Check-In enviado com sucesso!");
+    } catch (error) {
+        console.error("Erro ao enviar check-in:", error);
+        alert("Falha ao enviar o Check-In. Verifique os dados e tente novamente.");
+    } finally {
+        hideProgressOverlay();
+    }
+}
+
+async function uploadSinglePhoto(file, timestamp, timestampField) {
+    const formData = new FormData();
+    formData.append("files", file);
+    formData.append(timestampField, timestamp);
+
+    try {
+        const response = await fetch(`${API_URL}/checkin/upload-photo`, {
+            method: "POST",
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error(`Erro ao enviar a foto ${file.name}`);
+        }
+
+        const data = await response.json();
+        return data.urls[0];
+    } catch (error) {
+        console.error("Erro ao enviar foto:", error);
         throw error;
     }
 }
+
 
 document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("select-panel-button").addEventListener("click", openPanelSelectionModal);
     document.getElementById("close-panel-modal").addEventListener("click", closePanelSelectionModal);
     document.getElementById("modal-panel-list").addEventListener("click", handlePanelSelection);
-    document.getElementById("submit-checkin-button").addEventListener("click", handleSubmitCheckIn);
 });

@@ -150,7 +150,7 @@
 }
 
 /* Botão de envio */
-#submit-checkin-button {
+#submit-checkin-button, .send-checkin-button {
     background-color: #007bff;
     color: white;
     border: none;
@@ -159,6 +159,7 @@
     font-size: 16px;
     cursor: pointer;
     transition: background-color 0.2s, box-shadow 0.2s;
+    height: fit-content;
 }
 
 #submit-checkin-button:disabled {
@@ -201,11 +202,16 @@
     .midia-anexos{
         display: block !important;
     }
+
+    .send-checkin-button {
+        margin-top: 15px;
+    }
 }
 
 .midia-anexos{
     display: flex;
     gap: 30px;
+    align-items: center;
 }
 
 .filtrar-limpar {
@@ -466,7 +472,7 @@
     width: 100vw;
     height: 100vh;
     background: rgba(0, 0, 0, 0.5);
-    display: flex;
+    display: none;
     justify-content: center;
     align-items: center;
     z-index: 1000;
@@ -711,3 +717,22 @@
 #suggestions-list li:hover {
     background-color: #f0f0f0;
 }
+
+#progressContainer {
+    width: 100%;
+    background: #eee;
+    border: 1px solid #ccc;
+    margin-bottom: 10px;
+    height: 25px;
+    position: relative;
+  }
+  #progressBar {
+    height: 100%;
+    background: #4caf50;
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+  #progressMessage {
+    margin-top: 10px;
+    font-family: Arial, sans-serif;
+  }
