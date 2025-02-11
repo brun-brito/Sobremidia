@@ -263,6 +263,7 @@ let mediaData = {};  // Estrutura: { type: { mediaId: [ { file, base64, timestam
 const chunkSize = 5 * 1024 * 1024;
 let currentMediaId = "";
 let currentType = "";
+const checkinId = crypto.randomUUID();
 
 // Função para inicializar os upload frames
 function initializeUploadFrames() {
@@ -359,61 +360,69 @@ function handleFileUpload(event) {
   console.log("[DEBUG] Arquivos selecionados:", files);
   const mediaId = currentMediaId;
   const type = currentType;
+
   if (!mediaData[type]) mediaData[type] = {};
   if (!mediaData[type][mediaId]) mediaData[type][mediaId] = [];
+
   files.forEach(file => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const base64 = e.target.result.split(",")[1];
-      mediaData[type][mediaId].push({
-        file: file,
-        base64: base64,
-        timestamp: new Date(file.lastModified).toISOString(),
-        fileName: file.name
-      });
-      updateModalMediaGrid(mediaId, type);
-    };
-    reader.onerror = (err) => console.error("[DEBUG] Erro ao ler arquivo:", file.name, err);
-    reader.readAsDataURL(file);
+    // Cria uma URL temporária ao invés de ler o arquivo com FileReader
+    const objectURL = URL.createObjectURL(file);
+
+    mediaData[type][mediaId].push({
+      file: file,
+      url: objectURL,  // Usamos a URL temporária para exibição
+      timestamp: new Date(file.lastModified).toISOString(),
+      fileName: file.name
+    });
+
+    // Atualiza a grid imediatamente sem esperar leitura
+    updateModalMediaGrid(mediaId, type);
   });
 }
 
 // Atualiza a grid do modal com os arquivos anexados
 function updateModalMediaGrid(mediaId, type) {
-  const grid = document.getElementById('modal-media-grid');
-  if (!grid) {
-    console.error("[DEBUG] Elemento 'modal-media-grid' não encontrado");
-    return;
-  }
-  grid.innerHTML = "";
-  const items = (mediaData[type] && mediaData[type][mediaId]) || [];
-  if (items.length === 0) {
-    grid.innerHTML = "<p>Nenhum arquivo anexado.</p>";
-  } else {
-    items.forEach((item, index) => {
-      const gridItem = document.createElement('div');
-      gridItem.className = 'grid-item';
-      if (type === 'video-proof') {
-        gridItem.innerHTML = `
-          <video width="120" height="90" controls>
-            <source src="data:video/mp4;base64,${item.base64}" type="video/mp4">
-          </video>
-          <span class="delete-media" data-index="${index}">&times;</span>
-        `;
-      } else {
-        gridItem.innerHTML = `
-          <img src="data:image/jpeg;base64,${item.base64}" alt="${item.fileName}" width="120" height="90">
-          <span class="delete-media" data-index="${index}">&times;</span>
-        `;
-      }
-      gridItem.querySelector('.delete-media').addEventListener('click', () => {
-        removeMediaFromData(mediaId, type, index);
-        updateModalMediaGrid(mediaId, type);
+    const grid = document.getElementById('modal-media-grid');
+    if (!grid) {
+      console.error("[DEBUG] Elemento 'modal-media-grid' não encontrado");
+      return;
+    }
+    grid.innerHTML = "";
+  
+    const items = (mediaData[type] && mediaData[type][mediaId]) || [];
+    if (items.length === 0) {
+      grid.innerHTML = "<p>Nenhum arquivo anexado.</p>";
+    } else {
+      items.forEach((item, index) => {
+        const gridItem = document.createElement('div');
+        gridItem.className = 'grid-item';
+  
+        if (type === 'video-proof') {
+          gridItem.innerHTML = `
+            <video width="125px" height="90px" controls>
+              <source src="${item.url}" type="${item.file.type}">
+            </video>
+            <span class="delete-media" data-index="${index}">&times;</span>
+          `;
+        } else {
+          gridItem.innerHTML = `
+            <img src="${item.url}" alt="${item.fileName}" width="120" height="90">
+            <span class="delete-media" data-index="${index}">&times;</span>
+          `;
+        }
+  
+        // Adiciona evento para remover o item e liberar a URL temporária
+        gridItem.querySelector('.delete-media').addEventListener('click', () => {
+          removeMediaFromData(mediaId, type, index);
+          updateModalMediaGrid(mediaId, type);
+          // Libera a URL temporária para evitar vazamento de memória
+          URL.revokeObjectURL(item.url);
+        });
+  
+        grid.appendChild(gridItem);
       });
-      grid.appendChild(gridItem);
-    });
-  }
-}
+    }
+}  
 
 // Remove um arquivo da estrutura de mídia
 function removeMediaFromData(mediaId, type, index) {
@@ -449,16 +458,30 @@ function updateMainPreview(mediaId, type) {
     if (type === 'video-proof') {
       const container = document.querySelector(`.upload-frame[data-media-id="${mediaId}"][data-type="${type}"]`);
       if (container) {
+        // Libera a URL anterior antes de atribuir uma nova
+        const oldVideo = container.querySelector('video source');
+        if (oldVideo && oldVideo.src) {
+          URL.revokeObjectURL(oldVideo.src);
+        }
+  
+        // Atualiza a pré-visualização do vídeo com a nova URL
         container.innerHTML = `
-          <video id="${previewId}" style="width:100%; height:auto;">
-            <source src="data:video/mp4;base64,${items[0].base64}" type="video/mp4">
+          <video id="${previewId}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 5px;" controls>
+            <source src="${items[0].url}" type="${items[0].file.type}">
           </video>
           <span id="${counterElem ? counterElem.id : counterId}" class="media-counter" style="display: ${items.length > 1 ? 'block' : 'none'};">+${items.length - 1}</span>
         `;
       }
     } else {
+      // Imagem
       if (previewElem) {
-        previewElem.src = `data:image/jpeg;base64,${items[0].base64}`;
+        // Libera a URL anterior antes de atribuir a nova
+        if (previewElem.src) {
+          URL.revokeObjectURL(previewElem.src);
+        }
+  
+        // Atualiza a pré-visualização da imagem com a nova URL
+        previewElem.src = items[0].url;
         previewElem.style.display = "block";
       }
       if (counterElem) {
@@ -469,7 +492,7 @@ function updateMainPreview(mediaId, type) {
   } else {
     if (previewElem) previewElem.style.display = "none";
     if (counterElem) counterElem.style.display = "none";
-  }
+  }  
 }
 
     /*********************** AGRUPAMENTO E ENVIO DO CHECK-IN *************************/
@@ -508,41 +531,6 @@ function groupMediaData() {
     });
     console.log("[INFO] Dados agrupados para envio:", grouped);
     return Object.values(grouped);
-}
-
-async function sendCheckInData(panelId, panelName, groupedData) {
-    const payload = {
-        panelId,
-        panelName,
-        midias: groupedData.map(media => ({
-        cliente: media.cliente,
-        idMidia: media.idMidia,
-        nomeMidia: media.nomeMidia,
-        fotosMidia: media.fotosMidia.map(item => ({
-            timestamp: item.timestamp,
-            url: item.url
-        })),
-        fotosEntorno: media.fotosEntorno.map(item => ({
-            timestamp: item.timestamp,
-            url: item.url
-        })),
-        videosMidia: media.videosMidia.map(item => ({
-            timestamp: item.timestamp,
-            url: item.url
-        }))
-        }))
-    };
-    console.log("[INFO] Enviando payload para o backend:", payload);
-    const response = await fetch(`${API_URL}/checkin/create`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-    });
-    if(!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Erro ao enviar Check-In.");
-    }
-    return response.json();
 }
 
 function showProgressOverlay(totalActions) {
@@ -615,41 +603,12 @@ function updateProgressOverlay(completedActions, totalActions, message) {
         overlay.style.display = "none";
     }
 }      
-/*
-async function uploadPhotos(filesMidia, timestampsMidia, filesEntorno, timestampsEntorno) {
-    const formData = new FormData();
-    filesMidia.forEach((file, index) => {
-        formData.append("files", file);
-        formData.append("fotosMidiaTimestamps", timestampsMidia[index]);
-    });
 
-    filesEntorno.forEach((file, index) => {
-        formData.append("files", file);
-        formData.append("fotosEntornoTimestamps", timestampsEntorno[index]);
-    });
-
-    try {
-        const response = await fetch(`${API_URL}/checkin/upload-photo`, {
-        method: "POST",
-        body: formData
-        });
-
-        if (!response.ok) {
-        throw new Error("Erro no upload de fotos");
-        }
-
-        const data = await response.json();
-        return data.urls;
-    } catch (error) {
-        console.error("Erro ao enviar fotos:", error);
-        throw error;
-    }
-}*/
-
-    // Função para upload de vídeo
+// Função para upload de vídeo
 async function uploadVideoChunks(file, timestamp) {
     const totalChunks = Math.ceil(file.size / chunkSize);
     const fileId = (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString() + Math.random().toString(36).substring(2, 10));
+    let completedChunks = 0;
 
     for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
         const start = chunkIndex * chunkSize;
@@ -663,33 +622,40 @@ async function uploadVideoChunks(file, timestamp) {
         formData.append("totalChunks", totalChunks);
         formData.append("originalName", file.name);
         formData.append("videoTimestamp", timestamp);
+        formData.append("checkinId", checkinId);
 
-        console.log("[DEBUG] Conteúdo do FormData:");
-        formData.forEach((value, key) => {
-        console.log(`  ${key}:`, value);
-        });
+        // console.log("[DEBUG] Conteúdo do FormData:");
+        // formData.forEach((value, key) => {
+        // console.log(`  ${key}:`, value);
+        // });
 
         try {
-        const response = await fetch(`${API_URL}/checkin/upload-chunk`, {
-            method: "POST",
-            body: formData,
-        });
+            const response = await fetch(`${API_URL}/checkin/upload-chunk`, {
+                method: "POST",
+                body: formData,
+            });
 
-        if (!response.ok) {
-            throw new Error(`Erro no envio do chunk ${chunkIndex}`);
-        }
+            if (!response.ok) {
+                throw new Error(`Erro no envio do chunk ${chunkIndex}`);
+            }
 
-        const data = await response.json();
-        console.log(`[PROGRESS] Chunk ${chunkIndex + 1}/${totalChunks} enviado`);
+            const data = await response.json();
+            completedChunks++;
+
+            updateProgressOverlay(completedChunks, totalChunks, `Enviando vídeo: ${file.name}`);
+            // console.log(`[PROGRESS] Chunk ${chunkIndex + 1}/${totalChunks} enviado`);
+            if (chunkIndex === totalChunks - 1) {
+                if (!data.url) {
+                    throw new Error("URL do vídeo não retornada pelo backend.");
+                }
+                return data.url;
+            }
+
         } catch (error) {
-        console.error("Erro ao enviar chunk de vídeo:", error);
-        throw error;
+            console.error("Erro ao enviar chunk de vídeo:", error);
+            throw error;
         }
     }
-
-    return `https://storage.googleapis.com/sobremidia-ce.firebasestorage.app/checkin/${timestamp}_${file.name}`;
-    //https://storage.googleapis.com/sobremidia-ce.firebasestorage.app/teste/1738960503041_logo.mp4
-    // Esse é o link, mas tem que gerar token
 }
 
 async function sendCheckInForMedia(mediaId) {
@@ -786,6 +752,7 @@ async function uploadSinglePhoto(file, timestamp, timestampField) {
     const formData = new FormData();
     formData.append("files", file);
     formData.append(timestampField, timestamp);
+    formData.append("checkinId", checkinId);
 
     try {
         const response = await fetch(`${API_URL}/checkin/upload-photo`, {

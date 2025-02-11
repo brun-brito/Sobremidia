@@ -25,7 +25,7 @@ document.getElementById("search-input").addEventListener("input", () => {
     }
 
     const clients = Array.from(new Set(sortedCheckIns.flatMap(checkIn =>
-        checkIn.photos.map(photo => photo.mediaName ? photo.mediaName.split("-")[0] : "Desconhecido")
+        checkIn.midias.map(photo => photo.cliente ? photo.cliente : "Desconhecido")
     )));
 
     const filteredClients = clients.filter(client => client.toLowerCase().includes(searchInput));
@@ -49,6 +49,7 @@ document.getElementById("search-input").addEventListener("input", () => {
 
 document.getElementById("apply-date-filter").addEventListener("click", () => {
     const searchInput = document.getElementById("search-input").value.trim().toLowerCase();
+    const suggestionsList = document.getElementById("suggestions-list");
 
     if (searchInput === "") {
         document.getElementById("error-message").innerText = "Por favor, digite um cliente antes de filtrar.";
@@ -57,8 +58,8 @@ document.getElementById("apply-date-filter").addEventListener("click", () => {
     }
 
     const isClientValid = sortedCheckIns.some(checkIn =>
-        checkIn.photos.some(photo => {
-            const client = photo.mediaName ? photo.mediaName.split("-")[0].toLowerCase() : "desconhecido";
+        checkIn.midias.some(photo => {
+            const client = photo.cliente ? photo.cliente.toLowerCase() : "desconhecido";
             return client === searchInput;
         })
     );
@@ -70,6 +71,7 @@ document.getElementById("apply-date-filter").addEventListener("click", () => {
     }
 
     document.getElementById("error-message").innerText = "";
+    suggestionsList.style.display = "none";
     filterCheckIns(sortedCheckIns);
 });
 
@@ -188,8 +190,8 @@ function filterCheckIns(checkIns) {
     const filteredCheckIns = checkIns.filter(checkIn => {
         const checkInTime = checkIn.createdAt._seconds;
 
-        const hasClient = checkIn.photos.some(photo => {
-            const client = photo.mediaName ? photo.mediaName.split("-")[0].toLowerCase() : "desconhecido";
+        const hasClient = checkIn.midias.some(photo => {
+            const client = photo.cliente ? photo.cliente.toLowerCase() : "desconhecido";
             return client === searchInput;
         });
 
@@ -200,8 +202,6 @@ function filterCheckIns(checkIns) {
         return hasClient && isWithinDateRange;
     });
 
-    console.log(filteredCheckIns);
-    console.log(filteredCheckIns.length);
     if (filteredCheckIns.length === 0) {
         document.getElementById("checkins-list").innerHTML = "<p>Nenhum check-in encontrado para o cliente e as datas fornecidas.</p>";
     } else {
@@ -227,13 +227,13 @@ function toggleCheckInDetails(checkIn, listItem, detailsButton) {
     detailsItem.classList.add("checkin-details");
     
     const filteredPhotos = selectedClient === ""
-        ? checkIn.photos
-        : checkIn.photos.filter(photo => {
-            const client = photo.mediaName ? photo.mediaName.split("-")[0] : "Desconhecido";
+        ? checkIn.midias
+        : checkIn.midias.filter(photo => {
+            const client = photo.cliente ? photo.cliente : "Desconhecido";
             return client.toLowerCase() === selectedClient.toLowerCase();
         });
 
-    detailsItem.innerHTML = `
+    const buttonsAndLoading = `
         <div class="details-container">
             <h3>Detalhes do Check-In</h3>
             <div style="margin-bottom: 10px;">
@@ -243,37 +243,236 @@ function toggleCheckInDetails(checkIn, listItem, detailsButton) {
                 <div id="loading-pdf" class="loading-pdf" style="display: none;">
                     <i class="fas fa-spinner fa-spin"></i> Gerando PDF...
                 </div>
+                <button class="send-mail-button" data-checkin-id="${checkIn.id}">
+                    <i class="fas fa-envelope"></i> Enviar para cliente
+                </button>
+                <div id="enviar-email" style="width: fit-content; display: none;">
+                    <div>
+                        <label for="clientEmail" style="font-weight: bold;">Email do Cliente:</label>
+                        <input type="email" id="clientEmail" placeholder="Digite o email do cliente" required="" style="margin: 5px 0; padding: 5px; width: 100%;">
+                    </div>
+                    <div>
+                        <label for="sellerEmail" style="font-weight: bold;">Email do Vendedor:</label>
+                        <input type="email" id="sellerEmail" placeholder="Digite o email do vendedor" required="" style="margin: 5px 0; padding: 5px; width: 100%;">
+                    </div>
+                    <button id="confirmSendEmail" class="confirmSendEmail">
+                        Confirmar Envio
+                    </button>
+                </div>        
+                <div id="loading-mail" class="loading-mail" style="display: none;">
+                    <i class="fas fa-spinner fa-spin"></i> Enviando e-mail...
+                </div>
             </div>
+        `;
+
+        // Parte 2: Corpo do relatório
+        const reportBody = `
             <p><strong>Painel:</strong> ${checkIn.panelName || checkIn.panelId}</p>
             <p><strong>Data:</strong> ${new Date(checkIn.createdAt._seconds * 1000).toLocaleString()}</p>
-            <ul>
-                ${filteredPhotos.map(photo => `
-                    <li>
-                        <p><strong>Mídia:</strong> ${photo.mediaName || photo.mediaId}</p>
-                        <p><strong>Cliente:</strong> ${photo.mediaName ? photo.mediaName.split("-")[0] : "-"}</p>
-                        <div class="detail-item">
-                            <div class="photo-group">
-                                <p style="justify-self: center;"><strong>Esperada:</strong></p>
-                                <img src="${THUMB_URL}/i_${photo.mediaId}.png" alt="Foto Esperada" class="clickable-image" data-src="${THUMB_URL}/i_${photo.mediaId}.png">
-                            </div>
-                            <div class="photo-group">
-                                <p style="justify-self: center;"><strong>Foto mídia:</strong></p>
-                                <img src="${photo.mediaUrl}" alt="Check-In Foto" class="clickable-image" data-src="${photo.mediaUrl}">
-                                <p class="timestamp">${photo.timestampMedia}</p>
-                            </div>
-                            <div class="photo-group">
-                                <p style="justify-self: center;"><strong>Foto entorno:</strong></p>
-                                <img src="${photo.environmentUrl}" alt="Check-In Foto" class="clickable-image" data-src="${photo.environmentUrl}">
-                                <p class="timestamp">${photo.timestampEnvironment}</p>
+            <ul class="checkin-gallery">
+            ${filteredPhotos.map(photo => `
+                <li>
+                    <p><strong>Mídia:</strong> ${photo.nomeMidia || photo.idMidia}</p>
+                    <p><strong>Cliente:</strong> ${photo.cliente || "-"}</p>
+                    <div class="detail-item">
+                        
+                        <!-- Foto Esperada -->
+                        <div class="photo-group">
+                            <p><strong>Esperada:</strong></p>
+                            <div style="display: flex;"> 
+                                <img src="${THUMB_URL}/i_${photo.idMidia}.png" alt="Foto Esperada" class="clickable-image" data-src="${THUMB_URL}/i_${photo.idMidia}.png">
                             </div>
                         </div>
-                    </li>
-                `
-                    )
-                    .join("")}
-            </ul>
-        </div>
-    `;
+                        
+                        <!-- Fotos da Mídia -->
+                        <div class="media-section" style="margin-top: 15px;overflow: hidden;">
+                            <h4>Fotos da Mídia:</h4>
+                            <div class="media-gallery">
+                                ${photo.fotosMidia.map(foto => `
+                                    <div class="media-item">
+                                        <img src="${foto.url}" alt="Foto Mídia" class="clickable-image" data-src="${foto.url}">
+                                        <div class="timestamp-overlay">${new Date(foto.timestamp).toLocaleString()}</div>
+                                    </div>
+                                `).join("")}
+                            </div>
+                        </div>
+                        
+                        <!-- Fotos do Entorno -->
+                        <div class="media-section">
+                            <h4>Fotos do Entorno:</h4>
+                            <div class="media-gallery">
+                                ${photo.fotosEntorno.map(foto => `
+                                    <div class="media-item">
+                                        <img src="${foto.url}" alt="Foto Entorno" class="clickable-image" data-src="${foto.url}">
+                                        <div class="timestamp-overlay">${new Date(foto.timestamp).toLocaleString()}</div>
+                                    </div>
+                                `).join("")}
+                            </div>
+                        </div>
+                        
+                        <!-- Vídeos da Mídia -->
+                        <div class="media-section">
+                            <h4>Vídeos da Mídia:</h4>
+                            <div class="media-gallery-video">
+                                ${photo.videosMidia.map(video => `
+                                    <div class="media-item-video">
+                                        <video controls>
+                                            <source src="${API_URL}/proxy?url=${video.url}" type="video/mp4">
+                                        </video>
+                                        <div class="timestamp-overlay">${new Date(video.timestamp).toLocaleString()}</div>
+                                    </div>
+                                `).join("")}
+                            </div>
+                        </div>
+                    </div>
+                </li>
+            `).join("")}
+        </ul>
+    </div>
+    <!-- Estilo inline, para exportar via email -->
+    <style>
+        .details-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .details-container h3 {
+            margin: 0;
+            font-size: 18px;
+            color: #333;
+        }
+        
+        .details-container ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .details-container li {
+            margin-bottom: 10px;
+        }
+        
+        .details-container img {
+            display: block;
+            margin-top: 5px;
+            border-radius: 3px;
+        }
+
+        .export-button, .send-mail-button {
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            max-width: fit-content;
+        }
+        
+        .export-button {
+            background-color: #f44336;
+        }
+        
+        .export-button:hover {
+            background-color: #d32f2f;
+        }
+
+        .export-button:disabled {
+            background-color: #cccccc;
+            color: #666666;
+            cursor: not-allowed;
+            border: 1px solid #aaaaaa;
+        }
+
+        .loading-pdf, .loading-mail {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #333;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .send-mail-button {
+            background-color: #007bff;
+        }
+
+        .send-mail-button:hover {
+            background-color: #0056b3;
+        }
+
+        .checkin-gallery {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+            
+        .detail-item {
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        .clickable-image {
+            width: 150px;
+            height: auto;
+            border: 1px solid #ddd;
+            margin-top: 5px;
+            justify-self: center;
+            cursor: pointer;
+        }
+
+        .media-section {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            padding: 5px;
+            box-shadow: 0 9px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .media-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .media-gallery-video {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .media-item, .media-item-video {
+            position: relative;
+            overflow: hidden;
+            border-radius: 5px;
+            background-color: #fff;
+        }
+
+        .media-item img,
+        .media-item-video video {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 5px;
+        }
+
+        .timestamp-overlay {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 3px 5px;
+            font-size: 12px;
+            border-radius: 3px;
+        }
+        
+    </style>
+`;
+    detailsItem.innerHTML = buttonsAndLoading + reportBody;
 
     detailsItem.querySelectorAll(".clickable-image").forEach((img) => {
         img.addEventListener("click", (event) => {
@@ -283,7 +482,14 @@ function toggleCheckInDetails(checkIn, listItem, detailsButton) {
     
     listItem.insertAdjacentElement("afterend", detailsItem);
 
-
+    document.addEventListener("click", (event) => {
+        if (event.target && event.target.id === "close-modal") {
+            const modal = document.getElementById("image-modal");
+            if (modal) {
+                modal.style.display = "none";
+            }
+        }
+    });
 
     detailsItem.querySelector(".export-button").addEventListener("click", async () => {
         const exportButton = detailsItem.querySelector(".export-button");
@@ -292,7 +498,7 @@ function toggleCheckInDetails(checkIn, listItem, detailsButton) {
         try {
             exportButton.disabled = true;
             loadingDiv.style.display = "inline-flex";
-            await generateCheckinPDF(checkIn, selectedClient);  // Passa o cliente selecionado
+            await generateCheckinPDF(checkIn, selectedClient);
         } catch (error) {
             console.error("Erro ao gerar o PDF:", error);
             alert("Erro ao gerar o PDF. Por favor, tente novamente.");
@@ -301,7 +507,11 @@ function toggleCheckInDetails(checkIn, listItem, detailsButton) {
             loadingDiv.style.display = "none";
         }
     });
-    
+
+    detailsItem.querySelector(".send-mail-button").addEventListener("click", async () => {
+        await sendEmail(reportBody);
+    });
+
     detailsButton.classList.add("open");
     detailsButton.innerHTML = `Recolher detalhes <i class="fas fa-chevron-right"></i>`;
 }
@@ -323,17 +533,56 @@ function reattachImageClickEvents(detailsContainer) {
     });
 }
 
+async function sendEmail(detailsItem){
+        // Verifica se os inputs já foram criados para evitar duplicações
+        let emailInputContainer = document.getElementById("enviar-email");
+        emailInputContainer.style.display == "block" ?
+            emailInputContainer.style.display = "none" :
+            emailInputContainer.style.display = "block"
+         
+        // Adiciona o evento de clique ao botão de confirmação
+        const confirmButton = document.getElementById("confirmSendEmail");
+
+    // Remove qualquer listener existente antes de adicionar um novo
+    confirmButton.replaceWith(confirmButton.cloneNode(true));
+    const newConfirmButton = document.getElementById("confirmSendEmail");
+
+    // Adiciona o evento de clique ao botão de confirmação
+    newConfirmButton.addEventListener("click", async () => {
+        const clientEmail = document.getElementById("clientEmail").value.trim();
+        const sellerEmail = document.getElementById("sellerEmail").value.trim();
+        const loadingDiv = document.getElementById("loading-mail");
+
+        if (!clientEmail || !sellerEmail) {
+            alert("Por favor, preencha ambos os campos de email.");
+            return;
+        }
+
+        try {
+            loadingDiv.style.display = "inline-flex";
+            newConfirmButton.disabled = true;
+
+            // Chama a função de envio do email
+            await sendMailReport(clientEmail, sellerEmail, detailsItem);
+
+            alert("Email enviado com sucesso!");
+            emailInputContainer.style.display = "none";
+        } catch (error) {
+            console.error("Erro ao enviar e-mail:", error);
+            alert("Erro ao enviar e-mail. Por favor, tente novamente.");
+        } finally {
+            loadingDiv.style.display = "none";
+            newConfirmButton.disabled = false;
+        }
+    });
+}
+
 function openImageModal(imageSrc) {
     const modal = document.getElementById("image-modal");
     const modalImage = document.getElementById("modal-image");
     modalImage.src = imageSrc;
     modal.style.display = "block";
 }
-
-document.getElementById("close-modal").addEventListener("click", () => {
-    const modal = document.getElementById("image-modal");
-    modal.style.display = "none";
-});
 
 document.getElementById("image-modal").addEventListener("click", (event) => {
     if (event.target === document.getElementById("image-modal")) {

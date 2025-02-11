@@ -150,7 +150,7 @@
 }
 
 /* Botão de envio */
-#submit-checkin-button, .send-checkin-button {
+#submit-checkin-button, .send-checkin-button, #confirmSendEmail {
     background-color: #007bff;
     color: white;
     border: none;
@@ -162,12 +162,15 @@
     height: fit-content;
 }
 
-#submit-checkin-button:disabled {
+#submit-checkin-button:disabled, #confirmSendEmail:disabled {
     background-color: #ccc;
     cursor: not-allowed;
     box-shadow: none;
 }
 
+#confirmSendEmail {
+    margin-top: 7px;
+}
 /* Responsividade */
 @media (max-width: 768px) {
     #media-checkin-list li {
@@ -287,33 +290,6 @@
     max-width: 100px;
     margin-top: 10px;
     border-radius: 5px;
-}
-
-.details-container {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.details-container h3 {
-    margin: 0;
-    font-size: 18px;
-    color: #333;
-}
-
-.details-container ul {
-    list-style: none;
-    padding: 0;
-}
-
-.details-container li {
-    margin-bottom: 10px;
-}
-
-.details-container img {
-    display: block;
-    margin-top: 5px;
-    border-radius: 3px;
 }
 
 .close-details-button {
@@ -609,21 +585,6 @@
     text-align: center;
 }
 
-.clickable-image {
-    width: 100px;
-    height: auto;
-    border: 1px solid #ddd;
-    margin-top: 5px;
-    justify-self: center;
-    cursor: pointer;
-}
-
-.detail-item {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-
 .pagination-container {
     text-align: center;
     margin: 20px 0;
@@ -647,40 +608,6 @@
 
 .pagination-button:hover:not(.active) {
     background-color: #0056b3;
-}
-
-.export-button {
-    background-color: #f44336;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    max-width: fit-content;
-}
-
-.export-button:hover {
-    background-color: #d32f2f;
-}
-
-.loading-pdf {
-    margin-top: 10px;
-    font-size: 14px;
-    color: #333;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.export-button:disabled {
-    background-color: #cccccc;
-    color: #666666;
-    cursor: not-allowed;
-    border: 1px solid #aaaaaa;
 }
 
 .client-selector {
