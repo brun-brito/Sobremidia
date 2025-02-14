@@ -329,148 +329,6 @@ function toggleCheckInDetails(checkIn, listItem, detailsButton) {
             `).join("")}
         </ul>
     </div>
-    <!-- Estilo inline, para exportar via email -->
-    <style>
-        .details-container {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        
-        .details-container h3 {
-            margin: 0;
-            font-size: 18px;
-            color: #333;
-        }
-        
-        .details-container ul {
-            list-style: none;
-            padding: 0;
-        }
-        
-        .details-container li {
-            margin-bottom: 10px;
-        }
-        
-        .details-container img {
-            display: block;
-            margin-top: 5px;
-            border-radius: 3px;
-        }
-
-        .export-button, .send-mail-button {
-            color: white;
-            border: none;
-            border-radius: 5px;
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            max-width: fit-content;
-        }
-        
-        .export-button {
-            background-color: #f44336;
-        }
-        
-        .export-button:hover {
-            background-color: #d32f2f;
-        }
-
-        .export-button:disabled {
-            background-color: #cccccc;
-            color: #666666;
-            cursor: not-allowed;
-            border: 1px solid #aaaaaa;
-        }
-
-        .loading-pdf, .loading-mail {
-            margin-top: 10px;
-            font-size: 14px;
-            color: #333;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .send-mail-button {
-            background-color: #007bff;
-        }
-
-        .send-mail-button:hover {
-            background-color: #0056b3;
-        }
-
-        .checkin-gallery {
-            list-style-type: none;
-            padding: 0;
-            margin: 0;
-        }
-            
-        .detail-item {
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            background-color: #f9f9f9;
-        }
-
-        .clickable-image {
-            width: 150px;
-            height: auto;
-            border: 1px solid #ddd;
-            margin-top: 5px;
-            justify-self: center;
-            cursor: pointer;
-        }
-
-        .media-section {
-            margin-top: 20px;
-            border: 1px solid #ddd;
-            padding: 5px;
-            box-shadow: 0 9px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .media-gallery {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 15px;
-        }
-
-        .media-gallery-video {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 15px;
-        }
-
-        .media-item, .media-item-video {
-            position: relative;
-            overflow: hidden;
-            border-radius: 5px;
-            background-color: #fff;
-        }
-
-        .media-item img,
-        .media-item-video video {
-            width: 100%;
-            height: 180px;
-            object-fit: cover;
-            border-radius: 5px;
-        }
-
-        .timestamp-overlay {
-            position: absolute;
-            bottom: 5px;
-            right: 5px;
-            background-color: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 3px 5px;
-            font-size: 12px;
-            border-radius: 3px;
-        }
-        
-    </style>
 `;
     detailsItem.innerHTML = buttonsAndLoading + reportBody;
 
@@ -498,7 +356,7 @@ function toggleCheckInDetails(checkIn, listItem, detailsButton) {
         try {
             exportButton.disabled = true;
             loadingDiv.style.display = "inline-flex";
-            await generateCheckinPDF(checkIn, selectedClient);
+            await generateCheckinPDF(checkIn);
         } catch (error) {
             console.error("Erro ao gerar o PDF:", error);
             alert("Erro ao gerar o PDF. Por favor, tente novamente.");
@@ -509,7 +367,7 @@ function toggleCheckInDetails(checkIn, listItem, detailsButton) {
     });
 
     detailsItem.querySelector(".send-mail-button").addEventListener("click", async () => {
-        await sendEmail(reportBody);
+        await sendEmail(checkIn.id);
     });
 
     detailsButton.classList.add("open");
@@ -525,23 +383,15 @@ document.getElementById("clear-filters").addEventListener("click", () => {
     document.getElementById("checkins-list").innerHTML = "";
 });
 
-function reattachImageClickEvents(detailsContainer) {
-    detailsContainer.querySelectorAll(".clickable-image").forEach(img => {
-        img.addEventListener("click", (event) => {
-            openImageModal(event.target.getAttribute("data-src"));
-        });
-    });
-}
-
-async function sendEmail(detailsItem){
-        // Verifica se os inputs já foram criados para evitar duplicações
-        let emailInputContainer = document.getElementById("enviar-email");
-        emailInputContainer.style.display == "block" ?
-            emailInputContainer.style.display = "none" :
-            emailInputContainer.style.display = "block"
-         
-        // Adiciona o evento de clique ao botão de confirmação
-        const confirmButton = document.getElementById("confirmSendEmail");
+async function sendEmail(checkinId){
+    // Verifica se os inputs já foram criados para evitar duplicações
+    let emailInputContainer = document.getElementById("enviar-email");
+    emailInputContainer.style.display == "block" ?
+        emailInputContainer.style.display = "none" :
+        emailInputContainer.style.display = "block"
+        
+    // Adiciona o evento de clique ao botão de confirmação
+    const confirmButton = document.getElementById("confirmSendEmail");
 
     // Remove qualquer listener existente antes de adicionar um novo
     confirmButton.replaceWith(confirmButton.cloneNode(true));
@@ -563,7 +413,7 @@ async function sendEmail(detailsItem){
             newConfirmButton.disabled = true;
 
             // Chama a função de envio do email
-            await sendMailReport(clientEmail, sellerEmail, detailsItem);
+            await sendMailReport(clientEmail, sellerEmail, checkinId);
 
             alert("Email enviado com sucesso!");
             emailInputContainer.style.display = "none";

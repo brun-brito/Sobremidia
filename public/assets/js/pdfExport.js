@@ -279,126 +279,160 @@ async function generateDetailPDF(button) {
     }
 }
 
-async function generateCheckinPDF(checkIn, selectedClient) {
+async function generateCheckinPDF(checkIn) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF("p", "mm", "a4");
 
     let yOffset = 20;
+    const marginLeft = 15;
+    const pageWidth = doc.internal.pageSize.width - 30;
+    const pageHeight = doc.internal.pageSize.height - 20;
 
     try {
         const logoBase64 = await loadImageAsBase64(logoPath);
-        doc.addImage(logoBase64, "PNG", 10, 10, 40, 20);
+        doc.addImage(logoBase64, "PNG", marginLeft, 10, 40, 20);
     } catch (error) {
         console.error("Erro ao carregar o logotipo:", error);
     }
 
+    // **Cabeçalho com bordas**
+    doc.setDrawColor(0); // Cor preta
+    doc.setLineWidth(0.5);
+    doc.rect(marginLeft, 8, pageWidth, 25, "S");
+
     doc.setFontSize(16);
-    doc.text("Relatório de Check-In de Mídias", 70, 15);
+    doc.text("Relatório de Check-In de Mídias", marginLeft + 50, 15);
     doc.setFontSize(10);
-    doc.text(`Gerado em: ${new Date().toLocaleString()}`, 70, 25);
+    doc.text(`Gerado em: ${new Date().toLocaleString()}`, marginLeft + 50, 22);
+
+    // **Seção Informativa**
     yOffset = 40;
-
-    // Informações principais
     doc.setFont("helvetica", "bold");
-    doc.text("Painel: ", 10, yOffset);
+    doc.text("Painel:", marginLeft, yOffset);
     doc.setFont("helvetica", "normal");
-    doc.text(checkIn.panelName || checkIn.panelId, 30, yOffset);
-    
+    doc.text(checkIn.panelName || checkIn.panelId, marginLeft + 30, yOffset);
+
     doc.setFont("helvetica", "bold");
-    doc.text("Data: ", 10, yOffset + 7);
+    doc.text("Data:", marginLeft, yOffset + 7);
     doc.setFont("helvetica", "normal");
-    doc.text(new Date(checkIn.createdAt._seconds * 1000).toLocaleString(), 30, yOffset + 7);
+    doc.text(new Date(checkIn.createdAt._seconds * 1000).toLocaleString(), marginLeft + 30, yOffset + 7);
 
-    // Exibir o cliente no cabeçalho se for específico
-    if (selectedClient !== "Todos") {
-        doc.setFont("helvetica", "bold");
-        doc.text("Cliente: ", 10, yOffset + 14);
-        doc.setFont("helvetica", "normal");
-        doc.text(selectedClient, 30, yOffset + 14);
-        yOffset += 22;  // Ajustar o espaçamento após o cabeçalho
-    } else {
-        yOffset += 17;  // Ajuste normal para 'Todos'
-    }
+    // **Linha de separação**
+    yOffset += 12;
+    doc.setLineWidth(0.5);
+    doc.line(marginLeft, yOffset, pageWidth + marginLeft, yOffset);
 
+    yOffset += 10;
     let mediaIndex = 1;
 
-    // Filtrar as fotos pelo cliente selecionado
-    const filteredPhotos = selectedClient === "Todos"
-        ? checkIn.photos
-        : checkIn.photos.filter(photo => {
-            const client = photo.mediaName ? photo.mediaName.split("-")[0] : "Desconhecido";
-            return client === selectedClient;
-        });
-
-    // Gerar o conteúdo para cada foto filtrada
-    for (const photo of filteredPhotos) {
-        if (yOffset + 80 > 280) {
+    for (const media of checkIn.midias) {
+        if (yOffset + 120 > pageHeight) {
             doc.addPage();
             yOffset = 20;
         }
 
-        const indexOffset = String(mediaIndex) === "1" ? 0 : 2 * String(mediaIndex).length;
-
-        // Índice da mídia
-        doc.setFontSize(12);
+        // **Título da Mídia**
         doc.setFont("helvetica", "bold");
-        doc.text(`${mediaIndex})`, 10, yOffset);
-        mediaIndex++;
-
-        // Informações da mídia
-        doc.text("Mídia: ", 15 + indexOffset, yOffset);
+        doc.text(`${mediaIndex}) Mídia:`, marginLeft, yOffset);
         doc.setFont("helvetica", "normal");
-        doc.text(photo.mediaName || photo.mediaId, 35, yOffset);
+        doc.text(media.nomeMidia || media.idMidia, marginLeft + 30, yOffset);
 
-        // Exibir o cliente por mídia apenas se 'Todos' estiver selecionado
-        if (selectedClient === "Todos") {
-            doc.setFont("helvetica", "bold");
-            doc.text("Cliente: ", 15 + indexOffset, yOffset + 7);
-            doc.setFont("helvetica", "normal");
-            doc.text(photo.mediaName ? photo.mediaName.split("-")[0] : "-", 40, yOffset + 7);
-            yOffset += 12;  // Espaçamento ajustado
-        } else {
-            yOffset += 10;
-        }
-        // Thumb reduzida
-        const thumbnailUrl = photo.mediaId 
-            ? `${API_URL}/proxy?url=${encodeURIComponent(`${THUMB_URL}/i_${photo.mediaId}.png`)}`
-            : null;
+        doc.setFont("helvetica", "bold");
+        doc.text("Cliente:", marginLeft, yOffset + 7);
+        doc.setFont("helvetica", "normal");
+        doc.text(media.cliente || "-", marginLeft + 30, yOffset + 7);
 
-        try {
-            const base64Thumb = await loadImageAsBase64(thumbnailUrl);
-            doc.addImage(base64Thumb, "JPEG", 10, yOffset, 30, 20);
-            doc.text("Mídia esperada", 10, yOffset + 25);
-        } catch (error) {
-            console.warn("Erro ao carregar thumb:", error);
-        }
+        yOffset += 10;
 
-        // Foto da mídia (tamanho maior)
-        const mediaUrl = photo.mediaId
-            ? `${API_URL}/proxy?url=${encodeURIComponent(photo.mediaUrl)}`
-            : null;
-        try {
-            const base64Media = await loadImageAsBase64(mediaUrl);
-            doc.addImage(base64Media, "JPEG", 50, yOffset, 70, 50);
-            doc.text(`Foto mídia - ${photo.timestampMedia || "Sem Timestamp"}`, 50, yOffset + 55);
-        } catch (error) {
-            console.warn("Erro ao carregar imagem da mídia:", error);
+        // **Linha separadora**
+        doc.setLineWidth(0.3);
+        doc.line(marginLeft, yOffset, pageWidth + marginLeft, yOffset);
+        yOffset += 5;
+
+        // **Mídia Esperada**
+        if (media.idMidia) {
+            const thumbnailUrl = `${API_URL}/proxy?url=${encodeURIComponent(`${THUMB_URL}/i_${media.idMidia}.png`)}`;
+            try {
+                const base64Thumb = await loadImageAsBase64(thumbnailUrl);
+                doc.addImage(base64Thumb, "JPEG", marginLeft, yOffset, 40, 30);
+                doc.text("Mídia Esperada", marginLeft, yOffset + 35);
+            } catch (error) {
+                console.warn("Erro ao carregar thumb:", error);
+            }
         }
 
-        // Foto do entorno (tamanho maior)
-        const environmentUrl = photo.mediaId
-            ? `${API_URL}/proxy?url=${encodeURIComponent(photo.environmentUrl)}`
-            : null;
-        try {
-            const base64Entorno = await loadImageAsBase64(environmentUrl);
-            doc.addImage(base64Entorno, "JPEG", 130, yOffset, 70, 50);
-            doc.text(`Foto entorno - ${photo.timestampEnvironment || "Sem Timestamp"}`, 130, yOffset + 55);
-        } catch (error) {
-            console.warn("Erro ao carregar imagem do entorno:", error);
+        yOffset += 40;
+
+        // **Fotos da Mídia**
+        if (media.fotosMidia.length > 0) {
+            for (const foto of media.fotosMidia) {
+                if (yOffset + 80 > pageHeight) {
+                    doc.addPage();
+                    yOffset = 20;
+                }
+
+                try {
+                    const mediaUrl = `${API_URL}/proxy?url=${encodeURIComponent(foto.url)}`;
+                    const base64Media = await loadImageAsBase64(mediaUrl);
+                    doc.addImage(base64Media, "JPEG", marginLeft, yOffset, 80, 60);
+                    doc.text(`Foto Mídia - ${new Date(foto.timestamp).toLocaleString()}`, marginLeft, yOffset + 65);
+                } catch (error) {
+                    console.warn("Erro ao carregar imagem da mídia:", error);
+                }
+
+                yOffset += 75;
+            }
         }
 
-        yOffset += 70;
+        // **Fotos do Entorno**
+        if (media.fotosEntorno.length > 0) {
+            for (const foto of media.fotosEntorno) {
+                if (yOffset + 80 > pageHeight) {
+                    doc.addPage();
+                    yOffset = 20;
+                }
+
+                try {
+                    const environmentUrl = `${API_URL}/proxy?url=${encodeURIComponent(foto.url)}`;
+                    const base64Entorno = await loadImageAsBase64(environmentUrl);
+                    doc.addImage(base64Entorno, "JPEG", marginLeft, yOffset, 80, 60);
+                    doc.text(`Foto Entorno - ${new Date(foto.timestamp).toLocaleString()}`, marginLeft, yOffset + 65);
+                } catch (error) {
+                    console.warn("Erro ao carregar imagem do entorno:", error);
+                }
+
+                yOffset += 75;
+            }
+        }
+
+        // **Vídeos**
+        if (media.videosMidia.length > 0) {
+            for (const video of media.videosMidia) {
+                if (yOffset + 10 > pageHeight) {
+                    doc.addPage();
+                    yOffset = 20;
+                }
+                doc.text("Vídeo disponível no link:", marginLeft, yOffset);
+                doc.setTextColor(0, 0, 255);
+                doc.textWithLink(video.url, marginLeft + 50, yOffset, { url: video.url });
+                doc.setTextColor(0, 0, 0);
+                yOffset += 10;
+            }
+        }
+
+        // **Linha separadora**
+        doc.setLineWidth(0.5);
+        doc.line(marginLeft, yOffset, pageWidth + marginLeft, yOffset);
+        yOffset += 10;
+
+        mediaIndex++;
     }
+
+    // **Rodapé**
+    doc.setLineWidth(0.5);
+    doc.line(marginLeft, pageHeight - 10, pageWidth + marginLeft, pageHeight - 10);
+    doc.setFontSize(10);
+    doc.text("Relatório gerado automaticamente.", marginLeft, pageHeight - 5);
 
     const now = new Date();
     const dia = String(now.getDate()).padStart(2, '0');
@@ -406,10 +440,9 @@ async function generateCheckinPDF(checkIn, selectedClient) {
     const hora = String(now.getHours()).padStart(2, '0');
     const minuto = String(now.getMinutes()).padStart(2, '0');
 
-    const fileName = `relatorio_checkin_${checkIn.panelName}_${dia}-${mes}-${hora}-${minuto}.pdf`;
+    const fileName = `relatorio_checkin_${checkIn.panelName}_${dia}-${mes}_${hora}-${minuto}.pdf`;
     doc.save(fileName);
 }
-
 
 document.addEventListener("click", async (event) => {
     if (event.target.id === "export-pdf-button") {
