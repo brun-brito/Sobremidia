@@ -1,6 +1,6 @@
 const API_URL_MEDIA = "https://api.4yousee.com.br/v1/medias";
 const API_URL_PANELS = "https://api.4yousee.com.br/v1/players";
-const API_URL = "https://2ckh7b03-3000.brs.devtunnels.ms";
+const API_URL = "http://127.0.0.1:5001/sobremidia-ce/us-central1/v1";
 //https://us-central1-sobremidia-ce.cloudfunctions.net/v1
 const BASE_THUMBNAIL_URL = "https://s3.amazonaws.com/4yousee-files/sobremidia/common/videos/thumbnails/i_";
 
@@ -19,52 +19,122 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 async function loadFilters() {
-    const mediaList = document.getElementById("media-list");
-    const panelList = document.getElementById("panel-list");
-  
-    try {
-      // Carregar mídias
-      const mediaResponse = await fetch(API_URL_MEDIA, {
-        headers: { "Secret-Token": "67c7c2b91bcb315098bb733c07ce8b90" },
-      });
-      const mediaData = await mediaResponse.json();
-  
-      // Agrupar mídias por cliente
-      const clients = groupMediaByClient(mediaData.results);
-  
-      // Gerar HTML dos clientes
-      const clientHTML = Object.entries(clients).map(([clientName, mediaIds]) => `
-        <label class="media-item">
-          <input type="checkbox" name="client" value="${mediaIds.join(',')}">
-          <p>${clientName}</p>
-        </label>
-      `).join("");
-      mediaList.innerHTML = clientHTML;
-  
-      // Carregar painéis
-      const panelResponse = await fetch(API_URL_PANELS, {
-        headers: { "Secret-Token": "a59202bc005fa4305916bca8aa7e31d0" },
-      });
-      const panelData = await panelResponse.json();
-  
-      const panelHTML = panelData.results.map(panel => `
-        <label class="panel-item">
-          <input type="checkbox" name="panel" value="${panel.id}">
-          <div class="panel-icon">
-            <i class="fas fa-tv"></i> <!-- Ícone de player -->
-          </div>
-          <p>${panel.name}</p>
-        </label>
-      `).join("");
-      panelList.innerHTML = panelHTML;
-  
-      setupCheckboxLogic();
-      setupToggleLogic();
-      setupSearchLogic();
-    } catch (error) {
-      console.error("[ERROR] Falha ao carregar mídias e painéis:", error);
-    }
-  }  
+  const mediaList = document.getElementById("media-list");
+  const panelList = document.getElementById("panel-list");
+  const toggleMediaButton = document.getElementById("toggle-media");
+  const togglePanelButton = document.getElementById("toggle-panels");
+  toggleMediaButton.style.display = "block";
+  togglePanelButton.style.display = "block";
+
+  // Exibir mensagens de carregamento enquanto busca os dados
+  mediaList.innerHTML = 
+    `<div class="loading-container">
+      <div class="spinner"></div>
+      <p>Carregando clientes...</p>
+    </div>`;
+
+  panelList.innerHTML = 
+    `<div class="loading-container">
+      <div class="spinner"></div>
+      <p>Carregando painéis...</p>
+    </div>`;
+
+  try {
+    const allMediaResults = await fetchPaginatedResults(API_URL_MEDIA, "Secret-Token", "67c7c2b91bcb315098bb733c07ce8b90", 500);
+    const clients = groupMediaByClient(allMediaResults);
+
+    // Gerar HTML dos clientes
+    const clientHTML = Object.entries(clients).map(([clientName, mediaIds]) => `
+      <label class="media-item">
+        <input type="checkbox" name="client" value="${mediaIds.join(',')}">
+        <p>${clientName}</p>
+      </label>
+    `).join("");
+
+    // Atualizar a lista de mídias após o carregamento
+    mediaList.innerHTML = clientHTML;
+
+    const allPanelResults = await fetchPaginatedResults(API_URL_PANELS, "Secret-Token", "a59202bc005fa4305916bca8aa7e31d0", 500);
+    
+    // Gerar HTML dos painéis
+    const panelHTML = allPanelResults.map(panel => `
+      <label class="panel-item">
+        <input type="checkbox" name="panel" value="${panel.id}">
+        <div class="panel-icon">
+          <i class="fas fa-tv"></i> <!-- Ícone de player -->
+        </div>
+        <p>${panel.name}</p>
+      </label>
+    `).join("");
+
+    // Atualizar a lista de painéis após o carregamento
+    panelList.innerHTML = panelHTML;
+
+    setupCheckboxLogic();
+    setupToggleLogic();
+    setupSearchLogic();
+  } catch (error) {
+    console.error("[ERROR] Falha ao carregar mídias e painéis:", error);
+    toggleMediaButton.style.display = "none";
+    togglePanelButton.style.display = "none";
+    // Exibir botão de refresh para tentar buscar novamente
+    mediaList.innerHTML = `
+        <div class="error-message">
+            <p style="color: red;">Erro ao carregar clientes.</p>
+            <button class="retry-button" onclick="loadFilters()">
+                <i class="fas fa-sync-alt"></i> Tentar Novamente
+            </button>
+        </div>`;
+    
+    panelList.innerHTML = `
+        <div class="error-message">
+            <p style="color: red;">Erro ao carregar painéis.</p>
+            <button class="retry-button" onclick="loadFilters()">
+                <i class="fas fa-sync-alt"></i> Tentar Novamente
+            </button>
+        </div>`;
+  }
+}
+
+async function fetchPaginatedResults(baseUrl, headerKey, headerValue, delayMs = 500) {
+  const firstResponse = await fetch(`${baseUrl}?page=1`, {
+      headers: { [headerKey]: headerValue },
+  });
+
+  if (!firstResponse.ok) {
+      throw new Error(`Erro ao buscar a primeira página de ${baseUrl}`);
+  }
+
+  const firstData = await firstResponse.json();
+  let allResults = firstData.results;
+  const totalPages = firstData.totalPages;
+
+  // Se houver mais páginas, buscar as restantes com delay
+  if (totalPages > 1) {
+      for (let currentPage = 2; currentPage <= totalPages; currentPage++) {
+          await delay(delayMs); // Adiciona o delay corretamente
+
+          const response = await fetch(`${baseUrl}?page=${currentPage}`, {
+              headers: { [headerKey]: headerValue },
+          });
+
+          if (!response.ok) {
+              console.warn(`[WARN] Falha ao carregar página ${currentPage}, ignorando.`);
+              continue; // Pular para a próxima página se houver erro
+          }
+
+          const data = await response.json();
+          allResults = allResults.concat(data.results);
+      }
+  }
+
+  return allResults;
+}
+
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 
 function groupMediaByClient(mediaArray) {
     const clients = {};
@@ -160,13 +230,13 @@ function setupToggleLogic() {
     const totalMediaItems = mediaList.children.length;
 
     if (mediaVisibleCount < totalMediaItems) {
-      mediaVisibleCount += 5; // Incrementar em 5
+      mediaVisibleCount += 10; // Incrementar em 10
       toggleItems(mediaList, mediaVisibleCount);
       if (mediaVisibleCount >= totalMediaItems) {
         toggleMediaButton.innerHTML = `Recolher <span class="toggle-icon">↑</span>`;
       }
     } else {
-      mediaVisibleCount = 5; // Recolher para 5 itens
+      mediaVisibleCount = 10; // Recolher para 10 itens
       toggleItems(mediaList, mediaVisibleCount);
       toggleMediaButton.innerHTML = `Mostrar mais <span class="toggle-icon">↓</span>`;
     }
@@ -176,13 +246,13 @@ function setupToggleLogic() {
     const totalPanelItems = panelList.children.length;
 
     if (panelVisibleCount < totalPanelItems) {
-      panelVisibleCount += 5; // Incrementar em 5
+      panelVisibleCount += 10; // Incrementar em 10
       toggleItems(panelList, panelVisibleCount);
       if (panelVisibleCount >= totalPanelItems) {
         togglePanelButton.innerHTML = `Recolher <span class="toggle-icon">↑</span>`;
       }
     } else {
-      panelVisibleCount = 5; // Recolher para 5 itens
+      panelVisibleCount = 10; // Recolher para 10 itens
       toggleItems(panelList, panelVisibleCount);
       togglePanelButton.innerHTML = `Mostrar mais <span class="toggle-icon">↓</span>`;
     }
@@ -214,6 +284,16 @@ function filterItems(className, searchTerm) {
   });
 }
 
+function updateProgress(percentage, message) {
+  const progressBar = document.getElementById("progress-bar");
+  const progressMessage = document.getElementById("progress-message");
+  const progressPercentage = document.getElementById("progress-percentage");
+
+  progressPercentage.innerText = `${percentage}%`;
+  progressBar.style.width = `${percentage}%`;
+  progressMessage.innerText = message;
+}
+
 document.getElementById("report-form").addEventListener("submit", async function (event) {
   event.preventDefault();
 
@@ -228,28 +308,28 @@ document.getElementById("report-form").addEventListener("submit", async function
 
   // Elementos de carregamento
   const loadingSpinner = document.getElementById("loading-div");
-  const progressPercentage = document.getElementById("progress-percentage");
-  const progressBar = document.getElementById("progress-bar");
-  const progressMessage = document.getElementById("progress-message");
   const reportResult = document.getElementById("report-result");
   const reportContent = document.getElementById("report-content");
   const buttonGerar = document.getElementById("button-gerar");
+  
+  // Coletar valores do formulário
+  startDate = document.getElementById("startDate").value || null;
+  startTime = document.getElementById("startTime").value || null;
+  endDate = document.getElementById("endDate").value || null;
+  endTime = document.getElementById("endTime").value || null;
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const diffDays = (end - start) / (1000 * 60 * 60 * 24);
 
-  function updateProgress(percentage, message) {
-      progressPercentage.innerText = `${percentage}%`;
-      progressBar.style.width = `${percentage}%`;
-      progressMessage.innerText = message;
+  if (diffDays > 30) {
+      alert("O intervalo de datas deve ser de no máximo 30 dias.");
+      return;
   }
 
   toggleButtonState(buttonGerar, true);
   loadingSpinner.style.display = "block";
   reportResult.style.display = "none";
 
-  // Coletar valores do formulário
-  startDate = document.getElementById("startDate").value || null;
-  startTime = document.getElementById("startTime").value || null;
-  endDate = document.getElementById("endDate").value || null;
-  endTime = document.getElementById("endTime").value || null;
 
   // Criar o corpo da requisição sem campos vazios
   const requestBody = {
@@ -266,45 +346,96 @@ document.getElementById("report-form").addEventListener("submit", async function
     console.log(`[INFO] Enviando requisição para o backend... \n\n${JSON.stringify(requestBody)}`);
 
     const response = await fetch(`${API_URL}/reports/generate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(requestBody),
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      console.warn("[WARN] Erro retornado pela API:", errorData);
-      throw {
-        status: response.status,
-        message: errorData.error || "Erro desconhecido ao gerar o relatório.",
-      };
+        const errorData = await response.json();
+        console.warn("[WARN] Erro retornado pela API:", errorData);
+        throw {
+            status: response.status,
+            message: errorData.error || "Erro desconhecido ao gerar o relatório.",
+        };
     }
 
-    updateProgress(50, "Organizando dados obtidos...");
-    const result = await response.json();
-    console.log("[INFO] Dados do relatório:", result);
+    const { reportId } = await response.json();
+    console.log(`[INFO] Relatório criado com ID: ${reportId}`);
 
-    updateProgress(70, "Processando os dados...");
-    await displayReport(result);
+    updateProgress(20, "Relatório enviado para processamento...");
 
-    updateProgress(100, "Sucesso! Relatório concluído.");
+    // Agora verifica periodicamente o status
+    await checkReportStatus(reportId);
+
   } catch (error) {
-    console.error("[ERROR] Falha ao gerar relatório:", error);
+      console.error("[ERROR] Falha ao gerar relatório:", error);
 
-    const errorMessage = error.message || "Erro desconhecido.";
-    const userFriendlyMessage = getFriendlyErrorMessage(error.status, errorMessage);
+      const errorMessage = error.message || "Erro desconhecido.";
+      const userFriendlyMessage = getFriendlyErrorMessage(error.status, errorMessage);
 
-    reportContent.innerHTML = `<p style="color: red;">${userFriendlyMessage}</p>`;
-    reportResult.style.display = "block";
-    updateProgress(100, "Erro ao processar o relatório.");
+      reportContent.innerHTML = `<p style="color: red;">${userFriendlyMessage}</p>`;
+      reportResult.style.display = "block";
+      updateProgress(100, "Erro ao processar o relatório.");
   } finally {
-    toggleButtonState(buttonGerar, false);
-    setTimeout(() => {
-      loadingSpinner.style.display = "none"; // Oculta o spinner após um pequeno intervalo
-      updateProgress(0, ""); // Reseta o progresso e mensagem
-    }, 1000);
+      toggleButtonState(buttonGerar, false);
+      setTimeout(() => {
+          loadingSpinner.style.display = "none"; // Oculta o spinner após um pequeno intervalo
+          updateProgress(0, ""); // Reseta o progresso e mensagem
+      }, 1000);
   }
 });
+
+async function checkReportStatus(reportId) {
+  let attempts = 0;
+  const maxAttempts = 60; // Timeout após 5 minutos
+
+  while (attempts < maxAttempts) {
+      updateProgress(30 + (attempts * 2), "Aguardando processamento do relatório...");
+      const response = await fetch(`${API_URL}/reports/status/${reportId}`);
+      const { status } = await response.json();
+
+      if (status === "FINALIZADO") {
+          updateProgress(80, "Relatório pronto! Obtendo dados...");
+          return fetchReportResult(reportId);
+      } else if (status === "FALHA") {
+          console.error("[ERROR] Falha ao gerar relatório.");
+          updateProgress(100, "Erro ao processar o relatório.");
+          return;
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      attempts++;
+  }
+
+  console.error("[ERROR] Tempo limite atingido para geração do relatório.");
+  updateProgress(100, "Erro: Tempo limite atingido.");
+}
+
+async function fetchReportResult(reportId) {
+  try {
+      console.log(`[INFO] Solicitando relatório finalizado para o ID: ${reportId}`);
+
+      const response = await fetch(`${API_URL}/reports/result/${reportId}`);
+
+      if (!response.ok) {
+          console.error(`[ERROR] Erro na resposta da API ao obter relatório. Status: ${response.status}`);
+          throw new Error("Erro ao obter os dados do relatório.");
+      }
+
+      const responseData = await response.json();
+
+      updateProgress(90, "Formatando os dados...");
+      await displayReport(responseData);
+
+      updateProgress(100, "Sucesso! Relatório concluído.");
+  } catch (error) {
+      console.error("[ERROR] Erro ao obter relatório:", error);
+      reportContent.innerHTML = `<p style="color: red;">Erro ao carregar o relatório.</p>`;
+      reportResult.style.display = "block";
+      updateProgress(100, "Erro ao processar o relatório.");
+  }
+}
 
 function toggleButtonState(button, isDisabled) {
     button.disabled = isDisabled;
@@ -366,7 +497,6 @@ async function displayReport(data) {
                     : mediaNames[mediaId]) // Nome completo caso não tenha hífen
                 : `Mídia ${mediaId}`;
 
-                        
               return `
                 <li class="media-item">
                     <div class="media-summary">
@@ -381,38 +511,35 @@ async function displayReport(data) {
                     </div>
                     <div class="media-details details" style="display: none;">
                         ${Object.entries(players).map(([playerId, logs]) => {
-                            const logsByDate = groupLogsByDate(logs); // Agrupar logs por data
-                            const datesCount = Object.keys(logsByDate).length;
+                            const logsByDate = groupLogsByDate(logs);
+                            const totalAparicoes = logs.length;
             
                             return `
                                 <div class="panel-details">
-                                    <p><strong>${panelNames[playerId] || `Painel ${playerId}`}:</strong></p>
+                                    <p><h3>${panelNames[playerId] || `Painel ${playerId}`}:</h3></p>
                                     <ul>
-                                        ${
-                                            datesCount > 1 
-                                                ? `<li><strong>Total:</strong> ${logs.length} aparições</li>`
-                                                : ""
-                                        }
-                                        ${Object.entries(logsByDate).map(([date, times]) => `
-                                            <li>
-                                                ${date}: 
-                                                <a href="#" class="view-times-link"
-                                                  data-player-id="${playerId}" 
-                                                  data-media-id="${mediaId}" 
-                                                  data-date="${date}" 
-                                                  data-times="${times.join(',')}">
-                                                    ${times.length} aparições
-                                                </a>
-                                            </li>
-                                        `).join("")}
+                                        <li>
+                                            <span>Total:</span> 
+                                            <a href="#" class="view-total-link"
+                                              data-player-id="${playerId}" 
+                                              data-media-id="${mediaId}" 
+                                              data-logs='${JSON.stringify(logsByDate)}'>
+                                                ${totalAparicoes} aparições
+                                            </a>
+                                        </li>
                                     </ul>
                                 </div>
-                                <hr>
-                            `;
-                        }).join("")}
+                      <div id="totalAparicoesModal-${playerId}-${mediaId}" class="modal">
+                        <div class="modal-content">
+                            <span class="close" onclick="document.getElementById('totalAparicoesModal-${playerId}-${mediaId}').style.display='none'">&times;</span>
+                            <ul id="daily-aparicoes-list-${playerId}-${mediaId}"></ul>
+                        </div>
                     </div>
-                </li>
-            `;
+                        `;
+                    }).join("")}
+                </div>
+            </li>
+        `;
         }).join("");            
 
         // Gerar HTML dos painéis
@@ -437,29 +564,24 @@ async function displayReport(data) {
                     <div class="panel-details details" style="display: none;">
                         ${Object.entries(media).map(([mediaId, logs]) => {
                             const logsByDate = groupLogsByDate(logs); // Agrupar logs por data
-                            const datesCount = Object.keys(logsByDate).length;
+                            const totalAparicoes = logs.length;
 
                             return `
                                 <div class="media-details">
-                                    <p><strong>${mediaNames[mediaId] || `Mídia ${mediaId}`}:</strong></p>
+                                <p><strong>${
+                                    mediaNames[mediaId] 
+                                        ? mediaNames[mediaId].split("-").slice(1).join("-") 
+                                        : `Mídia ${mediaId}`
+                                }:</strong></p>
                                     <ul>
-                                        ${
-                                            datesCount > 1 
-                                                ? `<li><strong>Total:</strong> ${logs.length} aparições</li>`
-                                                : ""
-                                        }
-                                        ${Object.entries(logsByDate).map(([date, times]) => `
-                                            <li>
-                                                ${date}: 
-                                                <a href="#" class="view-times-link" 
-                                                  data-player-id="${playerId}" 
-                                                  data-media-id="${mediaId}" 
-                                                  data-date="${date}" 
-                                                  data-times="${times.join(',')}">
-                                                    ${times.length} aparições
-                                                </a>
-                                            </li>
-                                        `).join("")}
+                                        <li>
+                                            <strong>Total:</strong> 
+                                            <a href="#" class="view-total-link"
+                                              data-media-id="${mediaId}" 
+                                              data-logs='${JSON.stringify(logsByDate)}'>
+                                                ${totalAparicoes} aparições
+                                            </a>
+                                        </li>
                                     </ul>
                                 </div>
                                 <hr>
@@ -467,13 +589,23 @@ async function displayReport(data) {
                         }).join("")}
                     </div>
                 </li>
+                <div id="totalMediaAparicoesModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close" onclick="document.getElementById('totalMediaAparicoesModal').style.display='none'">&times;</span>
+                        <h4 id="modal-media-name"></h4>
+                        <ul id="daily-media-aparicoes-list"></ul>
+                    </div>
+                </div>
             `;
         }).join("");
 
+
+        const selectedClients = getSelectedClients();
         // Dados do resumo
         const summaryHTML = `
             <div class="summary-info">
                 <p><strong>Intervalo de Datas:</strong> ${startDate} (${startTime}) - ${endDate} (${endTime})</p>
+                <p><strong>Cliente(s):</strong> ${selectedClients}</p>
                 <p><strong>Total de Exibições:</strong> ${summary.totalExhibitions || 0}</p>
                 <p><strong>Total de Mídias:</strong> ${summary.totalMedia || 0}</p>
                 <p><strong>Total de Painéis:</strong> ${summary.totalPlayers || 0}</p>
@@ -515,6 +647,21 @@ async function displayReport(data) {
         reportContent.innerHTML = `<p style="color: red;">Erro ao exibir o relatório. Tente novamente mais tarde.</p>`;
         reportResult.style.display = "block";
     }
+}
+
+function getSelectedClients() {
+  const allMediaCheckbox = document.getElementById("allMedia");
+  const mediaCheckboxes = document.querySelectorAll("#media-list input[type='checkbox']:checked");
+
+  if (allMediaCheckbox.checked) {
+      return "Todos";
+  }
+
+  const selectedClients = Array.from(mediaCheckboxes).map(input => {
+    return input.closest("label").querySelector("p").textContent.trim();
+  });
+
+  return selectedClients.length > 0 ? selectedClients.join(", ") : "Todos";
 }
 
 function groupLogsByDate(logs) {
@@ -593,6 +740,73 @@ document.addEventListener("click", (event) => {
       // Mostra o modal
       modal.style.display = "block";
   }
+
+  document.addEventListener("click", (event) => {
+    if (event.target.classList.contains("view-total-link")) {
+        event.preventDefault();
+
+        const logsByDate = JSON.parse(event.target.dataset.logs);
+        const playerId = event.target.dataset.playerId || null;
+        const mediaId = event.target.dataset.mediaId || null;
+
+        let modal, dailyList, entityName;
+
+        if (playerId) {
+            modal = document.getElementById(`totalAparicoesModal-${playerId}-${mediaId}`);
+            dailyList = document.getElementById(`daily-aparicoes-list-${playerId}-${mediaId}`);
+            entityName = panelNames[playerId] || `Painel ${playerId}`;
+        } else if (mediaId) {
+            modal = document.getElementById(`totalMediaAparicoesModal-${mediaId}`);
+            dailyList = document.getElementById(`daily-media-aparicoes-list-${mediaId}`);
+            entityName = mediaNames[mediaId] || `Mídia ${mediaId}`;
+        } else {
+            return;
+        }
+
+        if (!modal || !dailyList) {
+            console.error("Modal ou lista de aparições diárias não encontrado!", { modal, dailyList });
+            return;
+        }
+
+        // Atualiza o título do modal
+        const modalTitle = modal.querySelector(".modal-content h4");
+        if (modalTitle) {
+            modalTitle.innerText = entityName;
+        }
+
+        // 📝 Novo Formato de Exibição (igual ao das aparições por hora)
+        dailyList.innerHTML = `
+            <div>
+                <h4 id="entity-name">${entityName}</h4>
+                <h4>Total de Aparições por Data</h4>
+                <button id="export-daily-pdf-button" class="export-daily-pdf-button"
+                        data-player-id="${playerId || ''}" 
+                        data-media-id="${mediaId || ''}">
+                    <i class="fas fa-file-pdf"></i> Exportar PDF
+                </button>
+                <div id="loading-pdf3" class="loading-pdf3" style="display: none;">
+                  <i class="fas fa-spinner fa-spin"></i> Gerando PDF...
+                </div>
+                <ul style="margin-top:15px;">
+                    ${Object.entries(logsByDate).map(([date, times], index) => `
+                        <li>
+                            ${index + 1} - ${date}: 
+                            <a href="#" class="view-times-link"
+                              data-player-id="${playerId || ''}" 
+                              data-media-id="${mediaId || ''}" 
+                              data-date="${date}" 
+                              data-times="${times.join(',')}">
+                                ${times.length} aparições
+                            </a>
+                        </li>
+                    `).join("")}
+                </ul>
+            </div>
+        `;
+
+        modal.style.display = "block";
+    }
+  });
 
   // Fecha o modal ao clicar no "X"
   if (event.target.id === "closeModal") {

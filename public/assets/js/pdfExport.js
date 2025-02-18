@@ -1,5 +1,6 @@
 const logoPath = "assets/images/Verde_Fundo Branco.png";
 
+// Função para exportar pdf de relatório veiculação inteiro
 async function generatePDF(summary, mediaDetails, playerDetails) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
@@ -26,8 +27,10 @@ async function generatePDF(summary, mediaDetails, playerDetails) {
     yOffset = 30;
 
     // Resumo
+    const selectedClients = getSelectedClients();
     const summaryText = `
 Intervalo de Datas: ${startDate} (${startTime}) - ${endDate} (${endTime})
+Cliente(s): ${selectedClients}
 Total de Exibições: ${summary.totalExhibitions || 0}
 Total de Mídias: ${summary.totalMedia || 0}
 Total de Painéis: ${summary.totalPlayers || 0}
@@ -51,7 +54,7 @@ Total de Painéis: ${summary.totalPlayers || 0}
     yOffset += 7;
 
     for (const [mediaId, mediaData] of Object.entries(mediaDetails)) {
-        const mediaName = mediaNames[mediaId] || `Mídia ${mediaId}`;
+        const mediaName = mediaNames[mediaId] ? mediaNames[mediaId].split("-").slice(1).join("-") : `Mídia ${mediaId}`;
         const thumbnailUrl = `${API_URL}/proxy?url=${encodeURIComponent(`${BASE_THUMBNAIL_URL}${mediaId}.png`)}`;
 
         if (yOffset > 250) {
@@ -71,21 +74,24 @@ Total de Painéis: ${summary.totalPlayers || 0}
 
         for (const [playerId, logs] of Object.entries(mediaData.players)) {
             const panelName = panelNames[playerId] || `Painel ${playerId}`;
+            const totalAparicoes = logs.length; // Soma total de aparições dessa mídia nesse painel
+
+            if (yOffset > 280) {
+                doc.addPage();
+                yOffset = 10;
+            }
+
             doc.setFont("helvetica", "bold");
             doc.text(`${panelName}:`, 15, yOffset);
             doc.setFont("helvetica", "normal");
 
-            for (const [date, appearances] of Object.entries(groupLogsByDate(logs))) {
-                yOffset += 7;
-                if (yOffset > 280) {
-                    doc.addPage();
-                    yOffset = 10;
-                }
-                doc.text(`- ${date}: ${appearances.length} aparições`, 20, yOffset);
-            }
+            yOffset += 7;
+            doc.text(`- Total: ${totalAparicoes} aparições`, 20, yOffset);
 
-            yOffset += 5;
+            yOffset += 7;
         }
+
+        yOffset += 10;
     }
 
     // Exibições por Painel
@@ -111,7 +117,7 @@ Total de Painéis: ${summary.totalPlayers || 0}
         yOffset += 10;
 
         for (const [mediaId, logs] of Object.entries(playerData.media)) {
-            const mediaName = mediaNames[mediaId] || `Mídia ${mediaId}`;
+            const mediaName = mediaNames[mediaId] ? mediaNames[mediaId].split("-").slice(1).join("-") : `Mídia ${mediaId}`;
             const appearances = logs.length;
 
             // Verificar espaço antes de adicionar a mídia
@@ -183,6 +189,7 @@ document.getElementById("export-pdf").addEventListener("click", async () => {
     }
 });
 
+// Função para exportar relatório de detalhes de exibição mídia por HORÁRIO
 async function generateDetailPDF(button) {
     const playerId = button.getAttribute("data-player-id");
     const mediaId = button.getAttribute("data-media-id");
@@ -209,12 +216,11 @@ async function generateDetailPDF(button) {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
 
-        // const logoPath = "assets/images/Verde_Fundo Branco.png";
         const thumbnailUrl = mediaId 
             ? `${API_URL}/proxy?url=${encodeURIComponent(`${BASE_THUMBNAIL_URL}${mediaId}.png`)}`
             : null;
 
-        let yOffset = 20; // Espaço após o cabeçalho
+        let yOffset = 20; // Controle do espaço vertical
 
         // Adicionar logotipo
         try {
@@ -226,7 +232,7 @@ async function generateDetailPDF(button) {
 
         // Título do relatório
         doc.setFontSize(16);
-        doc.text("Relatório de Aparições", 50, 15);
+        doc.text("Relatório de exibição por horário", 50, 15);
         doc.setFontSize(10);
         doc.text(`Gerado em: ${reportDate}`, 50, 20);
         yOffset = 30;
@@ -254,21 +260,38 @@ async function generateDetailPDF(button) {
         doc.text(`Data: ${date}`, 10, yOffset);
         yOffset += 10;
 
-        // Lista de horários
+        const numColumns = 3;
+        const columnSpacing = 70 / numColumns;
+        const columnStartX = 10;
+        let columnX = columnStartX;
+        let columnOffset = 0;
+
+        // Lista de horários distribuídos nas colunas
         doc.setFontSize(10);
-        times.forEach((time) => {
+        times.forEach((time, index) => {
             if (yOffset > 280) {
                 doc.addPage();
-                yOffset = 10;
+                yOffset = 20;
+                columnX = columnStartX;
+                columnOffset = 0;
             }
-            doc.text(`${time}`, 10, yOffset);
-            yOffset += 7;
+
+            doc.text(`${time}`, columnX, yOffset);
+
+            // Mudar para a próxima coluna
+            columnOffset++;
+            if (columnOffset % numColumns === 0) {
+                yOffset += 7;
+                columnX = columnStartX;
+            } else {
+                columnX += columnSpacing * numColumns;
+            }
         });
 
         // Salvar PDF
         const data = new Date();
-        const dataMesHora = `${data.getDate()}-${data.getMonth() + 1}-${data.getHours()}-${data.getMinutes()}`;
-        const fileName = `relatorio_aparicao_${nomePainel.replace(/ /g, "_")}_${mediaName.replace(/ /g, "_")}_${dataMesHora}.pdf`;
+        const dataFormatada = `${data.getDate()}-${data.getMonth() + 1}-${data.getHours()}-${data.getMinutes()}`;
+        const fileName = `relatorio_aparicao_${nomePainel.replace(/ /g, "_")}_${mediaName.replace(/ /g, "_")}_${dataFormatada}.pdf`;
         doc.save(fileName);
     } catch (error) {
         console.error("[ERROR] Falha ao criar o PDF:", error);
@@ -279,6 +302,123 @@ async function generateDetailPDF(button) {
     }
 }
 
+// Função para exportar relatório de detalhes de exibição mídia por DIA
+async function generateDailyPDF(button) {
+    const playerId = button.getAttribute("data-player-id");
+    const mediaId = button.getAttribute("data-media-id");
+
+    const modal = document.getElementById(`totalAparicoesModal-${playerId}-${mediaId}`);
+    if (!modal) {
+        console.error("Modal de exportação não encontrado!");
+        return;
+    }
+
+    // ✅ Corrigir extração do nome do painel e mídia
+    const nomePainel = modal.querySelector("#entity-name")?.textContent.trim() || `Painel ${playerId}`;
+    const mediaName = mediaId
+        ? mediaNames[mediaId] || `Mídia ${mediaId}`
+        : "Mídia não identificada";
+
+    const reportDate = new Date().toLocaleString();
+    const loadingSpinner = document.getElementById("loading-pdf2");
+
+    // ✅ Buscar lista de aparições correta
+    const dailyListElement = document.getElementById(`daily-aparicoes-list-${playerId}-${mediaId}`);
+    if (!dailyListElement) {
+        console.error("Lista de aparições diárias não encontrada.");
+        return;
+    }
+
+    // ✅ Corrigir extração das aparições
+    const dailyData = Array.from(dailyListElement.querySelectorAll("li")).map((li) => {
+        const match = li.innerText.match(/^(\d+) - ([\d-]+):\s+(\d+) aparições/);
+        if (match) {
+            return { index: match[1], date: match[2], count: match[3] };
+        }
+        return null;
+    }).filter(Boolean);
+
+    try {
+        // Exibir o carregamento
+        loadingSpinner.style.display = "inline-block";
+        button.disabled = true;
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        const thumbnailUrl = mediaId 
+            ? `${API_URL}/proxy?url=${encodeURIComponent(`${BASE_THUMBNAIL_URL}${mediaId}.png`)}`
+            : null;
+
+        let yOffset = 20; // Controle do espaço vertical
+
+        // ✅ Adicionar logotipo
+        try {
+            const logoBase64 = await loadImageAsBase64(logoPath);
+            doc.addImage(logoBase64, "PNG", 10, 10, 30, 15);
+        } catch (error) {
+            console.warn("[WARNING] Erro ao carregar o logotipo:", error);
+        }
+
+        // ✅ Título do relatório
+        doc.setFontSize(16);
+        doc.text("Relatório de exibição por data", 50, 15);
+        doc.setFontSize(10);
+        doc.text(`Gerado em: ${reportDate}`, 50, 20);
+        yOffset = 30;
+
+        // ✅ Adicionar informações do painel e mídia
+        doc.setFontSize(12);
+        doc.text(`Painel: ${nomePainel}`, 10, yOffset);
+        yOffset += 10;
+
+        doc.text(`Mídia:`, 10, yOffset);
+        yOffset += 5;
+
+        if (thumbnailUrl) {
+            try {
+                const thumbnailBase64 = await loadImageAsBase64(thumbnailUrl);
+                doc.addImage(thumbnailBase64, "JPEG", 10, yOffset, 20, 15); // Adicionar thumbnail
+            } catch (error) {
+                console.warn("[WARNING] Erro ao carregar a thumbnail:", error);
+            }
+        }
+
+        doc.text(`${mediaName}`, 35, yOffset + 10);
+        yOffset += 20;
+
+        // ✅ Lista de aparições por data com numeração
+        doc.text("Total de Aparições por Data:", 10, yOffset);
+        yOffset += 10;
+        doc.setFontSize(10);
+
+        if (dailyData.length === 0) {
+            doc.text("Nenhuma aparição registrada neste período.", 10, yOffset);
+        } else {
+            dailyData.forEach(({ index, date, count }) => {
+                if (yOffset > 280) {
+                    doc.addPage();
+                    yOffset = 10;
+                }
+                doc.text(`${index} - ${date}: ${count} aparições`, 10, yOffset);
+                yOffset += 7;
+            });
+        }
+
+        // ✅ Salvar PDF
+        const data = new Date();
+        const fileName = `relatorio_diario_${nomePainel.replace(/ /g, "_")}_${mediaName.replace(/ /g, "_")}.pdf`;
+        doc.save(fileName);
+    } catch (error) {
+        console.error("[ERROR] Falha ao criar o PDF:", error);
+    } finally {
+        // Ocultar carregamento
+        loadingSpinner.style.display = "none";
+        button.disabled = false;
+    }
+}
+
+// Função para exportar relatório de checkin 
 async function generateCheckinPDF(checkIn) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF("p", "mm", "a4");
@@ -448,5 +588,12 @@ document.addEventListener("click", async (event) => {
     if (event.target.id === "export-pdf-button") {
         const button = event.target;
         await generateDetailPDF(button);
+    }
+});
+
+document.addEventListener("click", async (event) => {
+    if (event.target.id === "export-daily-pdf-button") {
+        const button = event.target;
+        await generateDailyPDF(button);
     }
 });
