@@ -119,7 +119,6 @@ async function fetchPaginatedResults(baseUrl, headerKey, headerValue, delayMs = 
           });
 
           if (!response.ok) {
-              console.warn(`[WARN] Falha ao carregar página ${currentPage}, ignorando.`);
               continue; // Pular para a próxima página se houver erro
           }
 
@@ -353,7 +352,6 @@ document.getElementById("report-form").addEventListener("submit", async function
 
     if (!response.ok) {
         const errorData = await response.json();
-        console.warn("[WARN] Erro retornado pela API:", errorData);
         throw {
             status: response.status,
             message: errorData.error || "Erro desconhecido ao gerar o relatório.",
@@ -361,8 +359,6 @@ document.getElementById("report-form").addEventListener("submit", async function
     }
 
     const { reportId } = await response.json();
-    console.log(`[INFO] Relatório criado com ID: ${reportId}`);
-
     updateProgress(20, "Relatório enviado para processamento...");
 
     // Agora verifica periodicamente o status
@@ -414,8 +410,6 @@ async function checkReportStatus(reportId) {
 
 async function fetchReportResult(reportId) {
   try {
-      console.log(`[INFO] Solicitando relatório finalizado para o ID: ${reportId}`);
-
       const response = await fetch(`${API_URL}/reports/result/${reportId}`);
 
       if (!response.ok) {
@@ -473,7 +467,6 @@ async function displayReport(data) {
     const { mediaDetails = {}, playerDetails = {}, summary = {} } = data.data;
 
     if (Object.keys(mediaDetails).length === 0 && Object.keys(playerDetails).length === 0) {
-        console.warn("[WARN] Não há dados de exibição no relatório.");
         reportContent.innerHTML = `<p>O relatório está vazio. Verifique os filtros aplicados e tente novamente.</p>`;
         reportResult.style.display = "block";
         return;
@@ -529,9 +522,9 @@ async function displayReport(data) {
                                         </li>
                                     </ul>
                                 </div>
-                      <div id="totalAparicoesModal-${playerId}-${mediaId}" class="modal">
+                      <div id="totalMediaAparicoesModal-${playerId}-${mediaId}" class="modal">
                         <div class="modal-content">
-                            <span class="close" onclick="document.getElementById('totalAparicoesModal-${playerId}-${mediaId}').style.display='none'">&times;</span>
+                            <span class="close" onclick="document.getElementById('totalMediaAparicoesModal-${playerId}-${mediaId}').style.display='none'">&times;</span>
                             <ul id="daily-aparicoes-list-${playerId}-${mediaId}"></ul>
                         </div>
                     </div>
@@ -562,40 +555,39 @@ async function displayReport(data) {
                         </button>
                     </div>
                     <div class="panel-details details" style="display: none;">
-                        ${Object.entries(media).map(([mediaId, logs]) => {
-                            const logsByDate = groupLogsByDate(logs); // Agrupar logs por data
-                            const totalAparicoes = logs.length;
+                      ${Object.entries(media).map(([mediaId, logs]) => {
+                        const logsByDate = groupLogsByDate(logs);
+                        const totalAparicoes = logs.length;
 
-                            return `
-                                <div class="media-details">
-                                <p><strong>${
-                                    mediaNames[mediaId] 
-                                        ? mediaNames[mediaId].split("-").slice(1).join("-") 
-                                        : `Mídia ${mediaId}`
-                                }:</strong></p>
-                                    <ul>
-                                        <li>
-                                            <strong>Total:</strong> 
-                                            <a href="#" class="view-total-link"
-                                              data-media-id="${mediaId}" 
-                                              data-logs='${JSON.stringify(logsByDate)}'>
-                                                ${totalAparicoes} aparições
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </div>
-                                <hr>
-                            `;
+                        return `
+                          <div class="media-details">
+                            <p><strong>${
+                                mediaNames[mediaId] 
+                                    ? mediaNames[mediaId].split("-").slice(1).join("-") 
+                                    : `Mídia ${mediaId}`
+                            }:</strong></p>
+                            <ul>
+                              <li>
+                                <strong>Total:</strong> 
+                                <a href="#" class="view-total-link"
+                                  data-player-id="${playerId}" 
+                                  data-media-id="${mediaId}" 
+                                  data-logs='${JSON.stringify(logsByDate)}'>
+                                    ${totalAparicoes} aparições
+                                </a>
+                              </li>
+                            </ul>
+                          </div>
+                          <div id="totalPanelAparicoesModal-${playerId}-${mediaId}" class="modal">
+                            <div class="modal-content">
+                              <span class="close" onclick="document.getElementById('totalPanelAparicoesModal-${playerId}-${mediaId}').style.display='none'">&times;</span>
+                             <ul id="daily-aparicoes-list-${playerId}-${mediaId}"></ul>
+                          </div>
+                        </div>
+                          `;
                         }).join("")}
                     </div>
                 </li>
-                <div id="totalMediaAparicoesModal" class="modal">
-                    <div class="modal-content">
-                        <span class="close" onclick="document.getElementById('totalMediaAparicoesModal').style.display='none'">&times;</span>
-                        <h4 id="modal-media-name"></h4>
-                        <ul id="daily-media-aparicoes-list"></ul>
-                    </div>
-                </div>
             `;
         }).join("");
 
@@ -604,7 +596,7 @@ async function displayReport(data) {
         // Dados do resumo
         const summaryHTML = `
             <div class="summary-info">
-                <p><strong>Intervalo de Datas:</strong> ${startDate} (${startTime}) - ${endDate} (${endTime})</p>
+                <p><strong>Intervalo de Datas:</strong> ${formatDate(startDate)} (${startTime}) - ${formatDate(endDate)} (${endTime})</p>
                 <p><strong>Cliente(s):</strong> ${selectedClients}</p>
                 <p><strong>Total de Exibições:</strong> ${summary.totalExhibitions || 0}</p>
                 <p><strong>Total de Mídias:</strong> ${summary.totalMedia || 0}</p>
@@ -616,11 +608,11 @@ async function displayReport(data) {
         const reportHTML = `
             <h4>Resumo</h4>
             ${summaryHTML}
-            <h4>Exibições por Mídia</h4>
+            <h4 style="margin-top:12px;">Exibições por Mídia</h4>
             <ul class="media-list">
                 ${mediaHTMLArray}
             </ul>
-            <h4>Exibições por Painel</h4>
+            <h4 style="margin-top:12px;">Exibições por Painel</h4>
             <ul class="panel-list">
                 ${panelHTMLArray}
             </ul>
@@ -701,7 +693,7 @@ document.addEventListener("click", (event) => {
   if (event.target.classList.contains("view-times-link")) {
       event.preventDefault();
 
-      const times = event.target.dataset.times.split(",").sort(); // Ordenar os horários
+      const times = event.target.dataset.times.split(",").sort();
       const date = event.target.dataset.date;
       const playerId = event.target.dataset.playerId;
       const mediaId = event.target.dataset.mediaId;
@@ -717,12 +709,17 @@ document.addEventListener("click", (event) => {
       } else {
           entityName = "Indefinido";
       }
-
-      // Adiciona os horários enumerados no modal com o botão de exportação
+      
+      const activeModal = document.querySelector(".modal[style*='display: flex;']");
+      if (activeModal) {
+          activeModal.style.display = "none";
+          timesModal.dataset.previousModal = activeModal.id;
+      }
+      
       timesList.innerHTML = `
         <div>
             <h4 id="entity-name">${entityName}</h4>
-            <h4 id="report-date">Data: ${date}</h4>
+            <h4 id="report-date">Data: ${formatDate(date)}</h4>
             <button id="export-pdf-button" class="export-pdf-button" 
                     data-player-id="${playerId || ''}" 
                     data-media-id="${mediaId || ''}">
@@ -731,88 +728,105 @@ document.addEventListener("click", (event) => {
             <div id="loading-pdf2" class="loading-pdf2" style="display: none;">
               <i class="fas fa-spinner fa-spin"></i> Gerando PDF...
             </div>
-            <ul>
+            <ul style="display: grid; grid-template-columns: 1fr 1fr 1fr;">
                 ${times.map((time, index) => `<li>${index + 1} - ${time}</li>`).join("")}
             </ul>
         </div>
     `;
 
-      // Mostra o modal
       modal.style.display = "block";
   }
 
-  document.addEventListener("click", (event) => {
-    if (event.target.classList.contains("view-total-link")) {
-        event.preventDefault();
+  if (event.target.classList.contains("view-total-link")) {
+    event.preventDefault();
 
-        const logsByDate = JSON.parse(event.target.dataset.logs);
-        const playerId = event.target.dataset.playerId || null;
-        const mediaId = event.target.dataset.mediaId || null;
+    const logsByDate = JSON.parse(event.target.dataset.logs);
+    const playerId = event.target.dataset.playerId || null;
+    const mediaId = event.target.dataset.mediaId || null;
 
-        let modal, dailyList, entityName;
+    let modal, dailyList, entityName;
 
-        if (playerId) {
-            modal = document.getElementById(`totalAparicoesModal-${playerId}-${mediaId}`);
-            dailyList = document.getElementById(`daily-aparicoes-list-${playerId}-${mediaId}`);
-            entityName = panelNames[playerId] || `Painel ${playerId}`;
-        } else if (mediaId) {
-            modal = document.getElementById(`totalMediaAparicoesModal-${mediaId}`);
-            dailyList = document.getElementById(`daily-media-aparicoes-list-${mediaId}`);
-            entityName = mediaNames[mediaId] || `Mídia ${mediaId}`;
-        } else {
-            return;
-        }
-
-        if (!modal || !dailyList) {
-            console.error("Modal ou lista de aparições diárias não encontrado!", { modal, dailyList });
-            return;
-        }
-
-        // Atualiza o título do modal
-        const modalTitle = modal.querySelector(".modal-content h4");
-        if (modalTitle) {
-            modalTitle.innerText = entityName;
-        }
-
-        // 📝 Novo Formato de Exibição (igual ao das aparições por hora)
-        dailyList.innerHTML = `
-            <div>
-                <h4 id="entity-name">${entityName}</h4>
-                <h4>Total de Aparições por Data</h4>
-                <button id="export-daily-pdf-button" class="export-daily-pdf-button"
-                        data-player-id="${playerId || ''}" 
-                        data-media-id="${mediaId || ''}">
-                    <i class="fas fa-file-pdf"></i> Exportar PDF
-                </button>
-                <div id="loading-pdf3" class="loading-pdf3" style="display: none;">
-                  <i class="fas fa-spinner fa-spin"></i> Gerando PDF...
-                </div>
-                <ul style="margin-top:15px;">
-                    ${Object.entries(logsByDate).map(([date, times], index) => `
-                        <li>
-                            ${index + 1} - ${date}: 
-                            <a href="#" class="view-times-link"
-                              data-player-id="${playerId || ''}" 
-                              data-media-id="${mediaId || ''}" 
-                              data-date="${date}" 
-                              data-times="${times.join(',')}">
-                                ${times.length} aparições
-                            </a>
-                        </li>
-                    `).join("")}
-                </ul>
-            </div>
-        `;
-
-        modal.style.display = "block";
+    if (playerId && mediaId) {
+        modal = document.getElementById(`totalPanelAparicoesModal-${playerId}-${mediaId}`);
+        dailyList = document.getElementById(`daily-panel-aparicoes-list-${playerId}-${mediaId}`);
+        entityName = panelNames[playerId] || `Painel ${playerId}`;
+    } 
+    else if (mediaId) {
+        modal = document.getElementById(`totalMediaAparicoesModal-${playerId}-${mediaId}`);
+        dailyList = document.getElementById(`daily-aparicoes-list-${playerId}-${mediaId}`);
+        entityName = mediaNames[mediaId] || `Mídia ${mediaId}`;
+    } else {
+        console.error("❌ Nenhuma mídia ou painel encontrado para abrir o modal.");
+        return;
     }
-  });
 
-  // Fecha o modal ao clicar no "X"
-  if (event.target.id === "closeModal") {
-      const modal = document.getElementById("timesModal");
-      modal.style.display = "none";
-  }
+
+   if (!modal) {
+        console.error(`❌ Modal não encontrado para ${playerId ? "Painel" : "Mídia"} (${playerId || mediaId}).`);
+        return;
+    }
+
+    if (!dailyList) {
+        dailyList = document.createElement("ul");
+        dailyList.id = playerId 
+            ? `daily-panel-aparicoes-list-${playerId}-${mediaId}`
+            : `daily-aparicoes-list-${playerId}-${mediaId}`;
+        dailyList.style.marginTop = "15px";
+        modal.querySelector(".modal-content").appendChild(dailyList);
+    }
+
+    dailyList.innerHTML = `
+        <div>
+            <h4 id="entity-name">${entityName}</h4>
+            <h4>Total de Aparições por Data</h4>
+            <button id="export-daily-pdf-button-${playerId}-${mediaId}" class="export-daily-pdf-button"
+                    data-player-id="${playerId || ''}" 
+                    data-media-id="${mediaId || ''}">
+                <i class="fas fa-file-pdf"></i> Exportar PDF
+            </button>
+            <div id="loading-pdf3" class="loading-pdf3" style="display: none;">
+                <i class="fas fa-spinner fa-spin"></i> Gerando PDF...
+            </div>
+            <ul id="totalAparicoesModal-${playerId}-${mediaId}" style="margin-top:15px; display: grid; grid-template-columns: 1fr 1fr;">
+                ${Object.entries(logsByDate)
+                  .sort(([dateA], [dateB]) => new Date(dateA) - new Date(dateB))
+                  .map(([date, times], index) => `                
+                    <li style="list-style: none;">
+                        ${formatDate(date)}: 
+                        <a href="#" class="view-times-link"
+                          data-player-id="${playerId || ''}" 
+                          data-media-id="${mediaId || ''}" 
+                          data-date="${date}" 
+                          data-times="${times.join(',')}">
+                            ${times.length} aparições
+                        </a>
+                    </li>
+                `).join("")}
+            </ul>
+        </div>
+    `;
+
+    modal.style.display = "flex";
+    modal.style.justifyContent = "center";
+    modal.style.alignItems = "center";
+    modal.style.position = "fixed";
+    modal.style.top = "0";
+    modal.style.left = "0";
+    modal.style.width = "100%";
+    modal.style.height = "100%";
+    modal.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+
+    document.body.appendChild(modal);
+}
+    // 🔹 Fecha o modal ao clicar no "X"
+    if (event.target.classList.contains("close")) {
+        const modal = event.target.closest(".modal");
+        if (modal) {
+            modal.style.display = "none";
+        }
+    }
+  // });
+
 });
 
 window.addEventListener("click", (event) => {

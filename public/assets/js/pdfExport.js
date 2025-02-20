@@ -1,35 +1,62 @@
 const logoPath = "assets/images/Verde_Fundo Branco.png";
+const headerPath = "assets/images/Arquivos Timbrado/fotoHeader.png";
+const footerPath = "assets/images/Arquivos Timbrado/fotoFooter.png";
 
 // Função para exportar pdf de relatório veiculação inteiro
 async function generatePDF(summary, mediaDetails, playerDetails) {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    // const logoPath = "assets/images/Verde_Fundo Branco.png";
-    const title = "Relatório de Exibições";
+    const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4"
+    });
+    const pageWidth = 210;
+    const pageHeight = 297;
+    const headerHeight = 130;
+    const footerHeight = 150;
+
+    const contentStartY = headerHeight - 100;
+    const contentEndY = pageHeight - (footerHeight - 100);
     const reportDate = new Date().toLocaleString();
     const data = new Date();
     const fileName = `relatorio_detalhado_${data.getDate()}-${data.getMonth() + 1}-${data.getHours()}-${data.getMinutes()}.pdf`;
 
-    let yOffset = 20; // Controle da posição vertical
+    let yOffset = contentStartY + 10;
 
     try {
-        const logoBase64 = await loadImageAsBase64(logoPath);
-        doc.addImage(logoBase64, "PNG", 10, 10, 30, 15);
+        const headerBase64 = await loadImageAsBase64(headerPath);
+        const footerBase64 = await loadImageAsBase64(footerPath);
+
+        function addHeaderAndFooter() {
+            doc.addImage(headerBase64, "PNG", -14, -49, pageWidth, headerHeight);
+            doc.addImage(footerBase64, "PNG", -17, 217, 232, footerHeight);
+            doc.setLineWidth(0.3);
+            doc.rect(5, contentStartY, pageWidth - 10, contentEndY);
+        }
+
+        addHeaderAndFooter();
+
     } catch (error) {
-        console.error("Erro ao carregar a logo:", error);
+        console.error("Erro ao carregar a foto:", error);
     }
 
     doc.setFontSize(16);
-    doc.text(title, 50, 15);
+    doc.text("Relatório de Exibições", 10, yOffset);
+    yOffset += 7;    
     doc.setFontSize(10);
-    doc.text(`Gerado em: ${reportDate}`, 50, 20);
+    doc.text(`Gerado em: ${reportDate}`, 10, yOffset);
+    yOffset += 7;
 
-    yOffset = 30;
+    // Linha de separação do cabeçalho
+    doc.setDrawColor(0);
+    doc.setLineWidth(0.5);
+    doc.line(10, yOffset, pageWidth - 10, yOffset);
+    yOffset += 7;
 
     // Resumo
     const selectedClients = getSelectedClients();
     const summaryText = `
-Intervalo de Datas: ${startDate} (${startTime}) - ${endDate} (${endTime})
+Intervalo de Datas: ${formatDate(startDate)} (${startTime}) - ${formatDate(endDate)} (${endTime})
 Cliente(s): ${selectedClients}
 Total de Exibições: ${summary.totalExhibitions || 0}
 Total de Mídias: ${summary.totalMedia || 0}
@@ -37,15 +64,21 @@ Total de Painéis: ${summary.totalPlayers || 0}
     `.trim().split("\n");
 
     summaryText.forEach((line) => {
+        if (yOffset > contentEndY - 10) {
+            doc.addPage();
+            addHeaderAndFooter();
+            yOffset = contentStartY + 10;
+        }
         doc.text(line, 10, yOffset);
         yOffset += 7;
-        if (yOffset > 280) {
-            doc.addPage();
-            yOffset = 10;
-        }
     });
 
-    yOffset += 5;
+    // Linha de separação antes de "Exibições por Mídia"
+    doc.setDrawColor(180);
+    doc.setLineWidth(0.5);
+    doc.line(10, yOffset, pageWidth - 10, yOffset);
+    yOffset += 7;
+    doc.setDrawColor(0);
 
     // Exibições por Mídia
     doc.setFontSize(12);
@@ -57,9 +90,10 @@ Total de Painéis: ${summary.totalPlayers || 0}
         const mediaName = mediaNames[mediaId] ? mediaNames[mediaId].split("-").slice(1).join("-") : `Mídia ${mediaId}`;
         const thumbnailUrl = `${API_URL}/proxy?url=${encodeURIComponent(`${BASE_THUMBNAIL_URL}${mediaId}.png`)}`;
 
-        if (yOffset > 250) {
+        if (yOffset > contentEndY - 20) {
             doc.addPage();
-            yOffset = 10;
+            addHeaderAndFooter();
+            yOffset = contentStartY + 10;
         }
 
         try {
@@ -74,11 +108,12 @@ Total de Painéis: ${summary.totalPlayers || 0}
 
         for (const [playerId, logs] of Object.entries(mediaData.players)) {
             const panelName = panelNames[playerId] || `Painel ${playerId}`;
-            const totalAparicoes = logs.length; // Soma total de aparições dessa mídia nesse painel
+            const totalAparicoes = logs.length;
 
-            if (yOffset > 280) {
+            if (yOffset > contentEndY - 10) {
                 doc.addPage();
-                yOffset = 10;
+                addHeaderAndFooter();
+                yOffset = contentStartY + 10;
             }
 
             doc.setFont("helvetica", "bold");
@@ -90,10 +125,16 @@ Total de Painéis: ${summary.totalPlayers || 0}
 
             yOffset += 7;
         }
-
         yOffset += 10;
     }
 
+    // Linha de separação antes de "Exibições por Painel"
+    doc.setDrawColor(180);
+    doc.setLineWidth(0.5);
+    doc.line(10, yOffset, pageWidth - 10, yOffset);
+    doc.setDrawColor(0);
+    yOffset += 7;
+    
     // Exibições por Painel
     yOffset += 10;
     doc.setFontSize(12);
@@ -104,13 +145,12 @@ Total de Painéis: ${summary.totalPlayers || 0}
     for (const [playerId, playerData] of Object.entries(playerDetails)) {
         const panelName = panelNames[playerId] || `Painel ${playerId}`;
 
-        // Verificar espaço antes de adicionar o nome do painel
-        if (yOffset + 15 > 280) {
+        if (yOffset > contentEndY - 15) {
             doc.addPage();
-            yOffset = 10;
+            addHeaderAndFooter();
+            yOffset = contentStartY + 10;
         }
 
-        // Nome do painel em negrito
         doc.setFont("helvetica", "bold");
         doc.text(`${panelName}`, 10, yOffset);
         doc.setFont("helvetica", "normal");
@@ -120,26 +160,24 @@ Total de Painéis: ${summary.totalPlayers || 0}
             const mediaName = mediaNames[mediaId] ? mediaNames[mediaId].split("-").slice(1).join("-") : `Mídia ${mediaId}`;
             const appearances = logs.length;
 
-            // Verificar espaço antes de adicionar a mídia
-            if (yOffset + 7 > 280) {
+            if (yOffset > contentEndY - 7) {
                 doc.addPage();
-                yOffset = 10;
+                addHeaderAndFooter();
+                yOffset = contentStartY + 10;
             }
 
-            // Nome da mídia e total de aparições ajustados
             const textLine = `- ${mediaName}: ${appearances} aparições`;
             doc.text(textLine, 15, yOffset);
 
-            yOffset += 7; // Espaçamento entre linhas dentro de um painel
+            yOffset += 7;
         }
 
-        yOffset += 10; // Espaçamento entre diferentes painéis
+        yOffset += 10;
 
-        // Verificar espaço antes de adicionar o próximo painel
-        if (yOffset > 280) {
-            doc.addPage();
-            yOffset = 10;
-        }
+        // if (yOffset > 280) {
+        //     doc.addPage();
+        //     yOffset = 10;
+        // }
     }
 
     doc.save(fileName);
@@ -255,9 +293,9 @@ async function generateDetailPDF(button) {
         }
 
         doc.text(`${mediaName}`, 35, yOffset + 10);
-        yOffset += 20;
+        yOffset += 30;
 
-        doc.text(`Data: ${date}`, 10, yOffset);
+        doc.text(`Data: ${formatDate(date)}`, 10, yOffset);
         yOffset += 10;
 
         const numColumns = 3;
@@ -313,27 +351,32 @@ async function generateDailyPDF(button) {
         return;
     }
 
-    // ✅ Corrigir extração do nome do painel e mídia
-    const nomePainel = modal.querySelector("#entity-name")?.textContent.trim() || `Painel ${playerId}`;
+    const nomePainel = playerId
+        ? panelNames[playerId] || `Painel ${playerId}`
+        : "Painel não identificado";
+
     const mediaName = mediaId
         ? mediaNames[mediaId] || `Mídia ${mediaId}`
         : "Mídia não identificada";
 
     const reportDate = new Date().toLocaleString();
-    const loadingSpinner = document.getElementById("loading-pdf2");
+    const loadingSpinner = document.getElementById("loading-pdf3");
 
-    // ✅ Buscar lista de aparições correta
-    const dailyListElement = document.getElementById(`daily-aparicoes-list-${playerId}-${mediaId}`);
+    const dailyListElement = document.getElementById(`totalAparicoesModal-${playerId}-${mediaId}`);
     if (!dailyListElement) {
         console.error("Lista de aparições diárias não encontrada.");
         return;
     }
 
-    // ✅ Corrigir extração das aparições
     const dailyData = Array.from(dailyListElement.querySelectorAll("li")).map((li) => {
-        const match = li.innerText.match(/^(\d+) - ([\d-]+):\s+(\d+) aparições/);
+        const text = li.innerText.trim();
+        const match = text.match(/^([\d\/]+):\s*(\d+)\s*aparições/);
+    
         if (match) {
-            return { index: match[1], date: match[2], count: match[3] };
+            return {
+                date: match[1],  // Data formatada corretamente
+                count: match[2]  // Número de aparições
+            };
         }
         return null;
     }).filter(Boolean);
@@ -344,50 +387,63 @@ async function generateDailyPDF(button) {
         button.disabled = true;
 
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
+        const doc = new jsPDF({
+            orientation: "portrait", // Formato vertical
+            unit: "mm",
+            format: "a4"
+        });
 
-        const thumbnailUrl = mediaId 
-            ? `${API_URL}/proxy?url=${encodeURIComponent(`${BASE_THUMBNAIL_URL}${mediaId}.png`)}`
-            : null;
+        let yOffset = 40; // Controle do espaço vertical para o conteúdo
 
-        let yOffset = 20; // Controle do espaço vertical
-
-        // ✅ Adicionar logotipo
+        // 📌 Adicionando Cabeçalho
         try {
-            const logoBase64 = await loadImageAsBase64(logoPath);
-            doc.addImage(logoBase64, "PNG", 10, 10, 30, 15);
+            const headerBase64 = await loadImageAsBase64(headerPath);
+            doc.addImage(headerBase64, "PNG", 0, 0, 210, 30); // Ajusta a largura para caber na página
         } catch (error) {
-            console.warn("[WARNING] Erro ao carregar o logotipo:", error);
+            console.warn("[WARNING] Erro ao carregar o cabeçalho:", error);
         }
 
-        // ✅ Título do relatório
-        doc.setFontSize(16);
-        doc.text("Relatório de exibição por data", 50, 15);
-        doc.setFontSize(10);
-        doc.text(`Gerado em: ${reportDate}`, 50, 20);
-        yOffset = 30;
+        // 📌 Adicionando Rodapé
+        try {
+            const footerBase64 = await loadImageAsBase64(footerPath);
+            doc.addImage(footerBase64, "PNG", 0, 275, 210, 20); // Ajusta a largura e posição no rodapé
+        } catch (error) {
+            console.warn("[WARNING] Erro ao carregar o rodapé:", error);
+        }
 
-        // ✅ Adicionar informações do painel e mídia
+        // 📌 Conteúdo do relatório
+        doc.setFontSize(14);
+        doc.text("Relatório de Exibição por Data", 10, yOffset);
+        doc.setFontSize(10);
+        doc.text(`Gerado em: ${reportDate}`, 10, yOffset + 5);
+        yOffset += 15;
+
         doc.setFontSize(12);
         doc.text(`Painel: ${nomePainel}`, 10, yOffset);
-        yOffset += 10;
+        yOffset += 8;
 
         doc.text(`Mídia:`, 10, yOffset);
         yOffset += 5;
 
+        // 📌 Adicionando Thumbnail da Mídia
+        const thumbnailUrl = mediaId 
+            ? `${API_URL}/proxy?url=${encodeURIComponent(`${BASE_THUMBNAIL_URL}${mediaId}.png`)}`
+            : null;
+
         if (thumbnailUrl) {
             try {
                 const thumbnailBase64 = await loadImageAsBase64(thumbnailUrl);
-                doc.addImage(thumbnailBase64, "JPEG", 10, yOffset, 20, 15); // Adicionar thumbnail
+                doc.addImage(thumbnailBase64, "JPEG", 10, yOffset, 40, 30);
             } catch (error) {
                 console.warn("[WARNING] Erro ao carregar a thumbnail:", error);
             }
         }
 
-        doc.text(`${mediaName}`, 35, yOffset + 10);
-        yOffset += 20;
+        doc.text(`${mediaName}`, 55, yOffset + 10);
+        yOffset += 40;
 
-        // ✅ Lista de aparições por data com numeração
+        // 📌 Exibições por Data
+        doc.setFontSize(12);
         doc.text("Total de Aparições por Data:", 10, yOffset);
         yOffset += 10;
         doc.setFontSize(10);
@@ -395,24 +451,21 @@ async function generateDailyPDF(button) {
         if (dailyData.length === 0) {
             doc.text("Nenhuma aparição registrada neste período.", 10, yOffset);
         } else {
-            dailyData.forEach(({ index, date, count }) => {
-                if (yOffset > 280) {
+            dailyData.forEach(({ date, count }) => {
+                if (yOffset > 260) {
                     doc.addPage();
-                    yOffset = 10;
+                    yOffset = 40;
                 }
-                doc.text(`${index} - ${date}: ${count} aparições`, 10, yOffset);
+                doc.text(`${date}: ${count} aparições`, 10, yOffset);
                 yOffset += 7;
             });
         }
 
-        // ✅ Salvar PDF
-        const data = new Date();
         const fileName = `relatorio_diario_${nomePainel.replace(/ /g, "_")}_${mediaName.replace(/ /g, "_")}.pdf`;
         doc.save(fileName);
     } catch (error) {
         console.error("[ERROR] Falha ao criar o PDF:", error);
     } finally {
-        // Ocultar carregamento
         loadingSpinner.style.display = "none";
         button.disabled = false;
     }
@@ -592,8 +645,12 @@ document.addEventListener("click", async (event) => {
 });
 
 document.addEventListener("click", async (event) => {
-    if (event.target.id === "export-daily-pdf-button") {
+    if (event.target.classList.contains("export-daily-pdf-button")) {
+        console.log("✅ Clique detectado no botão de exportação diária.");
+
         const button = event.target;
+        console.log("📌 Botão encontrado:", button);
+
         await generateDailyPDF(button);
     }
 });

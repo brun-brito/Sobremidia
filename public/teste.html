@@ -1,154 +1,90 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt">
 <head>
-  <meta charset="UTF-8">
-  <title>Upload com Barra de Progresso</title>
-  <style>
-    /* Estilo básico para a barra de progresso */
-    #progressContainer {
-      width: 100%;
-      background: #eee;
-      border: 1px solid #ccc;
-      margin-bottom: 10px;
-      height: 25px;
-      position: relative;
-    }
-    #progressBar {
-      height: 100%;
-      background: #4caf50;
-      width: 0%;
-      transition: width 0.3s ease;
-    }
-    #progressMessage {
-      margin-top: 10px;
-      font-family: Arial, sans-serif;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exportação de PDF com Header e Footer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-  <h1>Upload de Fotos e Vídeos com Barra de Progresso</h1>
-  <input type="file" name="files" id="fileInput" multiple>
-  <button id="uploadBtn">Enviar Arquivos</button>
-  
-  <!-- Container da barra de progresso -->
-  <div id="progressContainer">
-    <div id="progressBar"></div>
-  </div>
-  <!-- Mensagem abaixo da barra -->
-  <div id="progressMessage"></div>
+    <h2>Exportação de PDF</h2>
+    <button onclick="generatePDF()">Exportar PDF</button>
 
-  <script>
-    const uploadBtn = document.getElementById("uploadBtn");
-    const fileInput = document.getElementById("fileInput");
-    const progressBar = document.getElementById("progressBar");
-    const progressMessage = document.getElementById("progressMessage");
-    
-    // Variáveis globais para controle da barra de progresso
-    let totalActions = 0;      // Número total de ações (1 por foto, ou 1 por chunk de vídeo)
-    let completedActions = 0;  // Ações já concluídas
-    const chunkSize = 5 * 1024 * 1024; // 5MB por chunk para vídeos
-    
-    // Atualiza a barra de progresso e a mensagem
-    function updateProgress(message) {
-      const percent = (completedActions / totalActions) * 100;
-      progressBar.style.width = percent + "%";
-      progressMessage.innerText = message + " (" + Math.round(percent) + "%)";
-    }
-    
-    // Função para upload de fotos (upload normal)
-    async function uploadImage(file) {
-      updateProgress(`Anexando imagem '${file.name}'`);
-      
-      const formData = new FormData();
-      // Importante: o backend espera o campo "files"
-      formData.append("files", file);
-      
-      try {
-        const response = await fetch('https://2ckh7b03-3000.brs.devtunnels.ms/checkin/upload', {
-          method: "POST",
-          body: formData
-        });
-        const data = await response.json();
-        console.log(`Foto ${file.name} enviada:`, data);
-      } catch (error) {
-        console.error(`Erro no upload da foto ${file.name}:`, error);
-      } finally {
-        completedActions++;
-        updateProgress(`Imagem '${file.name}' enviada.`);
-      }
-    }
-    
-    // Função para upload de vídeos em chunks
-    async function uploadVideoInChunks(file) {
-      const totalChunks = Math.ceil(file.size / chunkSize);
-      // Gera um ID único para o vídeo (para não misturar chunks de vídeos diferentes)
-      const fileId = (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString() + Math.random().toString(36).substring(2, 10));
-      const originalName = file.name;
-      
-      for (let index = 0; index < totalChunks; index++) {
-        updateProgress(`Anexando vídeo '${originalName}' (chunk ${index + 1} de ${totalChunks})`);
-        const start = index * chunkSize;
-        const end = Math.min(file.size, start + chunkSize);
-        const chunk = file.slice(start, end);
-        
-        const formData = new FormData();
-        formData.append("fileId", fileId);
-        formData.append("chunkIndex", index);
-        formData.append("totalChunks", totalChunks);
-        formData.append("originalName", originalName);
-        // Importante: o backend espera o campo "chunk" para vídeos
-        formData.append("chunk", chunk);
-        
-        try {
-          const response = await fetch('https://2ckh7b03-3000.brs.devtunnels.ms/checkin/upload-chunk', {
-            method: "POST",
-            body: formData
-          });
-          const data = await response.json();
-          console.log(`Chunk ${index + 1} de ${totalChunks} do vídeo '${originalName}' enviado:`, data);
-        } catch (error) {
-          console.error(`Erro no envio do chunk ${index + 1} do vídeo '${originalName}':`, error);
-          progressMessage.innerText = `Erro no envio do chunk ${index + 1} do vídeo '${originalName}'.`;
-          return; // Se ocorrer erro, interrompe o upload deste vídeo
-        } finally {
-          completedActions++;
-          updateProgress(`Vídeo '${originalName}' - chunk ${index + 1} enviado.`);
+    <script>
+        async function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({
+                orientation: "portrait",
+                unit: "mm",
+                format: "a4"
+            });
+
+            const pageWidth = 210;
+            const pageHeight = 297;
+            const headerHeight = 130;
+            const footerHeight = 150;
+
+            const contentStartY = headerHeight - 100;
+            const contentEndY = pageHeight - (footerHeight - 100);
+
+            async function loadImageAsBase64(url) {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.crossOrigin = "Anonymous";
+                    img.onload = () => {
+                        const canvas = document.createElement("canvas");
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        const ctx = canvas.getContext("2d");
+                        ctx.drawImage(img, 0, 0);
+                        resolve(canvas.toDataURL("image/png"));
+                    };
+                    img.onerror = (error) => reject(error);
+                    img.src = url;
+                });
+            }
+
+            try {
+                const headerBase64 = await loadImageAsBase64("assets/images/Arquivos Timbrado/fotoHeader.png");
+                doc.addImage(headerBase64, "PNG", -14, -49, pageWidth, headerHeight);
+
+                const footerBase64 = await loadImageAsBase64("assets/images/Arquivos Timbrado/fotoFooter.png");
+                doc.addImage(footerBase64, "PNG", -17, 217, 232, footerHeight);
+                
+                const borderStartY = contentStartY;
+                const borderHeight = contentEndY;
+                doc.setLineWidth(0.3);
+                doc.rect(5, borderStartY, pageWidth - 10, borderHeight);
+                // X, Y, Width, Height
+
+                doc.setFontSize(14);
+                doc.text("Relatório de Exibição", 10, contentStartY + 10);
+                doc.setFontSize(10);
+                doc.text("Painel: P.24008 - WASHINGTON SOARES | 4885", 10, contentStartY + 20);
+                doc.text("Mídia: FELIPÃO-FELIPÃO-3x5", 10, contentStartY + 30);
+
+                doc.setDrawColor(180);
+                doc.setLineWidth(0.3);
+                doc.line(10, contentStartY + 35, pageWidth - 10, contentStartY + 35);
+
+                let yOffset = contentStartY + 40;
+                for (let i = 1; i <= 50; i++) {
+                    if (yOffset > contentEndY) {
+                        doc.addPage();
+                        doc.rect(5, borderStartY, pageWidth - 10, borderHeight);
+                        doc.addImage(headerBase64, "PNG", -14, -49, pageWidth, headerHeight); 
+                        doc.addImage(footerBase64, "PNG", -17, 217, 232, footerHeight);
+                        yOffset = contentStartY + 10;
+                    }
+                    doc.text(`Linha de conteúdo ${i}`, 10, yOffset);
+                    yOffset += 7;
+                }
+
+                doc.save("Relatorio.pdf");
+            } catch (error) {
+                console.error("[ERROR] Falha ao gerar PDF:", error);
+            }
         }
-      }
-    }
-    
-    uploadBtn.addEventListener("click", () => {
-      const files = fileInput.files;
-      if (!files.length) {
-        alert("Selecione ao menos um arquivo.");
-        return;
-      }
-      
-      // Calcula o total de ações: cada foto = 1 ação; para cada vídeo, 1 ação por chunk
-      totalActions = 0;
-      Array.from(files).forEach(file => {
-        if (file.type.startsWith("video/")) {
-          totalActions += Math.ceil(file.size / chunkSize);
-        } else if (file.type.startsWith("image/")) {
-          totalActions += 1;
-        }
-      });
-      
-      // Reinicia o progresso
-      completedActions = 0;
-      updateProgress("Iniciando upload...");
-      
-      // Inicia o upload de cada arquivo conforme seu tipo
-      Array.from(files).forEach(file => {
-        if (file.type.startsWith("video/")) {
-          uploadVideoInChunks(file);
-        } else if (file.type.startsWith("image/")) {
-          uploadImage(file);
-        } else {
-          console.log(`Tipo não suportado: ${file.name}`);
-        }
-      });
-    });
-  </script>
+    </script>
 </body>
 </html>
