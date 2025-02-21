@@ -728,7 +728,7 @@ document.addEventListener("click", (event) => {
             <div id="loading-pdf2" class="loading-pdf2" style="display: none;">
               <i class="fas fa-spinner fa-spin"></i> Gerando PDF...
             </div>
-            <ul style="display: grid; grid-template-columns: 1fr 1fr 1fr;">
+            <ul style="display: grid; grid-template-columns: 1fr 1fr 1fr; margin-top: 12px;">
                 ${times.map((time, index) => `<li>${index + 1} - ${time}</li>`).join("")}
             </ul>
         </div>
