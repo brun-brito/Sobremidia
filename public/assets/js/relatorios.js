@@ -533,8 +533,8 @@ async function displayReport(data) {
             const thumbnailUrl = `${BASE_THUMBNAIL_URL}${mediaId}.png`;
             const mediaName = mediaNames[mediaId]
                 ? (mediaNames[mediaId].includes("-")
-                    ? mediaNames[mediaId].split("-").slice(1).join("-") // Remove o nome da empresa
-                    : mediaNames[mediaId]) // Nome completo caso não tenha hífen
+                    ? mediaNames[mediaId].split("-").slice(1).join("-")
+                    : mediaNames[mediaId])
                 : `Mídia ${mediaId}`;
 
               return `
@@ -608,10 +608,11 @@ async function displayReport(data) {
 
                         return `
                           <div class="media-details">
-                            <p><strong>${
-                                mediaNames[mediaId] 
-                                    ? mediaNames[mediaId].split("-").slice(1).join("-") 
-                                    : `Mídia ${mediaId}`
+                            <p><strong>${mediaNames[mediaId]
+                              ? (mediaNames[mediaId].includes("-")
+                                  ? mediaNames[mediaId].split("-").slice(1).join("-")
+                                  : mediaNames[mediaId])
+                              : `Mídia ${mediaId}`
                             }:</strong></p>
                             <ul>
                               <li>
@@ -925,3 +926,11 @@ document.querySelectorAll(".expandable").forEach(item => {
     });
 });
 
+document.getElementById("setTodayLink").addEventListener("click", (event) => {
+  event.preventDefault();
+
+  const today = new Date().toISOString().split("T")[0];
+
+  document.getElementById("startDate").value = today;
+  document.getElementById("endDate").value = today;
+});
