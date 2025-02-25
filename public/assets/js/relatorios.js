@@ -1,7 +1,7 @@
 const API_URL_MEDIA = "https://api.4yousee.com.br/v1/medias";
 const API_URL_PANELS = "https://api.4yousee.com.br/v1/players";
-const API_URL = "http://127.0.0.1:5001/sobremidia-ce/us-central1/v1";
-//https://us-central1-sobremidia-ce.cloudfunctions.net/v1
+const API_URL = "https://us-central1-sobremidia-ce.cloudfunctions.net/v1";
+//"http://127.0.0.1:5001/sobremidia-ce/us-central1/v1";
 const BASE_THUMBNAIL_URL = "https://s3.amazonaws.com/4yousee-files/sobremidia/common/videos/thumbnails/i_";
 
 let startDate = null;
@@ -319,6 +319,21 @@ document.getElementById("report-form").addEventListener("submit", async function
   const start = new Date(startDate);
   const end = new Date(endDate);
   const diffDays = (end - start) / (1000 * 60 * 60 * 24);
+ 
+  if (!startDate || !endDate) {
+    alert("As datas de início e fim devem ser preenchidas.");
+    return false;
+  }
+
+  if (!startTime || !endTime) {
+      alert("Os horários de início e fim devem ser preenchidos.");
+      return false;
+  }
+
+  if (startTime >= endTime) {
+    alert("A data e hora de início devem ser menores que a data e hora de fim.");
+    return false;
+  }
 
   if (diffDays > 30) {
       alert("O intervalo de datas deve ser de no máximo 30 dias.");
@@ -388,24 +403,56 @@ async function checkReportStatus(reportId) {
 
   while (attempts < maxAttempts) {
       updateProgress(30 + (attempts * 2), "Aguardando processamento do relatório...");
-      const response = await fetch(`${API_URL}/reports/status/${reportId}`);
-      const { status } = await response.json();
+      
+      try {
+          const response = await fetch(`${API_URL}/reports/status/${reportId}`);
+          const { status, message } = await response.json();
 
-      if (status === "FINALIZADO") {
-          updateProgress(80, "Relatório pronto! Obtendo dados...");
-          return fetchReportResult(reportId);
-      } else if (status === "FALHA") {
-          console.error("[ERROR] Falha ao gerar relatório.");
-          updateProgress(100, "Erro ao processar o relatório.");
+          if (status === "FINALIZADO") {
+              updateProgress(80, "Relatório pronto! Obtendo dados...");
+              return fetchReportResult(reportId);
+          } 
+
+          if (status === "FALHA") {
+              console.error(`[ERROR] Falha ao gerar relatório. ${message}`);
+
+              // Exibir a mensagem de erro retornada pela API
+              showError(message || "Erro ao processar o relatório. Tente novamente.");
+
+              updateProgress(100, "Erro ao processar o relatório.");
+              return; // Encerra a função ao detectar falha
+          }
+
+      } catch (error) {
+          console.error("[ERROR] Erro ao verificar status do relatório:", error);
+          showError("Erro na comunicação com o servidor. Tente novamente.");
+          updateProgress(100, "Erro ao comunicar com o servidor.");
           return;
       }
 
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      await new Promise(resolve => setTimeout(resolve, 3000));
       attempts++;
   }
 
   console.error("[ERROR] Tempo limite atingido para geração do relatório.");
+  showError("Erro: Tempo limite atingido.");
   updateProgress(100, "Erro: Tempo limite atingido.");
+}
+
+/**
+* Função para exibir mensagens de erro na interface
+*/
+function showError(message) {
+  const errorDiv = document.getElementById("error-message");
+  if (errorDiv) {
+      errorDiv.innerHTML = `<p style="color: red; font-weight: bold; margin-top: 5px;">${message}</p>`;
+      errorDiv.style.display = "block";
+
+      // Oculta a mensagem após 5 segundos
+      setTimeout(() => {
+          errorDiv.style.display = "none";
+      }, 10000);
+  }
 }
 
 async function fetchReportResult(reportId) {
@@ -818,14 +865,12 @@ document.addEventListener("click", (event) => {
 
     document.body.appendChild(modal);
 }
-    // 🔹 Fecha o modal ao clicar no "X"
     if (event.target.classList.contains("close")) {
         const modal = event.target.closest(".modal");
         if (modal) {
             modal.style.display = "none";
         }
     }
-  // });
 
 });
 

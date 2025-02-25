@@ -723,25 +723,28 @@ document.addEventListener("click", async (event) => {
     }
 });
 
-document.getElementById("export-pdf").addEventListener("click", async () => {
-    if (!reportSummary || !reportMediaDetails || !reportPlayerDetails) {
-        alert("Os dados do relatório ainda não estão disponíveis.");
-        return;
-    }
+const exportButton = document.getElementById("export-pdf");
 
-    const exportButton = document.getElementById("export-pdf");
-    const loadingDiv = document.getElementById("loading-pdf");
+if (exportButton) {
+    exportButton.addEventListener("click", async () => {
+        if (!reportSummary || !reportMediaDetails || !reportPlayerDetails) {
+            alert("Os dados do relatório ainda não estão disponíveis.");
+            return;
+        }
 
-    try {
-        exportButton.disabled = true;
-        loadingDiv.style.display = "inline-flex";
+        const loadingDiv = document.getElementById("loading-pdf");
 
-        await generatePDF(reportSummary, reportMediaDetails, reportPlayerDetails);
-    } catch (error) {
-        console.error("Erro ao gerar o PDF:", error);
-        alert("Erro ao gerar o PDF. Por favor, tente novamente.");
-    } finally {
-        exportButton.disabled = false;
-        loadingDiv.style.display = "none";
-    }
-});
+        try {
+            exportButton.disabled = true;
+            loadingDiv.style.display = "inline-flex";
+
+            await generatePDF(reportSummary, reportMediaDetails, reportPlayerDetails);
+        } catch (error) {
+            console.error("Erro ao gerar o PDF:", error);
+            alert("Erro ao gerar o PDF. Por favor, tente novamente.");
+        } finally {
+            exportButton.disabled = false;
+            loadingDiv.style.display = "none";
+        }
+    });
+}

@@ -12,7 +12,7 @@ async function sendMailReport(mailClient, mailSeller, checkinId) {
                     <h2>Relatório de Check-in</h2>
                     <p>Olá,</p>
                     <p>O relatório de check-in está disponível para visualização. Acesse através do link abaixo:</p>
-                    <p><a href="${API_URL}/checkin/html/${checkinId}" target="_blank" style="font-size:16px; font-weight:bold; color:#0056b3;">
+                    <p><a href="${API_URL_OFICIAL}/checkin/html/${checkinId}" target="_blank" style="font-size:16px; font-weight:bold; color:#0056b3;">
                         Visualizar Check-in</a></p>
                     <p>Atenciosamente,</p>
                     <p>Equipe Sobremídia</p>

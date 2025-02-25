@@ -92,7 +92,7 @@
                         <div class="inputs-date">
                             <div class="filter-group-date">
                                 <label for="startDate">Data de Início:</label>
-                                <input type="date" id="startDate" name="startDate" value="2025-01-01">
+                                <input type="date" id="startDate" name="startDate" value="2025-02-25">
                             </div>
                             <div class="filter-group-date">
                                 <label for="startTime">Hora de Início:</label>
@@ -100,7 +100,7 @@
                             </div>
                             <div class="filter-group-date">
                                 <label for="endDate">Data de Fim:</label>
-                                <input type="date" id="endDate" name="endDate" value="2025-01-01">
+                                <input type="date" id="endDate" name="endDate" value="2025-02-25">
                             </div>
                             <div class="filter-group-date">
                                 <label for="endTime">Hora de Fim:</label>
@@ -114,7 +114,10 @@
                         <i class="fas fa-chart-line"></i> Gerar Relatório
                     </button>
                 </form>
-        
+
+                <!-- Erro -->
+                <div id="error-message"></div>
+                
                 <!-- Loading -->
                 <div id="loading-div" style="display: none; text-align: center;">
                     <p id="progress-message">Criando relatório...</p>
@@ -178,13 +181,16 @@
         document.getElementById('current-year').textContent = new Date().getFullYear();
     </script>
 
+    <script src="https://www.gstatic.com/firebasejs/3.7.4/firebase.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/5.4.1/firebase-firestore.js"></script>
+    <script src="firebase/firebase-config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="assets/js/relatorios.js"></script>
     <script src="assets/js/graficos.js"></script> 
     <script src="assets/js/pdfExport.js"></script> 
-    <script src="assets/js/profile-script.js"></script>
+    <script src="assets/js/auth.js"></script>
     <script src="assets/js/formatDate.js"></script>
 </body>
 
