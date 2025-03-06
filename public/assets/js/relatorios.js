@@ -1,7 +1,7 @@
 const API_URL_MEDIA = "https://api.4yousee.com.br/v1/medias";
 const API_URL_PANELS = "https://api.4yousee.com.br/v1/players";
-const API_URL = "https://us-central1-sobremidia-ce.cloudfunctions.net/v1";
-//"http://127.0.0.1:5001/sobremidia-ce/us-central1/v1";
+// const API_URL = "https://us-central1-sobremidia-ce.cloudfunctions.net/v1";
+const API_URL = "http://127.0.0.1:5001/sobremidia-ce/us-central1/v1";
 const BASE_THUMBNAIL_URL = "https://s3.amazonaws.com/4yousee-files/sobremidia/common/videos/thumbnails/i_";
 
 let startDate = null;
@@ -40,7 +40,8 @@ async function loadFilters() {
     </div>`;
 
   try {
-    const allMediaResults = await fetchPaginatedResults(API_URL_MEDIA, "Secret-Token", "67c7c2b91bcb315098bb733c07ce8b90", 500);
+    const allMediaResults = await fetchPaginatedResults(API_URL_MEDIA, 
+    "Secret-Token", "67c7c2b91bcb315098bb733c07ce8b90", 500);
     const clients = groupMediaByClient(allMediaResults);
 
     // Gerar HTML dos clientes
@@ -54,7 +55,8 @@ async function loadFilters() {
     // Atualizar a lista de mídias após o carregamento
     mediaList.innerHTML = clientHTML;
 
-    const allPanelResults = await fetchPaginatedResults(API_URL_PANELS, "Secret-Token", "a59202bc005fa4305916bca8aa7e31d0", 500);
+    const allPanelResults = await fetchPaginatedResults(API_URL_PANELS, 
+    "Secret-Token", "b24987292ed4bf2e18199a425742ed5d", 500);
     
     // Gerar HTML dos painéis
     const panelHTML = allPanelResults.map(panel => `
@@ -96,7 +98,7 @@ async function loadFilters() {
   }
 }
 
-async function fetchPaginatedResults(baseUrl, headerKey, headerValue, delayMs = 500) {
+async function fetchPaginatedResults(baseUrl, headerKey, headerValue, delayMs) {
   const firstResponse = await fetch(`${baseUrl}?page=1`, {
       headers: { [headerKey]: headerValue },
   });
@@ -313,9 +315,9 @@ document.getElementById("report-form").addEventListener("submit", async function
   
   // Coletar valores do formulário
   startDate = document.getElementById("startDate").value || null;
-  startTime = document.getElementById("startTime").value || null;
+  startTime = document.getElementById("startTime").value + ":00" || null;
   endDate = document.getElementById("endDate").value || null;
-  endTime = document.getElementById("endTime").value || null;
+  endTime = document.getElementById("endTime").value + ":59" || null;
   const start = new Date(startDate);
   const end = new Date(endDate);
   const diffDays = (end - start) / (1000 * 60 * 60 * 24);
@@ -343,7 +345,7 @@ document.getElementById("report-form").addEventListener("submit", async function
   toggleButtonState(buttonGerar, true);
   loadingSpinner.style.display = "block";
   reportResult.style.display = "none";
-
+  const clientes = getSelectedClients();
 
   // Criar o corpo da requisição sem campos vazios
   const requestBody = {
@@ -353,10 +355,11 @@ document.getElementById("report-form").addEventListener("submit", async function
     ...(endTime && { endTime }),
     ...(selectedMedia.length > 0 && { mediaId: selectedMedia.map(Number) }),
     ...(selectedPanels.length > 0 && { playerId: selectedPanels.map(Number) }),
+    ...(clientes !== "Todos" ? { clientes: clientes.split(", ") } : { clientes: "Todos" })
   };
 
   try {
-    updateProgress(10, "Criando relatório...");
+    updateProgress(5, "Criando relatório...");
     console.log(`[INFO] Enviando requisição para o backend... \n\n${JSON.stringify(requestBody)}`);
 
     const response = await fetch(`${API_URL}/reports/generate`, {
@@ -374,7 +377,7 @@ document.getElementById("report-form").addEventListener("submit", async function
     }
 
     const { reportId } = await response.json();
-    updateProgress(20, "Relatório enviado para processamento...");
+    updateProgress(10, "Relatório enviado para processamento...");
 
     // Agora verifica periodicamente o status
     await checkReportStatus(reportId);
@@ -400,27 +403,29 @@ document.getElementById("report-form").addEventListener("submit", async function
 async function checkReportStatus(reportId) {
   let attempts = 0;
   const maxAttempts = 60; // Timeout após 5 minutos
+  let progress = 15; // Começa em 15%
 
   while (attempts < maxAttempts) {
-      updateProgress(30 + (attempts * 2), "Aguardando processamento do relatório...");
-      
+      // Ajuste dinâmico do progresso para não ultrapassar 95%
+      progress = Math.min(89, progress + Math.floor(Math.random() * 3) + 1); // Incrementa entre 1 e 3%
+
+      updateProgress(progress, "Processando relatório...");
+
       try {
           const response = await fetch(`${API_URL}/reports/status/${reportId}`);
-          const { status, message } = await response.json();
+          const responseData = await response.json();
 
-          if (status === "FINALIZADO") {
-              updateProgress(80, "Relatório pronto! Obtendo dados...");
+          if (responseData.status === "FINALIZADO") {
+              updateProgress(90, "Relatório pronto! Obtendo dados...");
               return fetchReportResult(reportId);
-          } 
+          }
 
-          if (status === "FALHA") {
-              console.error(`[ERROR] Falha ao gerar relatório. ${message}`);
-
-              // Exibir a mensagem de erro retornada pela API
-              showError(message || "Erro ao processar o relatório. Tente novamente.");
-
+          if (responseData.status === "FALHA") {
+              console.error(`[ERROR] Falha ao gerar relatório. ${responseData.message}`);
+              
+              showError(responseData.message || "Erro ao processar o relatório. Tente novamente.");
               updateProgress(100, "Erro ao processar o relatório.");
-              return; // Encerra a função ao detectar falha
+              return;
           }
 
       } catch (error) {
@@ -430,7 +435,7 @@ async function checkReportStatus(reportId) {
           return;
       }
 
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      await new Promise(resolve => setTimeout(resolve, 2500 + Math.random() * 1000)); // Varia o tempo de espera entre 2.5s e 3.5s
       attempts++;
   }
 
@@ -458,22 +463,20 @@ function showError(message) {
 async function fetchReportResult(reportId) {
   try {
       const response = await fetch(`${API_URL}/reports/result/${reportId}`);
-
-      if (!response.ok) {
-          console.error(`[ERROR] Erro na resposta da API ao obter relatório. Status: ${response.status}`);
-          throw new Error("Erro ao obter os dados do relatório.");
-      }
-
       const responseData = await response.json();
 
+      if (!response.ok || !responseData.success) {
+          console.error(`[ERROR] Erro na resposta da API ao obter relatório. Status: ${response.status}`);
+          throw new Error(responseData.error || "Erro ao obter os dados do relatório.");
+      }
+
       updateProgress(90, "Formatando os dados...");
-      await displayReport(responseData);
+      await displayReport(responseData, reportId);
 
       updateProgress(100, "Sucesso! Relatório concluído.");
   } catch (error) {
-      console.error("[ERROR] Erro ao obter relatório:", error);
-      reportContent.innerHTML = `<p style="color: red;">Erro ao carregar o relatório.</p>`;
-      reportResult.style.display = "block";
+      console.error("[ERROR] Erro ao obter relatório:", error.message);
+      showError(error.message || "Erro ao processar o relatório.");
       updateProgress(100, "Erro ao processar o relatório.");
   }
 }
@@ -500,12 +503,12 @@ function getFriendlyErrorMessage(status, message) {
     }
 }
 
-async function displayReport(data) {
+async function displayReport(data, reportId) {
     const reportResult = document.getElementById("report-result");
     const reportContent = document.getElementById("report-content");
 
     if (!data || !data.success || !data.data) {
-        console.error("[ERROR] Dados inválidos para exibição do relatório:", data);
+        console.error("[ERROR] Dados inválidos para inserção do relatório:", data);
         reportContent.innerHTML = `<p style="color: red;">Erro: Dados do relatório estão vazios ou inválidos.</p>`;
         reportResult.style.display = "block";
         return;
@@ -543,7 +546,7 @@ async function displayReport(data) {
                         <img src="${thumbnailUrl}" alt="${mediaName}" class="media-thumbnail">
                         <div class="media-info">
                             <strong>Nome: </strong><p id="media-name-${mediaId}">${mediaName}</p>
-                            <p><strong>Total de Exibições:</strong> ${totalExhibitions}</p>
+                            <p><strong>Total de Inserções:</strong> ${totalExhibitions}</p>
                         </div>
                         <button class="details-button" data-media-id="${mediaId}">
                             Ver detalhes <i class="fas fa-chevron-right"></i>
@@ -564,7 +567,7 @@ async function displayReport(data) {
                                               data-player-id="${playerId}" 
                                               data-media-id="${mediaId}" 
                                               data-logs='${JSON.stringify(logsByDate)}'>
-                                                ${totalAparicoes} aparições
+                                                ${totalAparicoes} inserções
                                             </a>
                                         </li>
                                     </ul>
@@ -595,7 +598,7 @@ async function displayReport(data) {
                                 <i class="fas fa-tv"></i> <!-- Ícone de player -->
                             </div>
                               <strong>Nome: </strong><p id="panel-name-${playerId}">${panelName}</p>
-                              <p><strong>Total de Exibições:</strong> ${totalExhibitions}</p>
+                              <p><strong>Total de Inserções:</strong> ${totalExhibitions}</p>
                         </div>
                         <button class="details-button" data-player-id="${playerId}">
                             Ver detalhes <i class="fas fa-chevron-right"></i>
@@ -621,7 +624,7 @@ async function displayReport(data) {
                                   data-player-id="${playerId}" 
                                   data-media-id="${mediaId}" 
                                   data-logs='${JSON.stringify(logsByDate)}'>
-                                    ${totalAparicoes} aparições
+                                    ${totalAparicoes} inserções
                                 </a>
                               </li>
                             </ul>
@@ -639,14 +642,13 @@ async function displayReport(data) {
             `;
         }).join("");
 
-
         const selectedClients = getSelectedClients();
         // Dados do resumo
         const summaryHTML = `
             <div class="summary-info">
                 <p><strong>Intervalo de Datas:</strong> ${formatDate(startDate)} (${startTime}) - ${formatDate(endDate)} (${endTime})</p>
                 <p><strong>Cliente(s):</strong> ${selectedClients}</p>
-                <p><strong>Total de Exibições:</strong> ${summary.totalExhibitions || 0}</p>
+                <p><strong>Total de Inserções:</strong> ${summary.totalExhibitions || 0}</p>
                 <p><strong>Total de Mídias:</strong> ${summary.totalMedia || 0}</p>
                 <p><strong>Total de Painéis:</strong> ${summary.totalPlayers || 0}</p>
             </div>
@@ -656,11 +658,11 @@ async function displayReport(data) {
         const reportHTML = `
             <h4>Resumo</h4>
             ${summaryHTML}
-            <h4 style="margin-top:12px;">Exibições por Mídia</h4>
+            <h4 style="margin-top:12px;">Inserções por Mídia</h4>
             <ul class="media-list">
                 ${mediaHTMLArray}
             </ul>
-            <h4 style="margin-top:12px;">Exibições por Painel</h4>
+            <h4 style="margin-top:12px;">Inserções por Painel</h4>
             <ul class="panel-list">
                 ${panelHTMLArray}
             </ul>
@@ -675,6 +677,10 @@ async function displayReport(data) {
                 item.classList.toggle("expanded");
             });
         });
+
+        document.querySelector(".send-mail-button").addEventListener("click", async () => {
+          await sendMail(reportId);
+      });
 
         // Renderizar gráficos
         renderMediaChart(mediaDetails);
@@ -804,13 +810,13 @@ document.addEventListener("click", (event) => {
         dailyList = document.getElementById(`daily-aparicoes-list-${playerId}-${mediaId}`);
         entityName = mediaNames[mediaId] || `Mídia ${mediaId}`;
     } else {
-        console.error("❌ Nenhuma mídia ou painel encontrado para abrir o modal.");
+        console.error("Nenhuma mídia ou painel encontrado para abrir o modal.");
         return;
     }
 
 
    if (!modal) {
-        console.error(`❌ Modal não encontrado para ${playerId ? "Painel" : "Mídia"} (${playerId || mediaId}).`);
+        console.error(`Modal não encontrado para ${playerId ? "Painel" : "Mídia"} (${playerId || mediaId}).`);
         return;
     }
 
@@ -826,7 +832,7 @@ document.addEventListener("click", (event) => {
     dailyList.innerHTML = `
         <div>
             <h4 id="entity-name">${entityName}</h4>
-            <h4>Total de Aparições por Data</h4>
+            <h4>Total de Inserções por Data</h4>
             <button id="export-daily-pdf-button-${playerId}-${mediaId}" class="export-daily-pdf-button"
                     data-player-id="${playerId || ''}" 
                     data-media-id="${mediaId || ''}">
@@ -846,7 +852,7 @@ document.addEventListener("click", (event) => {
                           data-media-id="${mediaId || ''}" 
                           data-date="${date}" 
                           data-times="${times.join(',')}">
-                            ${times.length} aparições
+                            ${times.length} inserções
                         </a>
                     </li>
                 `).join("")}
@@ -884,7 +890,8 @@ window.addEventListener("click", (event) => {
 
 async function fetchMediaNames(mediaIds) {
     try {
-        const response = await fetch(`${API_URL_MEDIA}?id=${mediaIds.join(',')}`, {headers: { 'Secret-Token': '67c7c2b91bcb315098bb733c07ce8b90' }});
+        const response = await fetch(`${API_URL_MEDIA}?id=${mediaIds.join(',')}`,
+        {headers: { 'Secret-Token': '0e51dbdb76a069e9642283cb0a84fb1f' }});
         if (!response.ok) throw new Error("Erro ao buscar nomes das mídias.");
         const data = await response.json();
 
@@ -902,7 +909,8 @@ async function fetchMediaNames(mediaIds) {
 
 async function fetchPanelNames(panelIds) {
     try {
-        const response = await fetch(API_URL_PANELS, {headers: { 'Secret-Token': 'a59202bc005fa4305916bca8aa7e31d0' }});
+        const response = await fetch(API_URL_PANELS, 
+        {headers: { 'Secret-Token': 'a59202bc005fa4305916bca8aa7e31d0' }});
         if (!response.ok) throw new Error("Erro ao buscar nomes dos painéis.");
         const data = await response.json();
 
@@ -918,6 +926,47 @@ async function fetchPanelNames(panelIds) {
         console.error("[ERROR] Falha ao buscar nomes dos painéis:", error);
         return {};
     }
+}
+
+async function sendMail(reportId){
+  let emailInputContainer = document.getElementById("enviar-email");
+
+    // Alterna a exibição do container
+    emailInputContainer.style.display = emailInputContainer.style.display === "block" ? "none" : "block";
+
+    // Obtém o botão de confirmação
+    const confirmButton = document.getElementById("confirmSendEmail");
+
+    // Remove event listeners antigos e adiciona um novo
+    confirmButton.replaceWith(confirmButton.cloneNode(true));
+    const newConfirmButton = document.getElementById("confirmSendEmail");
+
+    newConfirmButton.addEventListener("click", async () => {
+        const clientEmail = document.getElementById("clientEmail").value.trim();
+        const sellerEmail = document.getElementById("sellerEmail").value.trim();
+        const loadingDiv = document.getElementById("loading-mail");
+
+        if (!clientEmail || !sellerEmail) {
+            alert("⚠ Por favor, preencha ambos os campos de e-mail.");
+            return;
+        }
+
+        try {
+            loadingDiv.style.display = "inline-flex";
+            newConfirmButton.disabled = true;
+
+            await sendMailReport(clientEmail, sellerEmail, reportId);
+
+            alert("E-mail enviado com sucesso!");
+            emailInputContainer.style.display = "none";
+        } catch (error) {
+            console.error("Erro ao enviar e-mail:", error);
+            alert("Erro ao enviar e-mail. Por favor, tente novamente.");
+        } finally {
+            loadingDiv.style.display = "none";
+            newConfirmButton.disabled = false;
+        }
+    });
 }
 
 document.querySelectorAll(".expandable").forEach(item => {

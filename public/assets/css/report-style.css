@@ -182,7 +182,7 @@ input[type="time"] {
 
 .panel-icon {
     font-size: 30px;
-    color: #3498db;
+    color: #24d464;
 }
 
 .panel-item input {
@@ -348,4 +348,56 @@ input[type="time"] {
 
 .retry-button:hover {
     background-color: #cc0000;
+}
+
+#confirmSendEmail {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.2s, box-shadow 0.2s;
+    height: fit-content;
+}
+
+#confirmSendEmail:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+#confirmSendEmail {
+    margin-top: 7px;
+}
+
+.send-mail-button {
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    max-width: fit-content;
+}
+
+.loading-mail {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #333;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.send-mail-button {
+    background-color: #007bff;
+}
+
+.send-mail-button:hover {
+    background-color: #0056b3;
 }

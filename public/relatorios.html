@@ -23,8 +23,9 @@
             </div>
             <nav>
                 <ul class="nav-links">
-                    <li><a href="checkin.html" class="nav-link">Check-in</a></li>
-                    <li><a href="#" class="nav-link active">Relatórios</a></li>
+                    <li id="usuarios-id"><a href="usuarios.html" class="nav-link active">Usuários</a></li>
+                    <li id="checkin-id"><a href="checkin.html" class="nav-link">Check-in</a></li>
+                    <li id="reports-id"><a href="#" class="nav-link active">Relatórios</a></li>
                     <li><a href="profile.html" class="nav-link">Meu perfil</a></li>
                     <li><button id="logout-btn" class="logout-btn">Sair</button></li>
                 </ul>
@@ -45,7 +46,7 @@
                 <ul>
                     <li><strong>1.</strong> Selecione os clientes desejados ou marque "Todos";</li>
                     <li><strong>2.</strong> Selecione os painéis desejados ou marque "Todos";</li>
-                    <li><strong>3.</strong> Escolha um intervalo de data e hora para o relatório;</li>
+                    <li><strong>3.</strong> Escolha um intervalo de data e hora para o relatório (máximo 30 dias);</li>
                     <li><strong>4.</strong> Clique em "Gerar Relatório" e aguarde*. O resultado aparecerá logo abaixo.</li>
                     <li><small><em>*A geração do relatório pode levar algum tempo, dependendo da quantidade de dados solicitados. Seja paciente.</em></small></li>
                 </ul>
@@ -138,23 +139,43 @@
                   
                 <!-- Resultado -->
                 <div id="report-result" style="display: none;">
-                    <button id="export-pdf" class="export-button">
-                        <i class="fas fa-file-pdf"></i> Exportar PDF
-                    </button>
-                    <div id="loading-pdf" class="loading-pdf" style="display: none;">
-                        <i class="fas fa-spinner fa-spin"></i> Gerando PDF...
-                    </div>                    
-        
+                    <div style="margin-bottom: 10px;">
+                        <button id="export-pdf" class="export-button">
+                            <i class="fas fa-file-pdf"></i> Exportar PDF
+                        </button>
+                        <div id="loading-pdf" class="loading-pdf" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i> Gerando PDF...
+                        </div>                    
+                        <button class="send-mail-button" data-checkin-id="${checkIn.id}">
+                            <i class="fas fa-envelope"></i> Enviar para cliente
+                        </button>
+                        <div id="enviar-email" style="width: fit-content; display: none;">
+                            <div>
+                                <label for="clientEmail" style="font-weight: bold;">Email do Cliente:</label>
+                                <input type="email" id="clientEmail" placeholder="Digite o email do cliente" required="" style="margin: 5px 0; padding: 5px; width: 100%;">
+                            </div>
+                            <div>
+                                <label for="sellerEmail" style="font-weight: bold;">Email do Vendedor:</label>
+                                <input type="email" id="sellerEmail" placeholder="Digite o email do vendedor" required="" style="margin: 5px 0; padding: 5px; width: 100%;">
+                            </div>
+                            <button id="confirmSendEmail" class="confirmSendEmail">
+                                Confirmar Envio
+                            </button>
+                        </div>        
+                        <div id="loading-mail" class="loading-mail" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i> Enviando e-mail...
+                        </div>
+                    </div>
                     <h3>Resultado do Relatório</h3>
                     <div id="report-content"></div>
                     
                     <!-- Canvas para os Gráficos -->
                     <div class="chart-container">
-                        <h4 style="margin-top:12px;">Gráfico de Exibições por Mídia</h4>
+                        <h4 style="margin-top:12px;">Gráfico de Inserções por Mídia</h4>
                         <canvas id="mediaChart"></canvas>
                     </div>
                     <div class="chart-container">
-                        <h4>Gráfico de Exibições por Painel</h4>
+                        <h4>Gráfico de Inserções por Painel</h4>
                         <canvas id="playerChart"></canvas>
                     </div>
                 </div>
@@ -201,6 +222,7 @@
     <script src="assets/js/pdfExport.js"></script> 
     <script src="assets/js/auth.js"></script>
     <script src="assets/js/formatDate.js"></script>
+    <script src="assets/js/enviaEmail.js"></script>
 </body>
 
 </html>
