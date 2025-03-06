@@ -1,7 +1,6 @@
 // const API_URL = "https://2ckh7b03-3000.brs.devtunnels.ms";
-// const API_URL = "http://127.0.0.1:5000";
-const API_URL = "https://us-central1-sobremidia-ce.cloudfunctions.net/v1";
-const API_URL_OFICIAL = "https://api.sobremidia.com";
+const API_URL = "http://127.0.0.1:5001/sobremidia-ce/us-central1/v1";
+// const API_URL = "https://us-central1-sobremidia-ce.cloudfunctions.net/v1";
 const API_URL_MEDIA = "https://api.4yousee.com.br/v1/medias";
 const API_URL_PANELS = "https://api.4yousee.com.br/v1/players";
 const API_URL_PLAYLIST = "https://api.4yousee.com.br/v1/playlists";
@@ -373,7 +372,7 @@ function handleFileUpload(event) {
 
     mediaData[type][mediaId].push({
       file: file,
-      url: objectURL,  // Usamos a URL temporária para exibição
+      url: objectURL,  // Usamos a URL temporária para inserção
       timestamp: new Date(file.lastModified).toISOString(),
       fileName: file.name
     });

@@ -4,9 +4,15 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = 'login.html';
             return;
         }
+        
+        if (!user.emailVerified && !window.location.href.includes('profile.html')) {
+            alert("Por favor, verifique seu e-mail antes de acessar esta página.");
+            window.location.href = 'profile.html';
+            return;
+        }
 
         setupLogout();
-        handleAdminPermissions(user);
+        await handleUserPermissions(user);
     });
 });
 
@@ -29,26 +35,57 @@ function setupLogout() {
 /**
  * Configura permissões para o usuário administrador
  */
-function handleAdminPermissions(user) {
-    if (user.email === 'admin@admin.com') {
-        const checkinNav = document.getElementById('checkin-id');
-        const criarCampanhaNav = document.getElementById('criar-campanha-id');
-        const campanhaNav = document.getElementById('campanha-id');
-        const campanhaNavLink = document.getElementById('campanha-a-id');
+async function handleUserPermissions(user) {
+    try {
+        const userDoc = await db.collection("usuarios").doc(user.uid).get();
+        if (!userDoc.exists) {
+            console.warn("Usuário não encontrado no Firestore.");
+            return;
+        }
 
-        if (checkinNav) checkinNav.style.display = 'block';
-        if (criarCampanhaNav) criarCampanhaNav.style.display = 'none';
-        if (campanhaNav) campanhaNav.style.display = 'none';
-        if (campanhaNavLink) campanhaNavLink.classList.add('disabled-link');
+        const userData = userDoc.data();
+        const userRole = userData.funcao; // Obtendo função do usuário
 
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.classList.remove('disabled-link');
-            link.addEventListener('click', handleNavigation);
+        // Ocultar todas as seções inicialmente
+        const sections = {
+            usuarios: document.getElementById('usuarios-id'),
+            relatorios: document.getElementById('reports-id'),
+            checkin: document.getElementById('checkin-id'),
+            realizarCheckin: document.getElementById('realizar-checkin-button'),
+            historicoCheckin: document.getElementById('view-checkins-button')
+        };
+
+        Object.values(sections).forEach(el => {
+            if (el) el.style.display = 'none';
         });
 
-        if (document.getElementById('reports-section')) {
-            document.getElementById('reports-section').style.display = 'block';
+        // Aplicar permissões de acordo com a função do usuário
+        switch (userRole) {
+            case "administrador":
+                if (sections.usuarios) sections.usuarios.style.display = 'block';
+                if (sections.relatorios) sections.relatorios.style.display = 'block';
+                if (sections.checkin) sections.checkin.style.display = 'block';
+                if (sections.realizarCheckin) sections.realizarCheckin.style.display = 'block';
+                if (sections.historicoCheckin) sections.historicoCheckin.style.display = 'block';
+                break;
+
+            case "OPEC":
+                if (sections.relatorios) sections.relatorios.style.display = 'block';
+                if (sections.checkin) sections.checkin.style.display = 'block';
+                if (sections.historicoCheckin) sections.historicoCheckin.style.display = 'block';
+                break;
+
+            case "tecnico":
+                if (sections.checkin) sections.checkin.style.display = 'block';
+                if (sections.realizarCheckin) sections.realizarCheckin.style.display = 'block';
+                break;
+
+            default:
+                console.warn("Função do usuário não reconhecida.");
         }
+
+    } catch (error) {
+        console.error("Erro ao buscar informações do usuário:", error);
     }
 }
 

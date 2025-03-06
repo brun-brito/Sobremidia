@@ -19,7 +19,7 @@ function renderMediaChart(mediaDetails) {
             labels, // Exibe "Mídia {idMidia}" na parte de baixo
             datasets: [
                 {
-                    label: "Exibições por Mídia",
+                    label: "Inserções por Mídia",
                     data,
                     backgroundColor: "rgba(75, 192, 192, 0.2)",
                     borderColor: "rgba(75, 192, 192, 1)",
@@ -44,7 +44,7 @@ function renderMediaChart(mediaDetails) {
                         },
                         label: function (context) {
                             // Mostra o valor no tooltip
-                            return `Exibições: ${context.raw}`;
+                            return `Inserções: ${context.raw}`;
                         },
                     },
                 },
@@ -86,7 +86,7 @@ function renderPlayerChart(playerDetails) {
             labels,
             datasets: [
                 {
-                    label: "Exibições por Painel",
+                    label: "Inserções por Painel",
                     data,
                     backgroundColor: backgroundColors,
                     borderColor: borderColors,

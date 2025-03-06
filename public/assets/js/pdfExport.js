@@ -78,7 +78,7 @@ Total de Painéis: ${summary.totalPlayers || 0}
     doc.rect(10, yOffset - 5, pageWidth - 20, 10, "F");
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
-    doc.text("Exibições por Mídia", pageWidth / 2, yOffset, { align: "center" });
+    doc.text("Inserções por Mídia", pageWidth / 2, yOffset, { align: "center" });
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     yOffset += 7;
@@ -118,7 +118,7 @@ Total de Painéis: ${summary.totalPlayers || 0}
             doc.setFont("helvetica", "normal");
 
             yOffset += 7;
-            doc.text(`- Total: ${totalAparicoes} aparições`, 20, yOffset);
+            doc.text(`- Total: ${totalAparicoes} inserções`, 20, yOffset);
 
             yOffset += 7;
         }
@@ -134,7 +134,7 @@ Total de Painéis: ${summary.totalPlayers || 0}
     doc.rect(10, yOffset - 5, pageWidth - 20, 10, "F");
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
-    doc.text("Exibições por Painel", pageWidth / 2, yOffset, { align: "center" });
+    doc.text("Inserções por Painel", pageWidth / 2, yOffset, { align: "center" });
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     yOffset += 10;
@@ -163,7 +163,7 @@ Total de Painéis: ${summary.totalPlayers || 0}
                 yOffset = contentStartY + 10;
             }
 
-            const textLine = `- ${mediaName}: ${appearances} aparições`;
+            const textLine = `- ${mediaName}: ${appearances} inserções`;
             doc.text(textLine, 15, yOffset);
 
             yOffset += 7;
@@ -177,7 +177,7 @@ Total de Painéis: ${summary.totalPlayers || 0}
 
 }
 
-// Função para exportar relatório de detalhes de exibição mídia por HORÁRIO
+// Função para exportar relatório de detalhes de inserção mídia por HORÁRIO
 async function generateDetailPDF(button) {
     const playerId = button.getAttribute("data-player-id");
     const mediaId = button.getAttribute("data-media-id");
@@ -264,7 +264,7 @@ async function generateDetailPDF(button) {
         doc.rect(10, yOffset - 5, pageWidth - 20, 10, "F");
         doc.setFontSize(14);
         doc.setFont("helvetica", "bold");
-        doc.text("Horários das aparições", pageWidth / 2, yOffset, { align: "center" });
+        doc.text("Horários das inserções", pageWidth / 2, yOffset, { align: "center" });
         doc.setFontSize(10);
         doc.setFont("helvetica", "normal");
         yOffset += 12;
@@ -311,7 +311,7 @@ async function generateDetailPDF(button) {
     }
 }
 
-// Função para exportar relatório de detalhes de exibição mídia por DIA
+// Função para exportar relatório de detalhes de inserção mídia por DIA
 async function generateDailyPDF(button) {
     const playerId = button.getAttribute("data-player-id");
     const mediaId = button.getAttribute("data-media-id");
@@ -335,13 +335,13 @@ async function generateDailyPDF(button) {
 
     const dailyListElement = document.getElementById(`totalAparicoesModal-${playerId}-${mediaId}`);
     if (!dailyListElement) {
-        console.error("Lista de aparições diárias não encontrada.");
+        console.error("Lista de inserções diárias não encontrada.");
         return;
     }
 
     const dailyData = Array.from(dailyListElement.querySelectorAll("li")).map((li) => {
         const text = li.innerText.trim();
-        const match = text.match(/^([\d\/]+):\s*(\d+)\s*aparições/);
+        const match = text.match(/^([\d\/]+):\s*(\d+)\s*inserções/);
     
         if (match) {
             return {
@@ -419,13 +419,13 @@ async function generateDailyPDF(button) {
         doc.rect(10, yOffset - 5, pageWidth - 20, 10, "F");
         doc.setFontSize(14);
         doc.setFont("helvetica", "bold");
-        doc.text("Total de Aparições por Data", pageWidth / 2, yOffset, { align: "center" });
+        doc.text("Total de Inserções por Data", pageWidth / 2, yOffset, { align: "center" });
         doc.setFontSize(10);
         doc.setFont("helvetica", "normal");
         yOffset += 12;
 
         if (dailyData.length === 0) {
-            doc.text("Nenhuma aparição registrada neste período.", 10, yOffset);
+            doc.text("Nenhuma Inserção registrada neste período.", 10, yOffset);
         } else {
             let colX = 10;
             let rowY = yOffset;
@@ -440,7 +440,7 @@ async function generateDailyPDF(button) {
                 doc.setFont("helvetica", "bold");
                 doc.text(`${date}:`, colX, rowY);
                 doc.setFont("helvetica", "normal");
-                doc.text(`${count} aparições`, colX + 20, rowY);
+                doc.text(`${count} inserções`, colX + 20, rowY);
 
                 if (index % 2 === 0) {
                     colX = pageWidth / 2 + 5;
@@ -464,7 +464,7 @@ async function generateDailyPDF(button) {
 }
 
 // Função para exportar relatório de checkin 
-async function generateCheckinPDF(checkIn) {
+async function generateCheckinPDF(checkIn, returnBlob) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({
         orientation: "portrait",
@@ -517,12 +517,12 @@ async function generateCheckinPDF(checkIn) {
 
     const media = checkIn.midias[0];
 
-    // Mídia Esperada
+    // Preview da Mídia
     doc.setFillColor(230, 230, 230);
     doc.rect(10, yOffset - 5, pageWidth - 20, 10, "F");
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
-    doc.text("Mídia Esperada", pageWidth / 2, yOffset, { align: "center" });
+    doc.text("Preview da Mídia", pageWidth / 2, yOffset, { align: "center" });
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     yOffset += 12;
@@ -674,11 +674,21 @@ async function generateCheckinPDF(checkIn) {
     const now = new Date();
     const dia = String(now.getDate()).padStart(2, '0');
     const mes = String(now.getMonth() + 1).padStart(2, '0');
-    const hora = String(now.getHours()).padStart(2, '0');
-    const minuto = String(now.getMinutes()).padStart(2, '0');
 
     const fileName = `relatorio_checkin-${checkIn.midias[0].cliente}_${dia}-${mes}.pdf`;
-    doc.save(fileName);
+    
+    if (returnBlob) {
+        return new Promise((resolve, reject) => {
+            try {
+                const pdfBlob = doc.output("blob");
+                resolve(pdfBlob);
+            } catch (error) {
+                reject(error);
+            }
+        });
+    } else {
+        doc.save(fileName);
+    }
 }
 
 // Função para adicionar imagens e bordas nas páginas 

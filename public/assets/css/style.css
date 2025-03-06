@@ -278,3 +278,11 @@ footer {
         font-size: 10px;
     }
 }
+
+#usuarios-id,
+#reports-id,
+#checkin-id,
+#realizar-checkin-button,
+#view-checkins-button {
+    display: none;
+}

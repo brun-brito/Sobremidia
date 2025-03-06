@@ -276,11 +276,11 @@ function toggleCheckInDetails(checkIn, listItem, detailsButton) {
                     <p><strong>Cliente:</strong> ${photo.cliente || "-"}</p>
                     <div class="detail-item">
                         
-                        <!-- Foto Esperada -->
+                        <!-- Preview da Mídia -->
                         <div class="photo-group">
-                            <p><strong>Esperada:</strong></p>
+                            <p><strong>Preview:</strong></p>
                             <div style="display: flex;"> 
-                                <img src="${THUMB_URL}/i_${photo.idMidia}.png" alt="Foto Esperada" class="clickable-image" data-src="${THUMB_URL}/i_${photo.idMidia}.png">
+                                <img src="${THUMB_URL}/i_${photo.idMidia}.png" alt="Preview da Mídia" class="clickable-image" data-src="${THUMB_URL}/i_${photo.idMidia}.png">
                             </div>
                         </div>
                         
@@ -412,10 +412,16 @@ async function sendEmail(checkinId){
             loadingDiv.style.display = "inline-flex";
             newConfirmButton.disabled = true;
 
-            // Chama a função de envio do email
-            await sendMailReport(clientEmail, sellerEmail, checkinId);
+            const selectedCheckIn = sortedCheckIns.find((checkIn) => checkIn.id === checkinId);
+            const checkinPdf = await generateCheckinPDF(selectedCheckIn, true);
 
-            alert("Email enviado com sucesso!");
+            if (!(checkinPdf instanceof Blob)) {
+                console.error("[ERROR] O PDF gerado não é um Blob válido.", checkinPdf);
+                throw new Error("Erro ao gerar o relatório em PDF.");
+            }
+
+            await sendMailCheckin(clientEmail, sellerEmail, checkinId, checkinPdf);
+
             emailInputContainer.style.display = "none";
         } catch (error) {
             console.error("Erro ao enviar e-mail:", error);
