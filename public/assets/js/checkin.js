@@ -359,7 +359,7 @@ function closeModal() {
 // Processa o upload de arquivos no modal
 function handleFileUpload(event) {
   const files = Array.from(event.target.files);
-  console.log("[DEBUG] Arquivos selecionados:", files);
+  // console.log("[DEBUG] Arquivos selecionados:", files);
   const mediaId = currentMediaId;
   const type = currentType;
 
@@ -367,17 +367,17 @@ function handleFileUpload(event) {
   if (!mediaData[type][mediaId]) mediaData[type][mediaId] = [];
 
   files.forEach(file => {
-    // Cria uma URL temporária ao invés de ler o arquivo com FileReader
     const objectURL = URL.createObjectURL(file);
 
     mediaData[type][mediaId].push({
       file: file,
-      url: objectURL,  // Usamos a URL temporária para inserção
-      timestamp: new Date(file.lastModified).toISOString(),
+      url: objectURL,
+      timestamp: moment(file.lastModified).utcOffset(-3).format("YYYY-MM-DDTHH:mm:ss"),
       fileName: file.name
     });
 
-    // Atualiza a grid imediatamente sem esperar leitura
+    // console.log("[DEBUG] Dados de mídia atualizados:", mediaData);
+
     updateModalMediaGrid(mediaId, type);
   });
 }

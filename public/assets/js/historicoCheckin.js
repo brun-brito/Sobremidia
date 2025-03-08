@@ -412,15 +412,15 @@ async function sendEmail(checkinId){
             loadingDiv.style.display = "inline-flex";
             newConfirmButton.disabled = true;
 
-            const selectedCheckIn = sortedCheckIns.find((checkIn) => checkIn.id === checkinId);
-            const checkinPdf = await generateCheckinPDF(selectedCheckIn, true);
+            // const selectedCheckIn = sortedCheckIns.find((checkIn) => checkIn.id === checkinId);
+            // const checkinPdf = await generateCheckinPDF(selectedCheckIn, true);
 
-            if (!(checkinPdf instanceof Blob)) {
-                console.error("[ERROR] O PDF gerado não é um Blob válido.", checkinPdf);
-                throw new Error("Erro ao gerar o relatório em PDF.");
-            }
+            // if (!(checkinPdf instanceof Blob)) {
+            //     console.error("[ERROR] O PDF gerado não é um Blob válido.", checkinPdf);
+            //     throw new Error("Erro ao gerar o relatório em PDF.");
+            // }
 
-            await sendMailCheckin(clientEmail, sellerEmail, checkinId, checkinPdf);
+            await sendMailCheckin(clientEmail, sellerEmail, checkinId);
 
             emailInputContainer.style.display = "none";
         } catch (error) {
