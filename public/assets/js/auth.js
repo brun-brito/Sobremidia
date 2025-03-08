@@ -1,3 +1,6 @@
+// const API_URL = "http://127.0.0.1:5001/sobremidia-ce/us-central1/v1";
+const API_URL = "https://us-central1-sobremidia-ce.cloudfunctions.net/v1";
+
 document.addEventListener('DOMContentLoaded', () => {
     auth.onAuthStateChanged(async (user) => {
         if (!user) {

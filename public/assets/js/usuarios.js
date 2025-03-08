@@ -10,9 +10,6 @@ const currentPageText = document.getElementById("current-page");
 const loadingSpinner = document.getElementById("loading-spinner");
 const errorMessage = document.getElementById("error-message");
 
-// const API_URL = "http://127.0.0.1:5001/sobremidia-ce/us-central1/v1";
-const API_URL = "https://us-central1-sobremidia-ce.cloudfunctions.net/v1";
-
 let users = [];
 let filteredUsers = [];
 let currentPage = 1;

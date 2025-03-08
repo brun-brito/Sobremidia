@@ -1,5 +1,3 @@
-const API_URL_OFICIAL = "https://api.sobremidia.com";
-
 async function sendMailCheckin(mailClient, mailSeller, checkinId) {
     try {
         const response = await fetch(`${API_URL}/email/checkin`, {

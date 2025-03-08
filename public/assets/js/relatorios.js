@@ -1,7 +1,5 @@
 const API_URL_MEDIA = "https://api.4yousee.com.br/v1/medias";
 const API_URL_PANELS = "https://api.4yousee.com.br/v1/players";
-// const API_URL = "https://us-central1-sobremidia-ce.cloudfunctions.net/v1";
-const API_URL = "http://127.0.0.1:5001/sobremidia-ce/us-central1/v1";
 const BASE_THUMBNAIL_URL = "https://s3.amazonaws.com/4yousee-files/sobremidia/common/videos/thumbnails/i_";
 
 let startDate = null;
