@@ -3,6 +3,7 @@ const itemsPerPage = 5;
 let sortedCheckIns;
 let totalPages;
 let selectedClient = "";
+let selectedCheckIn;
 
 document.getElementById("view-checkins-button").addEventListener("click", async () => {
     document.getElementById("realizar-checkin").style.display = "none";
@@ -168,7 +169,7 @@ function setupDetailsToggle() {
         const listItem = detailsButton.closest(".checkin-item");
         const checkInId = detailsButton.getAttribute("data-checkin-id");
 
-        const selectedCheckIn = sortedCheckIns.find((checkIn) => checkIn.id === checkInId);
+        selectedCheckIn = sortedCheckIns.find((checkIn) => checkIn.id === checkInId);
 
         if (!selectedCheckIn) {
             console.warn(`Nenhum check-in encontrado para o ID: ${checkInId}`);
@@ -356,7 +357,7 @@ function toggleCheckInDetails(checkIn, listItem, detailsButton) {
         try {
             exportButton.disabled = true;
             loadingDiv.style.display = "inline-flex";
-            await generateCheckinPDF(checkIn);
+            await downloadCheckinPDF(checkIn);
         } catch (error) {
             console.error("Erro ao gerar o PDF:", error);
             alert("Erro ao gerar o PDF. Por favor, tente novamente.");
@@ -367,7 +368,7 @@ function toggleCheckInDetails(checkIn, listItem, detailsButton) {
     });
 
     detailsItem.querySelector(".send-mail-button").addEventListener("click", async () => {
-        await sendEmail(checkIn.id);
+        await sendEmail(checkIn);
     });
 
     detailsButton.classList.add("open");
@@ -383,7 +384,7 @@ document.getElementById("clear-filters").addEventListener("click", () => {
     document.getElementById("checkins-list").innerHTML = "";
 });
 
-async function sendEmail(checkinId){
+async function sendEmail(checkin){
     // Verifica se os inputs já foram criados para evitar duplicações
     let emailInputContainer = document.getElementById("enviar-email");
     emailInputContainer.style.display == "block" ?
@@ -412,15 +413,7 @@ async function sendEmail(checkinId){
             loadingDiv.style.display = "inline-flex";
             newConfirmButton.disabled = true;
 
-            // const selectedCheckIn = sortedCheckIns.find((checkIn) => checkIn.id === checkinId);
-            // const checkinPdf = await generateCheckinPDF(selectedCheckIn, true);
-
-            // if (!(checkinPdf instanceof Blob)) {
-            //     console.error("[ERROR] O PDF gerado não é um Blob válido.", checkinPdf);
-            //     throw new Error("Erro ao gerar o relatório em PDF.");
-            // }
-
-            await sendMailCheckin(clientEmail, sellerEmail, checkinId);
+            await sendMailCheckin(clientEmail, sellerEmail, checkin);
 
             emailInputContainer.style.display = "none";
         } catch (error) {
@@ -445,3 +438,24 @@ document.getElementById("image-modal").addEventListener("click", (event) => {
         document.getElementById("image-modal").style.display = "none";
     }
 });
+
+async function downloadCheckinPDF(checkIn) {
+    const response = await fetch(`${API_URL}/pdf/checkin/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(checkIn)
+    });
+
+    if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `relatorio_checkin-${checkIn.midias[0].cliente}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+    } else {
+        console.error("Erro ao gerar o PDF de check-in");
+    }
+}

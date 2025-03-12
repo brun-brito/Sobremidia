@@ -251,7 +251,7 @@ async function handlePanelSelection(event) {
     document.querySelectorAll('.send-checkin-button').forEach(button => {
         button.addEventListener('click', () => {
           const mediaId = button.getAttribute('data-media-id');
-          console.log("[DEBUG] Botão enviar checkin clicado para mediaId:", mediaId);
+          // console.log("[DEBUG] Botão enviar checkin clicado para mediaId:", mediaId);
           sendCheckInForMedia(mediaId);
         });
       });
@@ -528,7 +528,7 @@ function groupMediaData() {
         });
         });
     });
-    console.log("[INFO] Dados agrupados para envio:", grouped);
+    // console.log("[INFO] Dados agrupados para envio:", grouped);
     return Object.values(grouped);
 }
 
@@ -719,26 +719,30 @@ async function sendCheckInForMedia(mediaId) {
             videosMidia: videosMidia
         };
 
-        const payload = {
-            panelId,
-            panelName,
-            midias: [mediaPayload]
-        };
+        auth.onAuthStateChanged(async (user) => {
+          let email = user ? user.email : null;
+      
+          const payload = {
+              panelId,
+              panelName,
+              midias: [mediaPayload],
+              user: email
+          };
+      
+          // console.log("[INFO] Payload final enviado:", payload);
+      
+          const response = await fetch(`${API_URL}/checkin/create`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+          });
 
-        console.log("[INFO] Payload final enviado:", payload);
+          if (!response.ok) {
+          throw new Error("Erro ao criar check-in.");
+          }
 
-        // Envia o payload para o Firestore
-        const response = await fetch(`${API_URL}/checkin/create`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+          alert("Check-In enviado com sucesso!");
         });
-
-        if (!response.ok) {
-        throw new Error("Erro ao criar check-in.");
-        }
-
-        alert("Check-In enviado com sucesso!");
     } catch (error) {
         console.error("Erro ao enviar check-in:", error);
         alert("Falha ao enviar o Check-In. Verifique os dados e tente novamente.");
@@ -770,7 +774,6 @@ async function uploadSinglePhoto(file, timestamp, timestampField) {
         throw error;
     }
 }
-
 
 document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("select-panel-button").addEventListener("click", openPanelSelectionModal);
