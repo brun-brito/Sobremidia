@@ -1,5 +1,6 @@
-// const API_URL = "http://127.0.0.1:5001/sobremidia-ce/us-central1/v1";
-const API_URL = "https://us-central1-sobremidia-ce.cloudfunctions.net/v1";
+const API_URL = window.location.hostname === "127.0.0.1"
+    ? "http://127.0.0.1:5001/sobremidia-ce/us-central1/v1"
+    : "https://us-central1-sobremidia-ce.cloudfunctions.net/v1";
 
 document.addEventListener('DOMContentLoaded', () => {
     auth.onAuthStateChanged(async (user) => {
@@ -110,3 +111,33 @@ function handleNavigation(e) {
         document.getElementById(sectionToShow).style.display = 'block';
     }
 }
+
+
+// ativa hamburguer menu lateral
+document.addEventListener('DOMContentLoaded', () => {
+    const menuToggle = document.querySelector('.menu-toggle');
+    const menu = document.querySelector('header nav ul');
+  
+    // Abre ou fecha o menu ao clicar no botão de toggle
+    menuToggle.addEventListener('click', (event) => {
+        event.stopPropagation(); // Evita que o clique se propague
+        menu.classList.toggle('showing');
+    });
+  
+    // Fecha o menu ao clicar fora dele
+    document.addEventListener('click', (event) => {
+        const isClickInsideMenu = menu.contains(event.target);
+        const isClickOnToggle = menuToggle.contains(event.target);
+  
+        if (!isClickInsideMenu && !isClickOnToggle) {
+            menu.classList.remove('showing');
+        }
+    });
+  });
+  
+  // Fecha o menu ao selecionar alguma seção
+  document.querySelectorAll('header nav ul li a').forEach(link => {
+    link.addEventListener('click', () => {
+        document.querySelector('header nav ul').classList.remove('showing');
+    });
+  });
