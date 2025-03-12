@@ -1,4 +1,4 @@
-async function sendMailCheckin(mailClient, mailSeller, checkinId) {
+async function sendMailCheckin(mailClient, mailSeller, checkIn) {
     try {
         const response = await fetch(`${API_URL}/email/checkin`, {
             method: "POST",
@@ -6,7 +6,7 @@ async function sendMailCheckin(mailClient, mailSeller, checkinId) {
             body: JSON.stringify({
                 mailClient,
                 mailSeller,
-                checkinId
+                checkIn
             })
         });
 
@@ -22,13 +22,28 @@ async function sendMailCheckin(mailClient, mailSeller, checkinId) {
 
 async function sendMailReport(mailClient, mailSeller, reportId) {
     try {
+        const clientes = getSelectedClients();
+        const reportData = {
+            summary: reportSummary,
+            mediaDetails: reportMediaDetails,
+            playerDetails: reportPlayerDetails,
+            startDate,
+            endDate,
+            startTime,
+            endTime,
+            clientes,
+            mediaNames,
+            panelNames
+        };
+
         const response = await fetch(`${API_URL}/email/report`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 mailClient,
                 mailSeller,
-                reportId
+                reportId,
+                data: reportData 
             })
         });
 

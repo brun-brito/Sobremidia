@@ -11,6 +11,7 @@ let panelNames = null;
 let reportSummary = null;
 let reportMediaDetails = null;
 let reportPlayerDetails = null;
+let selectedReportId;
 
 document.addEventListener("DOMContentLoaded", async () => {
   await loadFilters();
@@ -344,6 +345,7 @@ document.getElementById("report-form").addEventListener("submit", async function
   loadingSpinner.style.display = "block";
   reportResult.style.display = "none";
   const clientes = getSelectedClients();
+  const userEmail = await getUserEmail();
 
   // Criar o corpo da requisição sem campos vazios
   const requestBody = {
@@ -353,12 +355,13 @@ document.getElementById("report-form").addEventListener("submit", async function
     ...(endTime && { endTime }),
     ...(selectedMedia.length > 0 && { mediaId: selectedMedia.map(Number) }),
     ...(selectedPanels.length > 0 && { playerId: selectedPanels.map(Number) }),
-    ...(clientes !== "Todos" ? { clientes: clientes.split(", ") } : { clientes: "Todos" })
+    ...(clientes !== "Todos" ? { clientes: clientes.split(", ") } : { clientes: "Todos" }),
+    user: userEmail,
   };
 
   try {
     updateProgress(5, "Criando relatório...");
-    console.log(`[INFO] Enviando requisição para o backend... \n\n${JSON.stringify(requestBody)}`);
+    // console.log(`[INFO] Enviando requisição para o backend... \n\n${JSON.stringify(requestBody)}`);
 
     const response = await fetch(`${API_URL}/reports/generate`, {
         method: "POST",
@@ -375,6 +378,7 @@ document.getElementById("report-form").addEventListener("submit", async function
     }
 
     const { reportId } = await response.json();
+    selectedReportId = reportId;
     updateProgress(10, "Relatório enviado para processamento...");
 
     // Agora verifica periodicamente o status
@@ -926,46 +930,55 @@ async function fetchPanelNames(panelIds) {
     }
 }
 
-async function sendMail(reportId){
+async function sendMail(reportId) {
   let emailInputContainer = document.getElementById("enviar-email");
 
-    // Alterna a exibição do container
-    emailInputContainer.style.display = emailInputContainer.style.display === "block" ? "none" : "block";
+  if (emailInputContainer.style.display === "none" || emailInputContainer.style.display === "") {
+      emailInputContainer.style.display = "block";
+  } else {
+      emailInputContainer.style.display = "none";
+      return;
+  }
 
-    // Obtém o botão de confirmação
-    const confirmButton = document.getElementById("confirmSendEmail");
+  const confirmButton = document.getElementById("confirmSendEmail");
 
-    // Remove event listeners antigos e adiciona um novo
-    confirmButton.replaceWith(confirmButton.cloneNode(true));
-    const newConfirmButton = document.getElementById("confirmSendEmail");
+  const newConfirmButton = confirmButton.cloneNode(true);
+  confirmButton.parentNode.replaceChild(newConfirmButton, confirmButton);
 
-    newConfirmButton.addEventListener("click", async () => {
-        const clientEmail = document.getElementById("clientEmail").value.trim();
-        const sellerEmail = document.getElementById("sellerEmail").value.trim();
-        const loadingDiv = document.getElementById("loading-mail");
+  newConfirmButton.addEventListener("click", async () => {
+      const clientEmail = document.getElementById("clientEmail").value.trim();
+      const sellerEmail = document.getElementById("sellerEmail").value.trim();
+      const loadingDiv = document.getElementById("loading-mail");
 
-        if (!clientEmail || !sellerEmail) {
-            alert("⚠ Por favor, preencha ambos os campos de e-mail.");
-            return;
-        }
+      if (!clientEmail || !sellerEmail) {
+          alert("Por favor, preencha ambos os campos de e-mail.");
+          return;
+      }
 
-        try {
-            loadingDiv.style.display = "inline-flex";
-            newConfirmButton.disabled = true;
+      try {
+          if (loadingDiv) loadingDiv.style.display = "inline-flex"; 
+          newConfirmButton.disabled = true;
 
-            await sendMailReport(clientEmail, sellerEmail, reportId);
+          await sendMailReport(clientEmail, sellerEmail, reportId);
 
-            alert("E-mail enviado com sucesso!");
-            emailInputContainer.style.display = "none";
-        } catch (error) {
-            console.error("Erro ao enviar e-mail:", error);
-            alert("Erro ao enviar e-mail. Por favor, tente novamente.");
-        } finally {
-            loadingDiv.style.display = "none";
-            newConfirmButton.disabled = false;
-        }
-    });
+          emailInputContainer.style.display = "none";
+      } catch (error) {
+          console.error("Erro ao enviar e-mail:", error);
+          alert("Erro ao enviar e-mail. Por favor, tente novamente.");
+      } finally {
+          if (loadingDiv) loadingDiv.style.display = "none";
+          newConfirmButton.disabled = false;
+      }
+  });
 }
+
+const getUserEmail = () => {
+  return new Promise((resolve) => {
+    auth.onAuthStateChanged(async (user) => {
+          resolve(user ? user.email : null);
+      });
+  });
+};
 
 document.querySelectorAll(".expandable").forEach(item => {
     item.addEventListener("click", () => {
@@ -976,7 +989,7 @@ document.querySelectorAll(".expandable").forEach(item => {
 document.getElementById("setTodayLink").addEventListener("click", (event) => {
   event.preventDefault();
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = moment().utcOffset(-3).format("YYYY-MM-DD");
 
   document.getElementById("startDate").value = today;
   document.getElementById("endDate").value = today;
