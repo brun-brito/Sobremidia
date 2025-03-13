@@ -773,15 +773,7 @@
     display: flex;
     gap: 10px;
     margin-bottom: 15px;
-}
-
-#suggestions-list li {
-    padding: 8px;
-    border-bottom: 1px solid #ddd;
-}
-
-#suggestions-list li:hover {
-    background-color: #f0f0f0;
+    align-items: flex-end;
 }
 
 #progressContainer {
@@ -802,3 +794,19 @@
     margin-top: 10px;
     font-family: Arial, sans-serif;
   }
+
+  #toggle-selection {
+    padding: 8px 12px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    background-color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+#selection-counter {
+    font-weight: bold;
+    color: #333;
+}

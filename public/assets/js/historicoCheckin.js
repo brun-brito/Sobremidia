@@ -1,82 +1,184 @@
 let currentPage = 1;
+let checkIns;
 const itemsPerPage = 5;
 let sortedCheckIns;
 let totalPages;
 let selectedClient = "";
+let selectedPanel = "";
 let selectedCheckIn;
+let selectionMode = false;
+let selectedCount = 0;
+let selectedCheckIns = new Set();
+let selectedCheckbox = {};
+
+const selectButton = document.getElementById("toggle-selection");
+const checkinsList = document.getElementById("checkins-list");
+
+selectButton.addEventListener("click", () => {
+    selectionMode = !selectionMode;
+    const checkboxes = document.querySelectorAll(".checkin-checkbox");
+
+    checkboxes.forEach(checkbox => {
+        checkbox.style.display = selectionMode ? "block" : "none";
+        if (!selectionMode) checkbox.checked = false;
+    });
+
+    const selectButton = document.getElementById("toggle-selection");
+    selectButton.innerHTML = selectionMode 
+        ? `<i class="fas fa-check-square"></i> Selecionar <span id="contador">(0)</span>` 
+        : `<i class="far fa-square"></i> Selecionar <span id="contador"></span>`;
+
+    selectedCount = 0;
+    updateSelectionCounter();
+});
+
+checkinsList.addEventListener("change", (event) => {
+    if (event.target.classList.contains("checkin-checkbox")) {
+        const checkInId = event.target.getAttribute("data-checkin-id");
+
+        if (event.target.checked) {
+            selectedCheckIns.add(checkInId);
+        } else {
+            selectedCheckIns.delete(checkInId);
+        }
+
+        selectedCount = selectedCheckIns.size;
+        updateSelectionCounter();
+    }
+});
+
+function updateSelectionCounter() {
+    let counter = document.getElementById("contador");
+
+    counter.textContent = selectedCount > 0 ? `(${selectedCount})` : "";
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+    checkIns = await fetchCheckIns();
+    populateClientSelector();
+});
+
+function populateClientSelector() {
+    const clientSelector = document.getElementById("client-selector");
+
+    const uniqueClients = new Set(
+        checkIns.flatMap(checkIn =>
+            checkIn.midias.map(photo => photo.cliente ? photo.cliente : "Desconhecido")
+        )
+    );
+
+    // Ordenar os clientes em ordem alfabética
+    const sortedClients = [...uniqueClients].sort((a, b) => a.localeCompare(b));
+
+    // Limpar o seletor e adicionar a opção padrão
+    clientSelector.innerHTML = `<option value="">Selecione um cliente...</option>`;
+
+    // Adicionar os clientes ordenados
+    sortedClients.forEach(client => {
+        clientSelector.innerHTML += `<option value="${client}">${client}</option>`;
+    });
+
+    clientSelector.addEventListener("change", () => {
+        selectedClient = clientSelector.value;
+        selectedPanel = "";
+        populatePanelSelector(selectedClient);
+    });
+}
+
+function populatePanelSelector(client) {
+    const panelSelector = document.getElementById("panel-selector");
+    panelSelector.innerHTML = `<option value="">Todos</option>`;
+
+    if (!client) {
+        panelSelector.disabled = true;
+        return;
+    }
+
+    let clientCheckIns = checkIns.filter(checkIn => 
+        checkIn.midias.some(photo => photo.cliente === client)
+    );
+
+    const uniquePanels = new Set(clientCheckIns.map(checkIn => checkIn.panelName || checkIn.panelId));
+
+    uniquePanels.forEach(panel => {
+        panelSelector.innerHTML += `<option value="${panel}">${panel}</option>`;
+    });
+
+    panelSelector.disabled = false;
+}
+
+function filterCheckIns() {
+    const startDateInput = document.getElementById("start-date").value;
+    const endDateInput = document.getElementById("end-date").value;
+
+    const startDate = startDateInput ? new Date(startDateInput).getTime() / 1000 : null;
+    const endDate = endDateInput ? (new Date(endDateInput).getTime() / 1000) + 86400 : null;
+
+    selectedCheckIns.clear();
+    selectedCount = 0;
+    updateSelectionCounter();
+
+    let filteredCheckIns = sortedCheckIns.filter(checkIn => {
+        const checkInTime = checkIn.createdAt._seconds;
+        const belongsToClient = selectedClient
+            ? checkIn.midias.some(photo => photo.cliente === selectedClient)
+            : true;
+        const belongsToPanel = selectedPanel ? checkIn.panelName === selectedPanel : true;
+        const isWithinDateRange =
+            (!startDate || checkInTime >= startDate) &&
+            (!endDate || checkInTime <= endDate);
+
+        return belongsToClient && belongsToPanel && isWithinDateRange;
+    });
+
+    if (filteredCheckIns.length === 0) {
+        document.getElementById("checkins-list").innerHTML = "<p>Nenhum check-in encontrado.</p>";
+        return;
+    }
+    document.getElementById("error-message").innerText = "";
+    sortedCheckIns = filteredCheckIns.sort((a, b) => b.createdAt._seconds - a.createdAt._seconds);
+    currentPage = 1;
+    setupPagination(sortedCheckIns);
+    renderPaginatedCheckIns(sortedCheckIns, currentPage);
+}
+
+function updateSelectionCounter() {
+    let counter = document.getElementById("contador");
+
+    counter.textContent = selectedCount > 0 ? `(${selectedCount})` : "";
+}
 
 document.getElementById("view-checkins-button").addEventListener("click", async () => {
     document.getElementById("realizar-checkin").style.display = "none";
     document.getElementById("checkin-history").style.display = "block";
 
-    const checkIns = await fetchCheckIns();
+    checkIns = await fetchCheckIns();
     sortedCheckIns = checkIns.sort((a, b) => b.createdAt._seconds - a.createdAt._seconds);
-    
-    document.getElementById("suggestions-list").innerHTML = "";
-});
-
-document.getElementById("search-input").addEventListener("input", () => {
-    const searchInput = document.getElementById("search-input").value.toLowerCase();
-    const suggestionsList = document.getElementById("suggestions-list");
-
-    if (searchInput === "") {
-        suggestionsList.innerHTML = "";
-        suggestionsList.style.display = "none";
-        return;
-    }
-
-    const clients = Array.from(new Set(sortedCheckIns.flatMap(checkIn =>
-        checkIn.midias.map(photo => photo.cliente ? photo.cliente : "Desconhecido")
-    )));
-
-    const filteredClients = clients.filter(client => client.toLowerCase().includes(searchInput));
-
-    if (filteredClients.length > 0 && searchInput !== "") {
-        suggestionsList.innerHTML = filteredClients.map(client => `<li style="padding: 8px; cursor: pointer;">${client}</li>`).join("");
-        suggestionsList.style.display = "block";
-
-        Array.from(suggestionsList.children).forEach(item => {
-            item.addEventListener("click", () => {
-                selectedClient = item.textContent;
-                document.getElementById("search-input").value = selectedClient;
-                suggestionsList.style.display = "none";
-                document.getElementById("error-message").innerText = "";
-            });
-        });
-    } else {
-        suggestionsList.style.display = "none";
-    }
 });
 
 document.getElementById("apply-date-filter").addEventListener("click", () => {
-    const searchInput = document.getElementById("search-input").value.trim().toLowerCase();
-    const suggestionsList = document.getElementById("suggestions-list");
-
-    if (searchInput === "") {
-        document.getElementById("error-message").innerText = "Por favor, digite um cliente antes de filtrar.";
-        document.getElementById("checkins-list").innerHTML = "";
+    
+    selectedClient = document.getElementById("client-selector").value;
+    if (selectedClient === "") {
+        alert("Selecione pelo menos um cliente.");
         return;
     }
+    selectedPanel = document.getElementById("panel-selector").value;
+    const startDateInput = document.getElementById("start-date").value;
+    const endDateInput = document.getElementById("end-date").value;
+    selectedCheckbox = {};
+    selectedCount = 0;
+    updateSelectionCounter();
+    document.getElementById("components-checkin").style.display = "block";
 
-    const isClientValid = sortedCheckIns.some(checkIn =>
-        checkIn.midias.some(photo => {
-            const client = photo.cliente ? photo.cliente.toLowerCase() : "desconhecido";
-            return client === searchInput;
-        })
-    );
 
-    if (!isClientValid) {
-        document.getElementById("error-message").innerText = `Nenhum check-in encontrado para o cliente '${searchInput}'.`;
-        document.getElementById("checkins-list").innerHTML = "";
-        return;
-    }
-
-    document.getElementById("error-message").innerText = "";
-    suggestionsList.style.display = "none";
-    filterCheckIns(sortedCheckIns);
+    filterCheckIns(selectedClient, selectedPanel, startDateInput, endDateInput);
 });
 
 function renderPaginatedCheckIns(checkIns, page) {
+    const selectionButton = document.getElementById("toggle-selection");
+    selectionButton.style.display = "flex";
+
     const checkinsList = document.getElementById("checkins-list");
     checkinsList.innerHTML = "";
 
@@ -94,19 +196,47 @@ function renderPaginatedCheckIns(checkIns, page) {
         listItem.classList.add("checkin-item");
         listItem.setAttribute("data-checkin-id", checkIn.id);
         listItem.setAttribute("data-panel-name", checkIn.panelName.toLowerCase());
+
+        // const isChecked = selectedCheckbox[checkIn.id] ? "checked" : "";
         listItem.innerHTML = `
-            <div>
-                <p><strong>Painel:</strong> ${checkIn.panelName || checkIn.panelId}</p>
-                <p><strong>Data:</strong> ${new Date(checkIn.createdAt._seconds * 1000).toLocaleString()}</p>
-                <button class="view-details-button" data-checkin-id="${checkIn.id}">
-                    Ver detalhes <i class="fas fa-chevron-right"></i>
-                </button>
+            <div style="display: flex; align-items: center;">
+                <input type="checkbox" class="checkin-checkbox" data-checkin-id="${checkIn.id}" 
+                    style="margin-right: 10px; ${selectionMode ? 'display: block;' : 'display: none;'}">
+                <div>
+                    <p><strong>Painel:</strong> ${checkIn.panelName || checkIn.panelId}</p>
+                    <p><strong>Data:</strong> ${new Date(checkIn.createdAt._seconds * 1000).toLocaleString()}</p>
+                    <button class="view-details-button" data-checkin-id="${checkIn.id}">
+                        Ver detalhes <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
             </div>
         `;
+
         checkinsList.appendChild(listItem);
     });
 
     setupDetailsToggle();
+
+    document.querySelectorAll(".checkin-checkbox").forEach(checkbox => {
+        const checkInId = checkbox.getAttribute("data-checkin-id");
+
+        // Adiciona o evento apenas se ainda não foi adicionado
+        checkbox.addEventListener("change", (event) => {
+            if (event.target.checked) {
+                selectedCheckbox[checkInId] = true; // Marca como selecionado
+            } else {
+                delete selectedCheckbox[checkInId]; // Remove se desmarcado
+            }
+
+            selectedCount = Object.keys(selectedCheckbox).length;
+            updateSelectionCounter();
+            console.log(selectedCheckbox)
+            console.log("checkins selecionados: ", selectedCount)
+        });
+
+        checkbox.checked = !!selectedCheckbox[checkInId];
+    });
+
 }
 
 function setupPagination(checkIns) {
@@ -145,6 +275,8 @@ function renderPagination(totalPages, currentPage) {
 
 function goToPage(page) {
     currentPage = page;
+    selectedCheckIns.clear();
+    selectedCount = 0;
     renderPaginatedCheckIns(sortedCheckIns, currentPage);
     renderPagination(totalPages, currentPage);
 }
@@ -154,6 +286,64 @@ function createDots() {
     dots.textContent = "...";
     dots.className = "pagination-dots";
     return dots;
+}
+
+function filterCheckIns(client, panel, startDateInput, endDateInput) {
+    
+    // Atualiza os check-ins ordenados antes de filtrar
+    sortedCheckIns = checkIns.sort((a, b) => b.createdAt._seconds - a.createdAt._seconds);
+
+    const startDate = startDateInput ? new Date(startDateInput).getTime() / 1000 : null;
+    const endDate = endDateInput ? (new Date(endDateInput).getTime() / 1000) + 86400 : null;
+
+    selectedCheckIns.clear();
+
+    let filteredCheckIns = sortedCheckIns.filter(checkIn => {
+        const checkInTime = checkIn.createdAt._seconds;
+        const belongsToClient = client ? checkIn.midias.some(photo => photo.cliente === client) : true;
+        const belongsToPanel = panel ? checkIn.panelName === panel : true;
+        const isWithinDateRange =
+            (!startDate || checkInTime >= startDate) &&
+            (!endDate || checkInTime <= endDate);
+
+        return belongsToClient && belongsToPanel && isWithinDateRange;
+    });
+
+
+    if (filteredCheckIns.length === 0) {
+        document.getElementById("checkins-list").innerHTML = "<p>Nenhum check-in encontrado.</p>";
+        return;
+    }
+
+    document.getElementById("error-message").innerText = "";
+    sortedCheckIns = filteredCheckIns;
+    currentPage = 1;
+    setupPagination(sortedCheckIns);
+    renderPaginatedCheckIns(sortedCheckIns, currentPage);
+}
+
+document.getElementById("clear-filters").addEventListener("click", async () => {
+    clearFilters();
+});
+
+function clearFilters() {
+    
+    document.getElementById("start-date").value = "";
+    document.getElementById("end-date").value = "";
+    document.getElementById("client-selector").value = "";
+    document.getElementById("panel-selector").innerHTML = `<option value="">Todos</option>`;
+    document.getElementById("panel-selector").disabled = true;
+    document.getElementById("error-message").innerText = "";
+    document.getElementById("checkins-list").innerHTML = "";
+    document.getElementById("components-checkin").style.display = "none"; 
+
+    selectedCheckIns.clear();
+    
+    currentPage = 1;
+    sortedCheckIns = checkIns.sort((a, b) => b.createdAt._seconds - a.createdAt._seconds);
+
+    populateClientSelector();  // Atualiza os clientes disponíveis
+
 }
 
 function setupDetailsToggle() {
@@ -178,38 +368,6 @@ function setupDetailsToggle() {
 
         toggleCheckInDetails(selectedCheckIn, listItem, detailsButton);
     });
-}
-
-function filterCheckIns(checkIns) {
-    const searchInput = document.getElementById("search-input").value.trim().toLowerCase();
-    const startDateInput = document.getElementById("start-date").value;
-    const endDateInput = document.getElementById("end-date").value;
-
-    const startDate = startDateInput ? new Date(startDateInput).getTime() / 1000 : null;
-    const endDate = endDateInput ? (new Date(endDateInput).getTime() / 1000) + 86400 : null;
-
-    const filteredCheckIns = checkIns.filter(checkIn => {
-        const checkInTime = checkIn.createdAt._seconds;
-
-        const hasClient = checkIn.midias.some(photo => {
-            const client = photo.cliente ? photo.cliente.toLowerCase() : "desconhecido";
-            return client === searchInput;
-        });
-
-        const isWithinDateRange =
-            (!startDate || checkInTime >= startDate) &&
-            (!endDate || checkInTime <= endDate);
-
-        return hasClient && isWithinDateRange;
-    });
-
-    if (filteredCheckIns.length === 0) {
-        document.getElementById("checkins-list").innerHTML = "<p>Nenhum check-in encontrado para o cliente e as datas fornecidas.</p>";
-    } else {
-        currentPage = 1;
-        setupPagination(filteredCheckIns);
-        renderPaginatedCheckIns(filteredCheckIns, currentPage);
-    }
 }
 
 function toggleCheckInDetails(checkIn, listItem, detailsButton) {
@@ -375,15 +533,6 @@ function toggleCheckInDetails(checkIn, listItem, detailsButton) {
     detailsButton.innerHTML = `Recolher detalhes <i class="fas fa-chevron-right"></i>`;
 }
 
-document.getElementById("clear-filters").addEventListener("click", () => {
-    document.getElementById("search-input").value = "";
-    document.getElementById("start-date").value = "";
-    document.getElementById("end-date").value = "";
-    selectedClient = "";
-    document.getElementById("error-message").innerText = "";
-    document.getElementById("checkins-list").innerHTML = "";
-});
-
 async function sendEmail(checkin){
     // Verifica se os inputs já foram criados para evitar duplicações
     let emailInputContainer = document.getElementById("enviar-email");
@@ -451,7 +600,8 @@ async function downloadCheckinPDF(checkIn) {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `relatorio_checkin-${checkIn.midias[0].cliente}.pdf`;
+        const dia = moment(new Date).utcOffset(-3).format("DD-MM")
+        a.download = `relatorio_checkin-${checkIn.midias[0].cliente}-${dia}.pdf`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);

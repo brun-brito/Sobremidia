@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/checkin.css">
     <link rel="stylesheet" href="assets/css/profile-style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 </head>
 
 <body>
@@ -103,18 +103,21 @@
                     <h3>Histórico de Check-Ins</h3>
                     
                     <div style="position: relative; margin-bottom: 15px;">
-                    <div class="search-data">
+                    <div id="search-data" class="search-data">
                         <div style="position: relative;">
                             <label>Nome Cliente<span style="color: red;">*</span></label>
-                            <input
-                                type="text"
-                                id="search-input"
-                                placeholder="Pesquise pelo cliente..."
-                                style="flex: 2; padding: 8px; border: 1px solid #ccc; border-radius: 5px;"
-                            />
-                            <ul id="suggestions-list" style="position: absolute; top: 100%; left: 0; border: 1px solid #ccc; background: white; list-style: none; padding: 0; margin: 0; display: none; z-index: 10;"></ul>
+                            <select id="client-selector" style="flex: 2; padding: 8px; border: 1px solid #ccc; border-radius: 5px; width: 100%;">
+                                <option value="">Selecione um cliente...</option>
+                            </select>
                         </div>
-                        
+                
+                        <div style="position: relative; margin-top: 10px;">
+                            <label>Nome Painel</label>
+                            <select id="panel-selector" style="flex: 2; padding: 8px; border: 1px solid #ccc; border-radius: 5px; width: 100%;" disabled>
+                                <option value="">Todos</option>
+                            </select>
+                        </div>
+                
                         <div style="display: grid;">
                             <label>Data início</label>
                             <input 
@@ -144,11 +147,19 @@
                                 Limpar Filtros
                             </a>
                         </div>
+
                     </div>
-                
-                    <p id="error-message" style="color: red; font-weight: bold;"></p>
-                    <ul id="checkins-list"></ul>
-                    <div id="pagination" class="pagination-container"></div>
+                    <div id="components-checkin">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+                            <button style="display: none;" id="toggle-selection" class="select-button">
+                                <i class="far fa-square"></i> Selecionar <span id="contador"></span>
+                            </button>
+                        </div>
+                    
+                        <p id="error-message" style="color: red; font-weight: bold;"></p>
+                        <ul id="checkins-list"></ul>
+                        <div id="pagination" class="pagination-container"></div>
+                    </div>
                 </div>                                
 
                 <div id="image-modal" class="image-modal" style="display: none;">
