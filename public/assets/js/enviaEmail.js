@@ -14,7 +14,7 @@ async function sendMailCheckin(mailClient, mailSeller, checkIn) {
             throw new Error("Erro ao enviar o e-mail.");
         }
 
-        alert("E-mail enviado com sucesso!");
+        alert("Dentro de alguns minutos, um e-mail será enviado para o(s) endereço(s) solicitado(s). Por favor, aguarde.")
     } catch (error) {
         console.error("Erro ao enviar e-mail:", error.message);
     }
