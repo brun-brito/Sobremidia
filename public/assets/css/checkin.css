@@ -162,6 +162,10 @@
     height: fit-content;
 }
 
+#confirmSendEmail {
+    background: #28a745; 
+}
+
 #submit-checkin-button:disabled, #confirmSendEmail:disabled {
     background-color: #ccc;
     cursor: not-allowed;
@@ -617,6 +621,23 @@
     border: 1px solid #aaaaaa;
 }
 
+#export-pdf-button-multi {
+    display: none;
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer; gap: 6px;
+}
+
+#export-pdf-button-multi:disabled {
+    background-color: #cccccc;
+    color: #666666;
+    cursor: not-allowed;
+    border: 1px solid #aaaaaa;
+}
+
 .loading-pdf, .loading-mail {
     margin-top: 10px;
     font-size: 14px;
@@ -699,6 +720,18 @@
     padding: 3px 5px;
     font-size: 12px;
     border-radius: 3px;
+}
+
+.video-element:fullscreen {
+    object-fit: contain;
+    width: 100vw;
+    height: 100vh;
+}
+
+.video-element:-webkit-full-screen {
+    object-fit: contain;
+    width: 100vw;
+    height: 100vh;
 }
 
 .image-modal {
