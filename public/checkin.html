@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Check-In Semanal</title>
+    <title>Relatório de Check-In</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="icon" href="assets/images/color.png" type="image/x-icon">
     <link rel="stylesheet" href="assets/css/style.css">
@@ -154,6 +154,38 @@
                             <button style="display: none;" id="toggle-selection" class="select-button">
                                 <i class="far fa-square"></i> Selecionar <span id="contador"></span>
                             </button>
+                            <button id="export-pdf-button-multi">
+                                <i class="fas fa-file-pdf"></i> Exportar PDF
+                            </button>
+                            <div id="loading-pdf-multi" class="loading-pdf" style="display: none;">
+                                <i class="fas fa-spinner fa-spin"></i> Gerando PDF...
+                            </div>
+                            <button id="send-email-button-multi" style="display: none; background: #007bff; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; gap: 6px;">
+                                <i class="fas fa-envelope"></i> Enviar E-mail
+                            </button>
+                            <button id="delete-checkin-button-multi" style="display: none; background: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; gap: 6px;">
+                                <i class="fas fa-trash"></i> Excluir Selecionados
+                            </button>
+                        </div>
+
+                        <!-- Inputs para inserir e-mails -->
+                        <div id="enviar-email-multi" style="width: fit-content; display: none;">
+                            <div>
+                                <label for="clientEmail-multi" style="font-weight: bold;">Email do Cliente:</label>
+                                <input type="email" id="clientEmail-multi" placeholder="Digite o email do cliente" required style="margin: 5px 0; padding: 5px; width: 100%;">
+                            </div>
+                            <div>
+                                <label for="sellerEmail-multi" style="font-weight: bold;">Email do Vendedor:</label>
+                                <input type="email" id="sellerEmail-multi" placeholder="Digite o email do vendedor" required style="margin: 5px 0; padding: 5px; width: 100%;">
+                            </div>
+                            <button id="confirmSendEmail-multi" class="confirmSendEmail" style="background: #28a745; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer;">
+                                Confirmar Envio
+                            </button>
+                        </div>
+
+                        <!-- Loader para exibir enquanto o e-mail está sendo enviado -->
+                        <div id="loading-mail-multi" class="loading-mail" style="display: none; margin-top: 10px;">
+                            <i class="fas fa-spinner fa-spin"></i> Enviando e-mail...
                         </div>
                     
                         <p id="error-message" style="color: red; font-weight: bold;"></p>

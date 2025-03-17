@@ -29,6 +29,7 @@ selectButton.addEventListener("click", () => {
         : `<i class="far fa-square"></i> Selecionar <span id="contador"></span>`;
 
     selectedCount = 0;
+    selectedCheckbox = {}; 
     updateSelectionCounter();
 });
 
@@ -49,7 +50,6 @@ checkinsList.addEventListener("change", (event) => {
 
 function updateSelectionCounter() {
     let counter = document.getElementById("contador");
-
     counter.textContent = selectedCount > 0 ? `(${selectedCount})` : "";
 }
 
@@ -219,25 +219,75 @@ function renderPaginatedCheckIns(checkIns, page) {
 
     document.querySelectorAll(".checkin-checkbox").forEach(checkbox => {
         const checkInId = checkbox.getAttribute("data-checkin-id");
+        const emailButtonContainer = document.getElementById("send-email-button-multi");
+        const exportPdfButton = document.getElementById("export-pdf-button-multi");
+        const deleteButton = document.getElementById("delete-checkin-button-multi");
 
         // Adiciona o evento apenas se ainda não foi adicionado
         checkbox.addEventListener("change", (event) => {
             if (event.target.checked) {
-                selectedCheckbox[checkInId] = true; // Marca como selecionado
+                const checkInData = checkIns.find(checkin => checkin.id === checkInId);
+
+                if (checkInData) {
+                    selectedCheckbox[checkInId] = checkInData; 
+                }
             } else {
-                delete selectedCheckbox[checkInId]; // Remove se desmarcado
+                delete selectedCheckbox[checkInId];
             }
 
             selectedCount = Object.keys(selectedCheckbox).length;
             updateSelectionCounter();
-            console.log(selectedCheckbox)
-            console.log("checkins selecionados: ", selectedCount)
+            
+            if (selectedCount > 0) {
+                emailButtonContainer.style.display = "inline-flex";
+                exportPdfButton.style.display = "inline-flex";
+                deleteButton.style.display = "inline-flex";
+            } else {
+                emailButtonContainer.style.display = "none";
+                exportPdfButton.style.display = "none";
+                deleteButton.style.display = "none";
+            }
+            // console.log("checkins selecionados: ", selectedCount)
         });
 
         checkbox.checked = !!selectedCheckbox[checkInId];
     });
-
 }
+
+const emailForm = document.getElementById("enviar-email-multi");
+const loadingMail = document.getElementById("loading-mail-multi");
+const confirmSendEmail = document.getElementById("confirmSendEmail-multi");
+const emailButtonContainer = document.getElementById("send-email-button-multi");
+
+emailButtonContainer.addEventListener("click", () => {
+    emailForm.style.display = "block";
+});
+
+confirmSendEmail.addEventListener("click", async () => {
+    if (selectedCount === 0) {
+        alert("Selecione pelo menos um check-in para enviar.");
+        return;
+    }
+
+    const mailClient = document.getElementById("clientEmail-multi").value.trim();
+    const mailSeller = document.getElementById("sellerEmail-multi").value.trim();
+
+    if (!mailClient || !mailSeller) {
+        alert("Os e-mails são obrigatórios.");
+        return;
+    }
+
+    loadingMail.style.display = "block";
+    emailForm.style.display = "none";
+    const checkInsArray = Object.values(selectedCheckbox);
+
+    await sendMailCheckin(mailClient, mailSeller, checkInsArray);
+    loadingMail.style.display = "none";
+    emailButtonContainer.style.display = "none";
+    document.getElementById("toggle-selection").click(); // para recolher os checkbox
+    selectedCheckbox = {}; // zerar os ids armazenados
+    updateSelectionCounter(); // atualizar o contador
+});
 
 function setupPagination(checkIns) {
     totalPages = Math.ceil(checkIns.length / itemsPerPage);
@@ -475,7 +525,7 @@ function toggleCheckInDetails(checkIn, listItem, detailsButton) {
                             <div class="media-gallery-video">
                                 ${photo.videosMidia.map(video => `
                                     <div class="media-item-video">
-                                        <video controls>
+                                        <video controls class="video-element">
                                             <source src="${API_URL}/proxy?url=${video.url}" type="video/mp4">
                                         </video>
                                         <div class="timestamp-overlay">${new Date(video.timestamp).toLocaleString()}</div>
@@ -589,10 +639,11 @@ document.getElementById("image-modal").addEventListener("click", (event) => {
 });
 
 async function downloadCheckinPDF(checkIn) {
+    const checkInPayload = Array.isArray(checkIn) ? checkIn : [checkIn];
     const response = await fetch(`${API_URL}/pdf/checkin/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(checkIn)
+        body: JSON.stringify(checkInPayload)
     });
 
     if (response.ok) {
@@ -601,7 +652,8 @@ async function downloadCheckinPDF(checkIn) {
         const a = document.createElement("a");
         a.href = url;
         const dia = moment(new Date).utcOffset(-3).format("DD-MM")
-        a.download = `relatorio_checkin-${checkIn.midias[0].cliente}-${dia}.pdf`;
+        const clienteNome = checkInPayload[0]?.midias?.[0]?.cliente || "desconhecido";
+        a.download = `relatorio_checkin-${clienteNome}-${dia}.pdf`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -609,3 +661,86 @@ async function downloadCheckinPDF(checkIn) {
         console.error("Erro ao gerar o PDF de check-in");
     }
 }
+
+async function deleteCheckin(checkinId) {
+    if (!checkinId) {
+        alert("Erro: ID do check-in inválido.");
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/checkin/${checkinId}`, {
+            method: "DELETE",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        });
+
+        if (response.ok) {
+        } else {
+            const errorData = await response.json();
+            alert(`Erro ao excluir check-in: ${errorData.error || "Erro desconhecido."}`);
+            console.error("Erro ao excluir check-in:", errorData);
+        }
+    } catch (error) {
+        console.error("Erro na requisição de exclusão:", error);
+        alert("Erro ao conectar ao servidor. Tente novamente.");
+    }
+}
+
+const exportPdfButton = document.getElementById("export-pdf-button-multi");
+const deleteButton = document.getElementById("delete-checkin-button-multi");
+
+exportPdfButton.addEventListener("click", async () => {
+    if (selectedCount === 0) {
+        alert("Selecione pelo menos um check-in para exportar.");
+        return;
+    }
+
+    const selectedCheckinsArray = Object.values(selectedCheckbox);
+
+    document.getElementById("loading-pdf-multi").style.display = "inline-flex";
+    exportPdfButton.disabled = true; 
+
+    try {
+        await downloadCheckinPDF(selectedCheckinsArray);
+    } catch (error) {
+        console.error("Erro ao gerar PDF:", error.message);
+    } finally {
+        document.getElementById("loading-pdf-multi").style.display = "none";
+        exportPdfButton.disabled = false; 
+    }
+});
+
+deleteButton.addEventListener("click", async () => {
+    const checkinIds = Object.keys(selectedCheckbox);
+
+    if (checkinIds.length === 0) {
+        alert("Nenhum check-in selecionado para exclusão.");
+        return;
+    }
+
+    const confirmDelete = confirm(`Tem certeza que deseja excluir ${checkinIds.length} check-in(s)?`);
+    if (!confirmDelete) return;
+
+    try {
+        for (let checkinId of checkinIds) {
+            await deleteCheckin(checkinId);
+
+            // Remove o item da lista
+            const checkinItem = document.querySelector(`li[data-checkin-id="${checkinId}"]`);
+            if (checkinItem) {
+                checkinItem.remove();
+            }
+            delete selectedCheckbox[checkinId];
+        }
+
+        alert("Check-ins excluídos com sucesso!");
+        updateSelectionCounter();
+
+        deleteButton.style.display = "none";
+    } catch (error) {
+        console.error("Erro na requisição de exclusão:", error);
+        alert("Erro ao conectar ao servidor. Tente novamente.");
+    }
+});
