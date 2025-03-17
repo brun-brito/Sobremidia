@@ -327,7 +327,7 @@ function openModal(mediaId, type) {
   // Atualiza o atributo 'accept' do input do modal
   const fileInput = document.getElementById('modal-file-input');
   if (fileInput) {
-    fileInput.accept = (type === 'video-proof') ? 'video/*' : 'image/*';
+    fileInput.accept = (type === 'video-proof') ? 'video/*' : '.png,.jpg,.jpeg';
   } else {
     console.error("[DEBUG] Elemento 'modal-file-input' não encontrado!");
   }
@@ -718,31 +718,29 @@ async function sendCheckInForMedia(mediaId) {
             fotosEntorno: fotosEntornoUrls,
             videosMidia: videosMidia
         };
-
-        auth.onAuthStateChanged(async (user) => {
-          let email = user ? user.email : null;
+        
+        const email = await getUserEmail();
       
-          const payload = {
-              panelId,
-              panelName,
-              midias: [mediaPayload],
-              user: email
-          };
-      
-          // console.log("[INFO] Payload final enviado:", payload);
-      
-          const response = await fetch(`${API_URL}/checkin/create`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload)
-          });
-
-          if (!response.ok) {
-          throw new Error("Erro ao criar check-in.");
-          }
-
-          alert("Check-In enviado com sucesso!");
+        const payload = {
+            panelId,
+            panelName,
+            midias: [mediaPayload],
+            user: email
+        };
+    
+        // console.log("[INFO] Payload final enviado:", payload);
+    
+        const response = await fetch(`${API_URL}/checkin/create`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
         });
+
+        if (!response.ok) {
+        throw new Error("Erro ao criar check-in.");
+        }
+
+        alert("Check-In enviado com sucesso!");
     } catch (error) {
         console.error("Erro ao enviar check-in:", error);
         alert("Falha ao enviar o Check-In. Verifique os dados e tente novamente.");
@@ -751,9 +749,19 @@ async function sendCheckInForMedia(mediaId) {
     }
 }
 
+function getUserEmail() {
+  return new Promise((resolve) => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      unsubscribe();
+      resolve(user ? user.email : null);
+    });
+  });
+}
+
 async function uploadSinglePhoto(file, timestamp, timestampField) {
-    const formData = new FormData();
-    formData.append("files", file);
+  const formData = new FormData();
+    formData.append("files", file, file.name);
+    formData.append("originalName", file.name);
     formData.append(timestampField, timestamp);
     formData.append("checkinId", checkinId);
 
@@ -768,7 +776,7 @@ async function uploadSinglePhoto(file, timestamp, timestampField) {
         }
 
         const data = await response.json();
-        return data.urls[0];
+        return data.urls;
     } catch (error) {
         console.error("Erro ao enviar foto:", error);
         throw error;
