@@ -21,7 +21,7 @@ body {
     padding: 20px;
 }
 
-/* INÍCIO SECTION TOTAL */
+/* ===================== SECTION TOTAL ===================== */
 #total {
     margin-bottom: 30px;
     padding: 20px;
@@ -117,9 +117,8 @@ body {
     letter-spacing: 1px;
 }
 
-/* LIMITE SECTION TOTAL */
 
-/* INÍCIO SECTION ENDEREÇOS */
+/* ===================== SECTION ENDEREÇOS ===================== */
 #address {
     padding: 20px;
     border-radius: 10px;
@@ -219,10 +218,9 @@ body {
         font-size: 12px;
     }
 }
-/* FIM SECTION ENDEREÇOS */
 
 
-/* INÍCIO SECTION avg */
+/* ===================== SECTION AVG ===================== */
 #avg {
     padding: 20px;
     border-radius: 10px;
@@ -247,7 +245,6 @@ body {
     background-color: #27293D;
     overflow: hidden;
     transition: max-height 0.5s ease-out, opacity 0.5s ease-out;
-    /* max-height: 1000px; */
     opacity: 1;
 }
 
@@ -262,9 +259,8 @@ body {
     max-height: 350px;
 }
 
-/* FIM SECTION avg */
 
-/* INÍCIO SECTION AUDIENCE-IMPACT */
+/* ===================== SECTION AUDIENCE-IMPACT ===================== */
 #audience-impact {
     padding: 20px;
     border-radius: 10px;
@@ -383,5 +379,129 @@ body {
     background-color: #9ca3af0a;
 }
 
+/* ===================== SECTION RECURRENCE ===================== */
+#recurrence {
+    padding: 20px;
+    border-radius: 10px;
+    background-color: #1e1e2f;
+    margin-top: 20px;
+}
 
-/* FIM SECTION AUDIENCE X IMPACT */
+#recurrence h2 {
+    margin-bottom: 15px;
+    gap: 10px;
+    background: #27293D;
+    border-radius: 8px;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: fit-content;
+}
+
+.recurrence-container {
+    padding: 25px;
+    background-color: #27293D;
+    overflow: hidden;
+    transition: max-height 0.5s ease-out, opacity 0.5s ease-out;
+    opacity: 1;
+}
+
+.recurrence-container.collapsed {
+    max-height: 0;
+    opacity: 0;
+    padding: 0;
+    margin: 0;
+}
+
+.chart-recurrence-container {
+    flex: 1.5;
+    overflow-x: auto;
+    height: 550px;
+}
+
+.recurrence-table {
+    border-collapse: collapse;
+    background-color: #2a2a3a;
+    border-radius: 8px;
+    overflow: hidden;
+    font-size: 18px;
+}
+
+.recurrence-table th, .recurrence-table td {
+    padding: 8px;
+    text-align: center;
+    border-bottom: 1px solid #444;
+}
+
+.recurrence-table thead {
+    background-color: #333645;
+    color: #ccc;
+}
+
+/* ===================== SECTION CAMERAS ===================== */
+#cameras {
+    padding: 20px;
+    border-radius: 10px;
+    background-color: #1e1e2f;
+    margin-top: 20px;
+}
+
+#cameras h2 {
+    margin-bottom: 15px;
+    gap: 10px;
+    background: #27293D;
+    border-radius: 8px;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: fit-content;
+}
+
+.cameras-container {
+    padding: 10px;
+    background-color: #27293D;
+    overflow: hidden;
+    transition: max-height 0.5s ease-out, opacity 0.5s ease-out;
+    opacity: 1;
+}
+
+.cameras-container.collapsed {
+    max-height: 0;
+    opacity: 0;
+    padding: 0;
+    margin: 0;
+}
+
+.cameras-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #2a2a3a;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.cameras-table th, .cameras-table td {
+    padding: 8px;
+    text-align: center;
+    border-bottom: 1px solid #444;
+}
+
+.pagination-controls {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+.chart-cameras-container {
+    flex: 1.5;
+    overflow-x: auto;
+    height: 400px;
+    white-space: nowrap;
+}
+
+.chart-body-cameras canvas {
+    width: 100% !important;
+    height: 380px !important;
+}

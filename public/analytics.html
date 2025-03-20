@@ -163,12 +163,83 @@
             </div>
         </section>
         
+        <!-- Section: Recorrência -->
+        <section class="section" id="recurrence">
+            <h2>
+                <i class="fas fa-id-badge"></i> Recorrência
+                <button class="toggle-button" onclick="toggleSection('recurrence')">
+                    <i class="fas fa-chevron-up"></i>
+                </button>
+            </h2>
+            <div class="recurrence-container">
+                <div class="audience-impact-wrapper">
+                    <div class="chart-recurrence-container">
+                        <canvas id="recurrenceChart"></canvas>
+                    </div>
+                    <div class="chart-recurrence-data-table">
+                        <table id="recurrenceTable" class="recurrence-table">
+                            <thead>
+                                <tr>
+                                    <th data-column="recurrence">Recorrência <span class="sort-icon"></span></th>
+                                    <th data-column="value">Valor <span class="sort-icon"></span></th>
+                                    <th data-column="percentage">Porcentagem <span class="sort-icon"></span></th>
+                                </tr>
+                            </thead>
+                            <tbody id="recurrenceDataTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Câmeras -->
+        <section class="section" id="cameras">
+            <h2>
+                <i class="fas fa-video"></i> Câmeras
+                <button class="toggle-button" onclick="toggleSection('cameras')">
+                    <i class="fas fa-chevron-up"></i>
+                </button>
+            </h2>
+            <div class="cameras-container">
+                <h3>Média de Impactos por Data</h3>
+                <div class="chart-cameras-container chart-scroll-container">
+                    <div class="chart-body-cameras">
+                        <canvas id="camerasChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-data-table">
+                    <table id="camerasTable" class="cameras-table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Carros</th>
+                                <th>Ônibus</th>
+                                <th>Caminhões</th>
+                                <th>Vans</th>
+                                <th>Motos</th>
+                                <th>Pessoas</th>
+                                <th>Total</th>
+                                <th>Câmera</th>
+                                <th>Data</th>
+                            </tr>
+                        </thead>
+                        <tbody id="camerasDataTable"></tbody>
+                    </table>
+                    <div class="pagination-controls">
+                        <button id="prevPage">&#9664;</button>
+                        <span id="pageInfo">Página 1 de X</span>
+                        <button id="nextPage">&#9654;</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
     </div>
     <script src="assets/js/analytics.js"></script>
     <script src="assets/js/constjson.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.2.0/chartjs-plugin-zoom.min.js"></script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>    
 
 </body>
 </html>
