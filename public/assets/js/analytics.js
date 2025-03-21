@@ -26,42 +26,6 @@ let currentPage = 1;
 const rowsPerPage = 10;
 let camerasData = [];
 
-function renderCamerasTable(page = 1) {
-    const startIndex = (page - 1) * rowsPerPage;
-    const endIndex = startIndex + rowsPerPage;
-    const camerasDataTable = document.getElementById('camerasDataTable');
-    camerasDataTable.innerHTML = '';
-
-    camerasData.slice(startIndex, endIndex).forEach(item => {
-        camerasDataTable.innerHTML += `<tr>
-            <td>${item.name}</td>
-            <td>${item.cars.toLocaleString('pt-BR')}</td>
-            <td>${item.buses.toLocaleString('pt-BR')}</td>
-            <td>${item.trucks.toLocaleString('pt-BR')}</td>
-            <td>${item.vans.toLocaleString('pt-BR')}</td>
-            <td>${item.motorcycles.toLocaleString('pt-BR')}</td>
-            <td>${item.people.toLocaleString('pt-BR')}</td>
-            <td>${item.impact_total.toLocaleString('pt-BR')}</td>
-            <td>${item.id}</td>
-            <td>${item.date}</td>
-        </tr>`;
-    });
-
-    document.getElementById('pageInfo').innerText = `Página ${page} de ${Math.ceil(camerasData.length / rowsPerPage)}`;
-}
-document.getElementById('prevPage').addEventListener('click', () => {
-    if (currentPage > 1) {
-        currentPage--;
-        renderCamerasTable(currentPage);
-    }
-});
-
-document.getElementById('nextPage').addEventListener('click', () => {
-    if (currentPage < Math.ceil(camerasData.length / rowsPerPage)) {
-        currentPage++;
-        renderCamerasTable(currentPage);
-    }
-});
 /*
 FUNÇÕES PARA A SEÇÃO TOTAL
 */
@@ -526,79 +490,116 @@ function carregarAvg() {
                            size: 14
                        }
                    }
-               }
-           }
-       }
+               },datalabels: {
+                anchor: 'end',
+                align: 'top',
+                color: '#4887F3',
+                font: {
+                    weight: 'bold',
+                    size: 14
+                },
+                formatter: function(value) {
+                    if (value >= 1000000) {
+                        return `${(value / 1000000).toFixed(1)} mi`;
+                    }
+                    if (value >= 1000) {
+                        return `${Math.round(value / 1000)}k`;
+                    }
+                    return value > 0 ? value.toLocaleString('pt-BR') : '';
+                }
+            }
+        }
+    },
+    plugins: [ChartDataLabels]
    });
 
-   new Chart(shiftCtx, {
-       type: 'bar',
-       data: {
-           labels: periodos,
-           datasets: [{
-               label: 'Impactos por Turno',
-               data: impactosPeriodo,
-               backgroundColor: '#4887F3',
-               borderRadius: {
-                   topLeft: 100,
-                   topRight: 100,
-                   bottomLeft: 0,
-                   bottomRight: 0
-               },
-               barPercentage: 1.3,
-               categoryPercentage: 0.5,
-           }]
-       },
-       options: {
-           responsive: true,
-           scales: {
-               x: {
-                   ticks: { 
-                       font: { size: 18, color: '#ffffff' },
-                       color: '#ffffff'
-                   },
-                   title: {
-                       display: true,
-                       text: 'Turno',
-                       font: {
-                           size: 18
-                       }
-                   }
-               },
-               y: { 
-                   beginAtZero: true,
-                   ticks: { 
-                       font: { size: 18, color: '#ffffff' },
-                       color: '#ffffff'
-                   },
-                   title: {
-                       display: true,
-                       text: 'Impactos',
-                       font: {
-                           size: 18
-                       }
-                   }
-               }
-           },
-           plugins: {
-               tooltip: {
-                   callbacks: {
-                       label: function(tooltipItem) {
-                           return `${tooltipItem.dataset.label}: ${Math.round(tooltipItem.raw).toLocaleString('pt-BR')}`;
-                       }
-                   }
-               },
-               legend: {
-                   labels: {
-                     color: '#ffffff',
-                       font: {
-                           size: 14
-                       }
-                   }
-               }
-           }
-       }
-   });
+    new Chart(shiftCtx, {
+        type: 'bar',
+        data: {
+            labels: periodos,
+            datasets: [{
+                label: 'Impactos por Turno',
+                data: impactosPeriodo,
+                backgroundColor: '#4887F3',
+                borderRadius: {
+                    topLeft: 100,
+                    topRight: 100,
+                    bottomLeft: 0,
+                    bottomRight: 0
+                },
+                barPercentage: 1.3,
+                categoryPercentage: 0.5,
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: {
+                    ticks: { 
+                        font: { size: 18, color: '#ffffff' },
+                        color: '#ffffff'
+                    },
+                    title: {
+                        display: true,
+                        text: 'Turno',
+                        font: {
+                            size: 18
+                        }
+                    }
+                },
+                y: { 
+                    beginAtZero: true,
+                    ticks: { 
+                        font: { size: 18, color: '#ffffff' },
+                        color: '#ffffff'
+                    },
+                    title: {
+                        display: true,
+                        text: 'Impactos',
+                        font: {
+                            size: 18
+                        }
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(tooltipItem) {
+                            return `${tooltipItem.dataset.label}: ${Math.round(tooltipItem.raw).toLocaleString('pt-BR')}`;
+                        }
+                    }
+                },
+                legend: {
+                    labels: {
+                        color: '#ffffff',
+                        font: {
+                            size: 14
+                        }
+                    }
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'top',
+                    color: '#4887F3',
+                    font: {
+                        weight: 'bold',
+                        size: 14
+                    },
+                    formatter: function(value) {
+                        if (value >= 1000000) {
+                            return `${(value / 1000000).toFixed(1)} mi`;
+                        }
+                        if (value >= 1000) {
+                            return `${Math.round(value / 1000)}k`;
+                        }
+                        return value > 0 ? value.toLocaleString('pt-BR') : '';
+                    }
+                }
+            }
+        },
+        plugins: [ChartDataLabels]
+    });
 }
 
 /*
@@ -668,15 +669,112 @@ function carregarRecurrence() {
                 }
             },
             plugins: {
-                legend: { labels: { color: '#ffffff', font: { size: 18 } } }
+                legend: { labels: { color: '#ffffff', font: { size: 18 } } },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'right',
+                    color: '#ffffff',
+                    font: {
+                        weight: 'bold',
+                        size: 14
+                    },
+                    formatter: function(value) {
+                        if (value >= 1000000) {
+                            return `${(value / 1000000).toFixed(1)} mi`;
+                        }
+                        if (value >= 1000) {
+                            return `${Math.round(value / 1000)}k`;
+                        }
+                        return value > 0 ? value.toLocaleString('pt-BR') : '';
+                    }
+                }
             }
-        }
+        },
+        plugins: [ChartDataLabels]
     });
 }
 
 /*
 FUNÇÃO PARA A SEÇÃO CÂMERAS
 */
+function renderCamerasTable(page = 1) {
+    const startIndex = (page - 1) * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    const camerasDataTable = document.getElementById('camerasDataTable');
+    camerasDataTable.innerHTML = '';
+
+    camerasData.slice(startIndex, endIndex).forEach(item => {
+        camerasDataTable.innerHTML += `<tr>
+            <td>${item.name}</td>
+            <td>${item.cars.toLocaleString('pt-BR')}</td>
+            <td>${item.buses.toLocaleString('pt-BR')}</td>
+            <td>${item.trucks.toLocaleString('pt-BR')}</td>
+            <td>${item.vans.toLocaleString('pt-BR')}</td>
+            <td>${item.motorcycles.toLocaleString('pt-BR')}</td>
+            <td>${item.people.toLocaleString('pt-BR')}</td>
+            <td>${item.impact_total.toLocaleString('pt-BR')}</td>
+            <td>${item.id}</td>
+            <td>${item.date}</td>
+        </tr>`;
+    });
+
+    document.getElementById('pageInfo').innerText = `Página ${page} de ${Math.ceil(camerasData.length / rowsPerPage)}`;
+
+    document.querySelectorAll('.cameras-table th').forEach(header => {
+        header.removeEventListener('click', header._sortHandler);
+        
+        const handler = () => {
+            const column = header.dataset.column;
+            const isNumeric = ['cars', 'buses', 'trucks', 'vans', 'motorcycles', 'people', 'impact_total'].includes(column);
+
+            if (currentSort.tableId === 'camerasTable' && currentSort.column === column) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort = { tableId: 'camerasTable', column, direction: 'asc' };
+            }
+
+            camerasData.sort((a, b) => {
+                let aValue = a[column];
+                let bValue = b[column];
+
+                if (column.toLowerCase().includes("date")) {
+                    aValue = new Date(aValue.split("/").reverse().join("-"));
+                    bValue = new Date(bValue.split("/").reverse().join("-"));
+                } else if (isNumeric) {
+                    aValue = parseFloat(aValue) || 0;
+                    bValue = parseFloat(bValue) || 0;
+                } else {
+                    aValue = aValue.toString().toLowerCase();
+                    bValue = bValue.toString().toLowerCase();
+                }
+
+                if (aValue < bValue) return currentSort.direction === 'asc' ? -1 : 1;
+                if (aValue > bValue) return currentSort.direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            updateSortIcons('camerasTable', header, column);
+            renderCamerasTable(currentPage);
+        };
+
+        header._sortHandler = handler;
+        header.addEventListener('click', handler);
+    });
+}
+document.getElementById('prevPage').addEventListener('click', () => {
+    if (currentPage > 1) {
+        currentPage--;
+        renderCamerasTable(currentPage);
+    }
+});
+
+document.getElementById('nextPage').addEventListener('click', () => {
+    if (currentPage < Math.ceil(camerasData.length / rowsPerPage)) {
+        currentPage++;
+        renderCamerasTable(currentPage);
+    }
+});
+
 function carregarCameras() {
     const camerasCtx = document.getElementById('camerasChart').getContext('2d');
     const camerasDataTable = document.getElementById('camerasDataTable');
@@ -721,6 +819,8 @@ function carregarCameras() {
         },
         options: {
             indexAxis: 'x',
+            // barPercentage: 1,
+            // categoryPercentage: 1,
             responsive: true,
             maintainAspectRatio: false,
             scales: {
@@ -767,9 +867,14 @@ function carregarCameras() {
     // Ajustar o tamanho do container do gráfico para permitir rolagem horizontal
     const totalLabels = allDates.length;
     const chartContainer = document.querySelector('.chart-body-cameras');
-    if (totalLabels > 5) {
-        chartContainer.style.width = (800 + (totalLabels - 5) * 400) + 'px';
-    }
+    requestAnimationFrame(() => {
+        if (totalLabels > 5) {
+            const calculatedWidth = 800 + (totalLabels - 5) * 188;
+            chartContainer.style.width = `${Math.min(calculatedWidth, 9100)}px`;
+        } else {
+            chartContainer.style.width = '100%';
+        }
+    });
 
     // Renderizar os dados da tabela paginada
     camerasData = dadosApi.cameras.per_type.map(item => ({
@@ -785,7 +890,7 @@ function carregarCameras() {
         name: item.name
     }));
 
-    camerasData.sort((a, b) => new Date(b.date.split("/").reverse().join("-")) - new Date(a.date.split("/").reverse().join("-")));
+    camerasData.sort((a, b) => new Date(a.date.split("/").reverse().join("-")) - new Date(b.date.split("/").reverse().join("-")));
 
     renderCamerasTable(currentPage);
 }
@@ -880,12 +985,63 @@ function updateSortIcons(tableId, currentHeader, column) {
     currentHeader.appendChild(sortIcon);
 }
 
-// Chama a função ao carregar a página
+// function inicializarDashboard(dados) {
+//     dadosApi = dados;
+//     esconderLoading();
+//     carregarTotal();
+//     carregarEnderecos();
+//     carregarAvg();
+//     carregarAudienciaImpacto();
+//     carregarRecurrence();
+//     carregarCameras();
+// }
+
+// function mostrarLoading(texto = 'Carregando dados, por favor aguarde...') {
+//     document.getElementById('loading').style.display = 'flex';
+//     document.getElementById('loading-text').innerText = texto;
+//     document.getElementById('error-message').style.display = 'none';
+//     document.getElementById('retry-button').style.display = 'none';
+//     document.querySelector('.spinner').style.display = 'block';
+// }
+
+// function esconderLoading() {
+//     document.getElementById('loading').style.display = 'none';
+// }
+
+// function mostrarErro(mensagem) {
+//     document.querySelector('.spinner').style.display = 'none';
+//     document.getElementById('loading-text').innerText = 'Erro ao carregar dados';
+//     document.getElementById('error-message').innerText = `Detalhes: ${mensagem}`;
+//     document.getElementById('error-message').style.display = 'block';
+//     document.getElementById('retry-button').style.display = 'inline-block';
+// }
+
+// document.addEventListener("DOMContentLoaded", () => {
+//     const retryBtn = document.getElementById('retry-button');
+
+//     async function iniciarDashboard() {
+//         mostrarLoading();
+
+//         try {
+//             const dados = await buscarDadosDoAnalytics('2025-03-01', '2025-03-20');
+//             if (!dados) throw new Error('Nenhum dado retornado da API.');
+//             inicializarDashboard(dados);
+//         } catch (err) {
+//             mostrarErro(err.message);
+//         }
+//     }
+
+//     retryBtn.addEventListener('click', iniciarDashboard);
+//     iniciarDashboard();
+// });
+
 document.addEventListener("DOMContentLoaded", () => {
-   carregarTotal();
-   carregarEnderecos();
-   carregarAvg();
-   carregarAudienciaImpacto();
-   carregarRecurrence();
-   carregarCameras();
-});
+    carregarTotal();
+    carregarEnderecos();
+    carregarAvg();
+    carregarAudienciaImpacto();
+    carregarRecurrence();
+    carregarCameras();
+    document.getElementById('loading').style.display = 'none';
+ });
+ 

@@ -211,16 +211,16 @@
                     <table id="camerasTable" class="cameras-table">
                         <thead>
                             <tr>
-                                <th>Nome</th>
-                                <th>Carros</th>
-                                <th>Ônibus</th>
-                                <th>Caminhões</th>
-                                <th>Vans</th>
-                                <th>Motos</th>
-                                <th>Pessoas</th>
-                                <th>Total</th>
-                                <th>Câmera</th>
-                                <th>Data</th>
+                                <th data-column="name">Localização</th>
+                                <th data-column="cars">Carros</th>
+                                <th data-column="buses">Ônibus</th>
+                                <th data-column="trucks">Caminhões</th>
+                                <th data-column="vans">Vans</th>
+                                <th data-column="motorcycles">Motos</th>
+                                <th data-column="people">Pessoas</th>
+                                <th data-column="impact_total">Impacto</th>
+                                <th data-column="id">ID</th>
+                                <th data-column="date">Data</th>
                             </tr>
                         </thead>
                         <tbody id="camerasDataTable"></tbody>
@@ -234,9 +234,21 @@
             </div>
         </section>
 
+        <section class="section" id="loading">
+          <div id="loading" class="loading-overlay">
+            <div class="spinner"></div>
+            <p id="loading-text">Carregando dados, por favor aguarde...</p>
+            <div id="error-message" style="display:none; color: red; margin-top: 10px;"></div>
+            <button id="retry-button" style="display:none; margin-top: 10px; padding: 8px 16px; background-color: #35C759; border: none; border-radius: 5px; color: white; cursor: pointer;">
+                <i class="fas fa-sync-alt"></i> Tentar novamente
+            </button>
+          </div>
+        </section>
+
     </div>
     <script src="assets/js/analytics.js"></script>
     <script src="assets/js/constjson.js"></script>
+    <script src="assets/js/connectAnalytics.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.2.0/chartjs-plugin-zoom.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>    
