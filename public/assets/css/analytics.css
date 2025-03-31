@@ -78,6 +78,7 @@ body {
 
 .chart-data-table::-webkit-scrollbar {
     width: 8px;
+    height: 10px;
 }
 
 .chart-data-table::-webkit-scrollbar-track {
@@ -142,6 +143,27 @@ body {
     transition: max-height 0.5s ease-out, opacity 0.5s ease-out;
     max-height: 1000px;
     opacity: 1;
+}
+
+.address-scroll-wrapper {
+    max-height: 800px;
+    overflow-x: auto;
+}
+
+.address-scroll-wrapper::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+.address-scroll-wrapper::-webkit-scrollbar-track {
+    background: #27293D;
+    border-radius: 10px;
+}
+.address-scroll-wrapper::-webkit-scrollbar-thumb {
+    background: #35C759;
+    border-radius: 10px;
+}
+.address-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #2fa746;
 }
 
 .address-container.collapsed {

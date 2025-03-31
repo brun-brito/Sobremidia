@@ -69,23 +69,25 @@
               </button>
             </h2>
             <div class="address-container">
-                <table id="addressesTable" class="address-table">
-                    <thead>
-                        <tr>
-                            <th data-column="local">Local <span class="sort-icon"></span></th>
-                            <th data-column="audiencia">Audiência <span class="sort-icon"></span></th>
-                            <th data-column="impacto">Impactos <span class="sort-icon"></span></th>
-                            <th data-column="frequencia">Frequência média <span class="sort-icon"></span></th>
-                            <th data-column="dwellTime">Dwell Time <span class="sort-icon"></span></th>
-                            <th data-column="medianDays">Mediana de dias monitorados <span class="sort-icon"></span></th>
-                            <th data-column="minDate">Data mínima <span class="sort-icon"></span></th>
-                            <th data-column="maxDate">Data máxima <span class="sort-icon"></span></th>
-                        </tr>
-                    </thead>
-                    <tbody id="addressesList">
-                        <!-- Endereços serão adicionados dinamicamente pelo JS -->
-                    </tbody>
-                </table>
+                <div class="address-scroll-wrapper">
+                    <table id="addressesTable" class="address-table">
+                        <thead>
+                            <tr>
+                                <th data-column="local">Local <span class="sort-icon"></span></th>
+                                <th data-column="audiencia">Audiência <span class="sort-icon"></span></th>
+                                <th data-column="impacto">Impactos <span class="sort-icon"></span></th>
+                                <th data-column="frequencia">Frequência média <span class="sort-icon"></span></th>
+                                <th data-column="dwellTime">Dwell Time <span class="sort-icon"></span></th>
+                                <th data-column="medianDays">Mediana de dias monitorados <span class="sort-icon"></span></th>
+                                <th data-column="minDate">Data mínima <span class="sort-icon"></span></th>
+                                <th data-column="maxDate">Data máxima <span class="sort-icon"></span></th>
+                            </tr>
+                        </thead>
+                        <tbody id="addressesList">
+                            <!-- Endereços serão adicionados dinamicamente pelo JS -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </section>
         
