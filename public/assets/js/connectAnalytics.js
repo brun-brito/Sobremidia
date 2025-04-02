@@ -1,9 +1,4 @@
-async function buscarDadosDoAnalytics(startDate, endDate) {
-  const loadingEl = document.getElementById('loading');
-  const errorEl = document.getElementById('error-message');
-  loadingEl.style.display = 'flex';
-  errorEl.style.display = 'none';
-
+async function buscarDadosDoAnalytics(startDate, endDate, panels) {
   try {
     const response = await fetch(`${API_URL}/analytics`, {
       method: 'POST',
@@ -13,10 +8,7 @@ async function buscarDadosDoAnalytics(startDate, endDate) {
       body: JSON.stringify({
         start_date: startDate,
         end_date: endDate,
-        locations: [
-          "4409", "4410", "4411", "4412", "4413",
-          "4499", "4500", "4541", "4792", "4793"
-        ]
+        locations: panels
       })
     });
 
@@ -29,8 +21,6 @@ async function buscarDadosDoAnalytics(startDate, endDate) {
     return dados;
   } catch (error) {
     console.error('Erro ao buscar dados do analytics:', error.message);
-    errorEl.innerText = `Erro: ${error.message}`;
-    errorEl.style.display = 'block';
     throw error;
   }
 }

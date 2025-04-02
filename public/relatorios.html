@@ -1,228 +1,1020 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Relatório</title>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="icon" href="assets/images/color.png" type="image/x-icon" />
+        <link rel="stylesheet" href="assets/css/style.css" />
+        <link rel="stylesheet" href="assets/css/profile-style.css" />
+        <link rel="stylesheet" href="assets/css/report-style.css" />
+        <link rel="stylesheet" href="assets/css/analytics.css" />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+        />
+        <link
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+            rel="stylesheet"
+        />
+    </head>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Relatório</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="icon" href="assets/images/color.png" type="image/x-icon">
-    <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="stylesheet" href="assets/css/profile-style.css">   
-    <link rel="stylesheet" href="assets/css/report-style.css">    
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-</head>
-
-<body>
-    <header>
-        <div class="container-logo">
-            <div class="logo">
-                <a href="#"><img src="assets/images/Verde_Fundo Branco.png" alt="Logo Sobremídia"></a>
-            </div>
-            <nav>
-                <ul class="nav-links">
-                    <li id="usuarios-id"><a href="usuarios.html" class="nav-link active">Usuários</a></li>
-                    <li id="checkin-id"><a href="checkin.html" class="nav-link">Check-in</a></li>
-                    <li id="reports-id"><a href="#" class="nav-link active">Relatórios</a></li>
-                    <li><a href="profile.html" class="nav-link">Meu perfil</a></li>
-                    <li><button id="logout-btn" class="logout-btn">Sair</button></li>
-                </ul>
-                <div class="menu-toggle">
-                    <i class="fas fa-bars"></i>
+    <body>
+        <header>
+            <div class="container-logo">
+                <div class="logo">
+                    <a href="#"
+                        ><img
+                            src="assets/images/Verde_Fundo Branco.png"
+                            alt="Logo Sobremídia"
+                    /></a>
                 </div>
-            </nav>
-        </div>
-    </header>
-
-    <main class="content-wrapper">
-        <section id="reports-section" class="content-section" >
-            <div class="container">
-                <h2>Relatórios</h2>
-                <p>
-                    Para gerar um relatório personalizado, siga os passos abaixo:
-                </p>
-                <ul>
-                    <li><strong>1.</strong> Selecione os clientes desejados ou marque "Todos";</li>
-                    <li><strong>2.</strong> Selecione os painéis desejados ou marque "Todos";</li>
-                    <li><strong>3.</strong> Escolha um intervalo de data e hora para o relatório (máximo 30 dias);</li>
-                    <li><strong>4.</strong> Clique em "Gerar Relatório" e aguarde*. O resultado aparecerá logo abaixo.</li>
-                    <li><small><em>*A geração do relatório pode levar algum tempo, dependendo da quantidade de dados solicitados. Seja paciente.</em></small></li>
-                </ul>
-        
-                <!-- Formulário de Filtros -->
-                <form id="report-form">
-                    <!-- Escolha de Mídias -->
-                    <div class="filters">
-                        <h3>Escolha o(s) Cliente(s)</h3>
-                        <input type="text" id="media-search" placeholder="Pesquisar por clientes..." class="search-bar">
-                        <br>
-                        <label>
-                            <input type="checkbox" id="allMedia" checked>
-                            Todos
-                        </label>
-                        <div id="media-list" class="media-list">
-                            <!-- As mídias serão carregadas dinamicamente aqui -->
-                        </div>
-                        <button id="toggle-media" class="toggle-button" type="button">
-                            Mostrar mais <span class="toggle-icon">↓</span>
-                        </button>                    
-                    </div>
-        
-                    <!-- Escolha de Painéis -->
-                    <div class="filters">
-                        <h3>Escolha o(s) Painel(éis)</h3>
-                        <input type="text" id="panel-search" placeholder="Pesquisar por painéis..." class="search-bar">
-                        <br>
-                        <label>
-                            <input type="checkbox" id="allPanels" checked>
-                            Todos
-                        </label>
-                        <div id="panel-list" class="panel-list">
-                            <!-- Os painéis serão carregados dinamicamente aqui -->
-                        </div>
-                        <button id="toggle-panels" class="toggle-button" type="button">
-                            Mostrar mais <span class="toggle-icon">↓</span>
-                        </button>
-                    </div>
-
-                    <!-- Filtro de Data e Hora -->
-                    <div class="filters-date">
-                        <h3>Intervalo de Data e Hora</h3>
-                        <div class="inputs-date">
-                            <div class="filter-group-date">
-                                <label for="startDate">Data de Início:</label>
-                                <input type="date" id="startDate" name="startDate">
-                            </div>
-                            <div class="filter-group-date">
-                                <label for="startTime">Hora de Início:</label>
-                                <input type="time" id="startTime" name="startTime" value="00:00">
-                            </div>
-                            <div class="filter-group-date">
-                                <label for="endDate">Data de Fim:</label>
-                                <input type="date" id="endDate" name="endDate">
-                            </div>
-                            <div class="filter-group-date">
-                                <label for="endTime">Hora de Fim:</label>
-                                <input type="time" id="endTime" name="endTime" value="23:59">
-                            </div>
-                            <div class="filter-group-date" style="display: flex; align-items: center; justify-content: end;">
-                                <a href="#" id="setTodayLink" style="color: blue; text-decoration: underline; cursor: pointer; font-size: 1.1em;">
-                                    Hoje
-                                </a>
-                                <span style="margin-left: 5px; font-size: 0.7em; color: #555;">
-                                    (Define as datas de início e fim para o dia de hoje)
-                                </span>
-                            </div>                            
-                        
-                        </div>
-                    </div>
-        
-                    <!-- Botão de Geração -->
-                    <button id="button-gerar" class="button-gerar" type="submit">
-                        <i class="fas fa-chart-line"></i> Gerar Relatório
-                    </button>
-                </form>
-
-                <!-- Erro -->
-                <div id="error-message"></div>
-                
-                <!-- Loading -->
-                <div id="loading-div" style="display: none; text-align: center;">
-                    <p id="progress-message">Criando relatório...</p>
-                    <p><span id="progress-percentage">0%</span></p>
-                    <div style="width: 100%; background: #ddd; border-radius: 5px; overflow: hidden;">
-                      <div id="progress-bar" style="width: 0%; height: 10px; background: #4caf50;"></div>
-                    </div>
-                </div>
-                  
-                <!-- Resultado -->
-                <div id="report-result" style="display: none;">
-                    <div style="margin-bottom: 10px;">
-                        <button id="export-pdf" class="export-button">
-                            <i class="fas fa-file-pdf"></i> Exportar PDF
-                        </button>
-                        <div id="loading-pdf" class="loading-pdf" style="display: none;">
-                            <i class="fas fa-spinner fa-spin"></i> Gerando PDF...
-                        </div>                    
-                        <button class="send-mail-button" data-checkin-id="${checkIn.id}">
-                            <i class="fas fa-envelope"></i> Enviar para cliente
-                        </button>
-                        <div id="enviar-email" style="width: fit-content; display: none;">
-                            <div>
-                                <label for="clientEmail" style="font-weight: bold;">Email do Cliente:</label>
-                                <input type="email" id="clientEmail" placeholder="Digite o email do cliente" required="" style="margin: 5px 0; padding: 5px; width: 100%;">
-                            </div>
-                            <div>
-                                <label for="sellerEmail" style="font-weight: bold;">Email do Vendedor:</label>
-                                <input type="email" id="sellerEmail" placeholder="Digite o email do vendedor" required="" style="margin: 5px 0; padding: 5px; width: 100%;">
-                            </div>
-                            <button id="confirmSendEmail" class="confirmSendEmail">
-                                Confirmar Envio
+                <nav>
+                    <ul class="nav-links">
+                        <li id="usuarios-id">
+                            <a href="usuarios.html" class="nav-link active"
+                                >Usuários</a
+                            >
+                        </li>
+                        <li id="checkin-id">
+                            <a href="checkin.html" class="nav-link">Check-in</a>
+                        </li>
+                        <li id="reports-id">
+                            <a href="#" class="nav-link active">Relatórios</a>
+                        </li>
+                        <li>
+                            <a href="profile.html" class="nav-link"
+                                >Meu perfil</a
+                            >
+                        </li>
+                        <li>
+                            <button id="logout-btn" class="logout-btn">
+                                Sair
                             </button>
-                        </div>        
-                        <div id="loading-mail" class="loading-mail" style="display: none;">
-                            <i class="fas fa-spinner fa-spin"></i> Enviando e-mail...
+                        </li>
+                    </ul>
+                    <div class="menu-toggle">
+                        <i class="fas fa-bars"></i>
+                    </div>
+                </nav>
+            </div>
+        </header>
+
+        <main class="content-wrapper">
+            <section id="reports-section" class="content-section">
+                <div class="container">
+                    <h2>Relatórios</h2>
+                    <p>
+                        Para gerar um relatório personalizado, siga os passos
+                        abaixo:
+                    </p>
+                    <ul>
+                        <li>
+                            <strong>1.</strong> Selecione os clientes desejados
+                            ou marque "Todos";
+                        </li>
+                        <li>
+                            <strong>2.</strong> Selecione os painéis desejados
+                            ou marque "Todos";
+                        </li>
+                        <li>
+                            <strong>3.</strong> Escolha um intervalo de data e
+                            hora para o relatório (máximo 30 dias);
+                        </li>
+                        <li>
+                            <strong>4.</strong> Clique em "Gerar Relatório" e
+                            aguarde*. O resultado aparecerá logo abaixo.
+                        </li>
+                        <li>
+                            <small
+                                ><em
+                                    >*A geração do relatório pode levar algum
+                                    tempo, dependendo da quantidade de dados
+                                    solicitados. Seja paciente.</em
+                                ></small
+                            >
+                        </li>
+                    </ul>
+
+                    <!-- Formulário de Filtros -->
+                    <form id="report-form">
+                        <!-- Escolha de Mídias -->
+                        <div class="filters">
+                            <h3>Escolha o(s) Cliente(s)</h3>
+                            <input
+                                type="text"
+                                id="media-search"
+                                placeholder="Pesquisar por clientes..."
+                                class="search-bar"
+                            />
+                            <br />
+                            <label>
+                                <input type="checkbox" id="allMedia" checked />
+                                Todos
+                            </label>
+                            <div id="media-list" class="media-list">
+                                <!-- As mídias serão carregadas dinamicamente aqui -->
+                            </div>
+                            <button
+                                id="toggle-media"
+                                class="toggle-button"
+                                type="button"
+                            >
+                                Mostrar mais <span class="toggle-icon">↓</span>
+                            </button>
+                        </div>
+
+                        <!-- Escolha de Painéis -->
+                        <div class="filters">
+                            <h3>Escolha o(s) Painel(éis)</h3>
+                            <input
+                                type="text"
+                                id="panel-search"
+                                placeholder="Pesquisar por painéis..."
+                                class="search-bar"
+                            />
+                            <br />
+                            <label>
+                                <input type="checkbox" id="allPanels" checked />
+                                Todos
+                            </label>
+                            <div id="panel-list" class="panel-list">
+                                <!-- Os painéis serão carregados dinamicamente aqui -->
+                            </div>
+                            <button
+                                id="toggle-panels"
+                                class="toggle-button"
+                                type="button"
+                            >
+                                Mostrar mais <span class="toggle-icon">↓</span>
+                            </button>
+                        </div>
+
+                        <!-- Filtro de Data e Hora -->
+                        <div class="filters-date">
+                            <h3>Intervalo de Data e Hora</h3>
+                            <div class="inputs-date">
+                                <div class="filter-group-date">
+                                    <label for="startDate"
+                                        >Data de Início:</label
+                                    >
+                                    <input
+                                        type="date"
+                                        id="startDate"
+                                        name="startDate"
+                                    />
+                                </div>
+                                <div class="filter-group-date">
+                                    <label for="startTime"
+                                        >Hora de Início:</label
+                                    >
+                                    <input
+                                        type="time"
+                                        id="startTime"
+                                        name="startTime"
+                                        value="00:00"
+                                    />
+                                </div>
+                                <div class="filter-group-date">
+                                    <label for="endDate">Data de Fim:</label>
+                                    <input
+                                        type="date"
+                                        id="endDate"
+                                        name="endDate"
+                                    />
+                                </div>
+                                <div class="filter-group-date">
+                                    <label for="endTime">Hora de Fim:</label>
+                                    <input
+                                        type="time"
+                                        id="endTime"
+                                        name="endTime"
+                                        value="23:59"
+                                    />
+                                </div>
+                                <div
+                                    class="filter-group-date"
+                                    style="
+                                        display: flex;
+                                        align-items: center;
+                                        justify-content: end;
+                                    "
+                                >
+                                    <a
+                                        href="#"
+                                        id="setTodayLink"
+                                        style="
+                                            color: blue;
+                                            text-decoration: underline;
+                                            cursor: pointer;
+                                            font-size: 1.1em;
+                                        "
+                                    >
+                                        Hoje
+                                    </a>
+                                    <span
+                                        style="
+                                            margin-left: 5px;
+                                            font-size: 0.7em;
+                                            color: #555;
+                                        "
+                                    >
+                                        (Define as datas de início e fim para o
+                                        dia de hoje)
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botão de Geração -->
+                        <button
+                            id="button-gerar"
+                            class="button-gerar"
+                            type="submit"
+                        >
+                            <i class="fas fa-chart-line"></i> Gerar Relatório
+                        </button>
+                    </form>
+
+                    <!-- Abas de Relatório -->
+                    <div id="tabs-wrapper" style="display: none">
+                        <div class="tabs">
+                            <button
+                                class="tab-button active"
+                                onclick="showTab('veiculacao')"
+                            >
+                                Relatório de Veiculação
+                            </button>
+                            <button
+                                class="tab-button"
+                                onclick="showTab('impacto')"
+                            >
+                                Relatório de Impacto
+                            </button>
                         </div>
                     </div>
-                    <h3>Resultado do Relatório</h3>
-                    <div id="report-content"></div>
-                    
-                    <!-- Canvas para os Gráficos -->
-                    <div class="chart-container">
-                        <h4 style="margin-top:12px;">Gráfico de Inserções por Mídia</h4>
-                        <canvas id="mediaChart"></canvas>
+
+                    <!-- Resultado - Aba Veiculação -->
+                    <div
+                        id="tab-veiculacao"
+                        class="tab-content"
+                        style="display: none"
+                    >
+                        <div id="report-result" style="display: none">
+                            <div style="margin-bottom: 10px">
+                                <button id="export-pdf" class="export-button">
+                                    <i class="fas fa-file-pdf"></i> Exportar PDF
+                                </button>
+                                <div
+                                    id="loading-pdf"
+                                    class="loading-pdf"
+                                    style="display: none"
+                                >
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    Gerando PDF...
+                                </div>
+                                <button
+                                    class="send-mail-button"
+                                    data-checkin-id="${checkIn.id}"
+                                >
+                                    <i class="fas fa-envelope"></i> Enviar para
+                                    cliente
+                                </button>
+                                <div
+                                    id="enviar-email"
+                                    style="width: fit-content; display: none"
+                                >
+                                    <div>
+                                        <label
+                                            for="clientEmail"
+                                            style="font-weight: bold"
+                                            >Email do Cliente:</label
+                                        >
+                                        <input
+                                            type="email"
+                                            id="clientEmail"
+                                            placeholder="Digite o email do cliente"
+                                            required=""
+                                            style="
+                                                margin: 5px 0;
+                                                padding: 5px;
+                                                width: 100%;
+                                            "
+                                        />
+                                    </div>
+                                    <div>
+                                        <label
+                                            for="sellerEmail"
+                                            style="font-weight: bold"
+                                            >Email do Vendedor:</label
+                                        >
+                                        <input
+                                            type="email"
+                                            id="sellerEmail"
+                                            placeholder="Digite o email do vendedor"
+                                            required=""
+                                            style="
+                                                margin: 5px 0;
+                                                padding: 5px;
+                                                width: 100%;
+                                            "
+                                        />
+                                    </div>
+                                    <button
+                                        id="confirmSendEmail"
+                                        class="confirmSendEmail"
+                                    >
+                                        Confirmar Envio
+                                    </button>
+                                </div>
+                                <div
+                                    id="loading-mail"
+                                    class="loading-mail"
+                                    style="display: none"
+                                >
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    Enviando e-mail...
+                                </div>
+                            </div>
+                            <h3>Resultado do Relatório</h3>
+                            <div id="report-content"></div>
+
+                            <!-- Canvas para os Gráficos -->
+                            <div class="chart-container2">
+                                <h4 style="margin-top: 12px">
+                                    Gráfico de Inserções por Mídia
+                                </h4>
+                                <canvas id="mediaChart"></canvas>
+                            </div>
+                            <div class="chart-container2">
+                                <h4>Gráfico de Inserções por Painel</h4>
+                                <canvas id="playerChart"></canvas>
+                            </div>
+                        </div>
                     </div>
-                    <div class="chart-container">
-                        <h4>Gráfico de Inserções por Painel</h4>
-                        <canvas id="playerChart"></canvas>
+
+                    <!-- Resultado - Aba Impacto -->
+                    <div
+                        id="tab-impacto"
+                        class="tab-content"
+                        style="display: none"
+                    >
+                        <div id="impact-result">
+                            <h3>Relatório de Impacto</h3>
+                            <div class="dashboard-container">
+                                <!-- Section: Total -->
+                                <section class="section" id="total">
+                                    <h2 class="section-title">
+                                        <i class="fas fa-chart-bar"></i>
+                                        Dados Totais
+                                        <button
+                                            class="toggle-button"
+                                            onclick="toggleSection('total')"
+                                        >
+                                            <i class="fas fa-chevron-up"></i>
+                                        </button>
+                                    </h2>
+                                    <div
+                                        class="total-container"
+                                        id="total-container"
+                                    >
+                                        <div class="metric-card">
+                                            <i class="fas fa-users icon"></i>
+                                            <div class="info">
+                                                <span>Audiência Total</span>
+                                                <h2 id="totalAudience"></h2>
+                                            </div>
+                                        </div>
+                                        <div class="metric-card">
+                                            <i
+                                                class="fas fa-chart-bar icon"
+                                            ></i>
+                                            <div class="info">
+                                                <span>Impacto</span>
+                                                <h2 id="totalImpact"></h2>
+                                            </div>
+                                        </div>
+                                        <div class="metric-card">
+                                            <i class="fas fa-sync-alt icon"></i>
+                                            <div class="info">
+                                                <span>Frequência Média</span>
+                                                <h2 id="frequency"></h2>
+                                            </div>
+                                        </div>
+                                        <div class="metric-card">
+                                            <i class="fas fa-clock icon"></i>
+                                            <div class="info">
+                                                <span>Dwell Time</span>
+                                                <h2 id="dwellTime"></h2>
+                                            </div>
+                                        </div>
+                                        <div class="metric-card">
+                                            <i
+                                                class="fas fa-calendar-alt icon"
+                                            ></i>
+                                            <div class="info">
+                                                <span
+                                                    >Mediana de Dias
+                                                    Monitorados</span
+                                                >
+                                                <h2 id="medianDays"></h2>
+                                            </div>
+                                        </div>
+                                        <div class="metric-card">
+                                            <i
+                                                class="fas fa-map-marker-alt icon"
+                                            ></i>
+                                            <div class="info">
+                                                <span>Localizações</span>
+                                                <h2 id="locations"></h2>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <!-- Section: Endereços -->
+                                <section class="section" id="address">
+                                    <h2>
+                                        <i class="fas fa-map-marker-alt"></i>
+                                        Endereços
+                                        <button
+                                            class="toggle-button"
+                                            onclick="toggleSection('address')"
+                                        >
+                                            <i class="fas fa-chevron-up"></i>
+                                        </button>
+                                    </h2>
+                                    <div class="address-container">
+                                        <div class="address-scroll-wrapper">
+                                            <table
+                                                id="addressesTable"
+                                                class="address-table"
+                                            >
+                                                <thead>
+                                                    <tr>
+                                                        <th data-column="local">
+                                                            Local
+                                                            <span
+                                                                class="sort-icon"
+                                                            ></span>
+                                                        </th>
+                                                        <th
+                                                            data-column="audiencia"
+                                                        >
+                                                            Audiência
+                                                            <span
+                                                                class="sort-icon"
+                                                            ></span>
+                                                        </th>
+                                                        <th
+                                                            data-column="impacto"
+                                                        >
+                                                            Impactos
+                                                            <span
+                                                                class="sort-icon"
+                                                            ></span>
+                                                        </th>
+                                                        <th
+                                                            data-column="frequencia"
+                                                        >
+                                                            Frequência média
+                                                            <span
+                                                                class="sort-icon"
+                                                            ></span>
+                                                        </th>
+                                                        <th
+                                                            data-column="dwellTime"
+                                                        >
+                                                            Dwell Time
+                                                            <span
+                                                                class="sort-icon"
+                                                            ></span>
+                                                        </th>
+                                                        <th
+                                                            data-column="medianDays"
+                                                        >
+                                                            Mediana de dias
+                                                            monitorados
+                                                            <span
+                                                                class="sort-icon"
+                                                            ></span>
+                                                        </th>
+                                                        <th
+                                                            data-column="minDate"
+                                                        >
+                                                            Data mínima
+                                                            <span
+                                                                class="sort-icon"
+                                                            ></span>
+                                                        </th>
+                                                        <th
+                                                            data-column="maxDate"
+                                                        >
+                                                            Data máxima
+                                                            <span
+                                                                class="sort-icon"
+                                                            ></span>
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="addressesList">
+                                                    <!-- Endereços serão adicionados dinamicamente pelo JS -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <!-- Section: Audience x Impact -->
+                                <section class="section" id="audience-impact">
+                                    <h2>
+                                        <i class="fas fa-chart-line"></i> Total
+                                        por dia e semana
+                                        <button
+                                            class="toggle-button"
+                                            onclick="toggleSection('audience-impact')"
+                                        >
+                                            <i class="fas fa-chevron-up"></i>
+                                        </button>
+                                    </h2>
+                                    <div class="audience-impact-container">
+                                        <h3>
+                                            Análise Diária Audiência x Impactos
+                                        </h3>
+                                        <div class="audience-impact-wrapper">
+                                            <div
+                                                class="chart-container chart-scroll-container"
+                                            >
+                                                <div class="chart-body">
+                                                    <canvas
+                                                        id="dailyChart"
+                                                    ></canvas>
+                                                </div>
+                                            </div>
+                                            <div class="chart-data-table">
+                                                <table
+                                                    id="audienceTable"
+                                                    class="audience-table"
+                                                >
+                                                    <thead>
+                                                        <tr>
+                                                            <th
+                                                                data-column="date"
+                                                            >
+                                                                Data
+                                                                <span
+                                                                    class="sort-icon"
+                                                                ></span>
+                                                            </th>
+                                                            <th
+                                                                data-column="audience"
+                                                            >
+                                                                Audiência
+                                                                <span
+                                                                    class="sort-icon"
+                                                                ></span>
+                                                            </th>
+                                                            <th
+                                                                data-column="impact"
+                                                            >
+                                                                Impacto
+                                                                <span
+                                                                    class="sort-icon"
+                                                                ></span>
+                                                            </th>
+                                                            <th
+                                                                data-column="dwell_time"
+                                                            >
+                                                                Dwell Time
+                                                                <span
+                                                                    class="sort-icon"
+                                                                ></span>
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody
+                                                        id="dailyDataTable"
+                                                    ></tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+
+                                        <h3>
+                                            Análise Semanal Audiência x Impactos
+                                        </h3>
+                                        <div class="audience-impact-wrapper">
+                                            <div
+                                                class="chart-container chart-scroll-container"
+                                            >
+                                                <div class="chart-body">
+                                                    <canvas
+                                                        id="weeklyChart"
+                                                    ></canvas>
+                                                </div>
+                                            </div>
+                                            <div class="chart-data-table">
+                                                <table
+                                                    id="audienceTable-weekly"
+                                                    class="audience-table-weekly"
+                                                >
+                                                    <thead>
+                                                        <tr>
+                                                            <th
+                                                                data-column="day"
+                                                            >
+                                                                Dia da Semana
+                                                                <span
+                                                                    class="sort-icon"
+                                                                ></span>
+                                                            </th>
+                                                            <th
+                                                                data-column="audience"
+                                                            >
+                                                                Audiência
+                                                                <span
+                                                                    class="sort-icon"
+                                                                ></span>
+                                                            </th>
+                                                            <th
+                                                                data-column="impact"
+                                                            >
+                                                                Impacto
+                                                                <span
+                                                                    class="sort-icon"
+                                                                ></span>
+                                                            </th>
+                                                            <th
+                                                                data-column="dwell_time"
+                                                            >
+                                                                Dwell Time
+                                                                <span
+                                                                    class="sort-icon"
+                                                                ></span>
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody
+                                                        id="weeklyDataTable"
+                                                    ></tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <!-- Section: Média por Hora e Turno -->
+                                <section class="section" id="avg">
+                                    <h2>
+                                        <i class="fas fa-clock"></i> Média por
+                                        Hora e Turno
+                                        <button
+                                            class="toggle-button"
+                                            onclick="toggleSection('avg')"
+                                        >
+                                            <i class="fas fa-chevron-up"></i>
+                                        </button>
+                                    </h2>
+                                    <div class="avg-container">
+                                        <h3>Média de Impactos por Hora</h3>
+                                        <canvas id="hourlyChart"></canvas>
+
+                                        <h3>Média de Impactos por Turno</h3>
+                                        <canvas id="shiftChart"></canvas>
+                                    </div>
+                                </section>
+
+                                <!-- Section: Recorrência -->
+                                <section class="section" id="recurrence">
+                                    <h2>
+                                        <i class="fas fa-id-badge"></i>
+                                        Recorrência
+                                        <button
+                                            class="toggle-button"
+                                            onclick="toggleSection('recurrence')"
+                                        >
+                                            <i class="fas fa-chevron-up"></i>
+                                        </button>
+                                    </h2>
+                                    <div class="recurrence-container">
+                                        <div class="audience-impact-wrapper">
+                                            <div
+                                                class="chart-recurrence-container"
+                                            >
+                                                <canvas
+                                                    id="recurrenceChart"
+                                                ></canvas>
+                                            </div>
+                                            <div
+                                                class="chart-recurrence-data-table"
+                                            >
+                                                <table
+                                                    id="recurrenceTable"
+                                                    class="recurrence-table"
+                                                >
+                                                    <thead>
+                                                        <tr>
+                                                            <th
+                                                                data-column="recurrence"
+                                                            >
+                                                                Recorrência
+                                                                <span
+                                                                    class="sort-icon"
+                                                                ></span>
+                                                            </th>
+                                                            <th
+                                                                data-column="value"
+                                                            >
+                                                                Valor
+                                                                <span
+                                                                    class="sort-icon"
+                                                                ></span>
+                                                            </th>
+                                                            <th
+                                                                data-column="percentage"
+                                                            >
+                                                                Porcentagem
+                                                                <span
+                                                                    class="sort-icon"
+                                                                ></span>
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody
+                                                        id="recurrenceDataTable"
+                                                    ></tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <!-- Section: Câmeras -->
+                                <section class="section" id="cameras">
+                                    <h2>
+                                        <i class="fas fa-video"></i> Câmeras
+                                        <button
+                                            class="toggle-button"
+                                            onclick="toggleSection('cameras')"
+                                        >
+                                            <i class="fas fa-chevron-up"></i>
+                                        </button>
+                                    </h2>
+                                    <div
+                                        class="cameras-container"
+                                        id="cameras-container"
+                                    >
+                                        <div
+                                            id="cameras-no-data"
+                                            style="
+                                                display: none;
+                                                padding: 1rem 0;
+                                                text-align: center;
+                                            "
+                                        >
+                                            <p
+                                                style="
+                                                    font-size: 1.5rem;
+                                                    color: black;
+                                                "
+                                            >
+                                                Sem dados
+                                            </p>
+                                        </div>
+
+                                        <div id="cameras-content">
+                                            <h3>Média de Impactos por Data</h3>
+                                            <div
+                                                class="chart-cameras-container chart-scroll-container"
+                                            >
+                                                <div class="chart-body-cameras">
+                                                    <canvas
+                                                        id="camerasChart"
+                                                    ></canvas>
+                                                </div>
+                                            </div>
+                                            <div class="chart-data-table">
+                                                <table
+                                                    id="camerasTable"
+                                                    class="cameras-table"
+                                                >
+                                                    <thead>
+                                                        <tr>
+                                                            <th
+                                                                data-column="name"
+                                                            >
+                                                                Localização
+                                                            </th>
+                                                            <th
+                                                                data-column="cars"
+                                                            >
+                                                                Carros
+                                                            </th>
+                                                            <th
+                                                                data-column="buses"
+                                                            >
+                                                                Ônibus
+                                                            </th>
+                                                            <th
+                                                                data-column="trucks"
+                                                            >
+                                                                Caminhões
+                                                            </th>
+                                                            <th
+                                                                data-column="vans"
+                                                            >
+                                                                Vans
+                                                            </th>
+                                                            <th
+                                                                data-column="motorcycles"
+                                                            >
+                                                                Motos
+                                                            </th>
+                                                            <th
+                                                                data-column="people"
+                                                            >
+                                                                Pessoas
+                                                            </th>
+                                                            <th
+                                                                data-column="impact_total"
+                                                            >
+                                                                Impacto
+                                                            </th>
+                                                            <th
+                                                                data-column="id"
+                                                            >
+                                                                ID
+                                                            </th>
+                                                            <th
+                                                                data-column="date"
+                                                            >
+                                                                Data
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody
+                                                        id="camerasDataTable"
+                                                    ></tbody>
+                                                </table>
+                                                <div
+                                                    class="pagination-controls"
+                                                >
+                                                    <button id="prevPage">
+                                                        &#9664;
+                                                    </button>
+                                                    <span id="pageInfo"
+                                                        >Página 1 de X</span
+                                                    >
+                                                    <button id="nextPage">
+                                                        &#9654;
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+                                <section class="section" id="loading">
+                                    <div id="loading" class="loading-overlay">
+                                        <div class="spinner"></div>
+                                        <p id="loading-text">
+                                            Carregando dados, por favor
+                                            aguarde...
+                                        </p>
+                                        <div
+                                            id="error-message"
+                                            style="
+                                                display: none;
+                                                color: red;
+                                                margin-top: 10px;
+                                            "
+                                        ></div>
+                                        <button
+                                            id="retry-button"
+                                            style="
+                                                display: none;
+                                                margin-top: 10px;
+                                                padding: 8px 16px;
+                                                background-color: #35c759;
+                                                border: none;
+                                                border-radius: 5px;
+                                                color: white;
+                                                cursor: pointer;
+                                            "
+                                        >
+                                            <i class="fas fa-sync-alt"></i>
+                                            Tentar novamente
+                                        </button>
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Erro -->
+                    <div id="error-message"></div>
+
+                    <!-- Loading -->
+                    <div
+                        id="loading-div"
+                        style="display: none; text-align: center"
+                    >
+                        <p id="progress-message">Criando relatório...</p>
+                        <p><span id="progress-percentage">0%</span></p>
+                        <div
+                            style="
+                                width: 100%;
+                                background: #ddd;
+                                border-radius: 5px;
+                                overflow: hidden;
+                            "
+                        >
+                            <div
+                                id="progress-bar"
+                                style="
+                                    width: 0%;
+                                    height: 10px;
+                                    background: #4caf50;
+                                "
+                            ></div>
+                        </div>
+                    </div>
+
+                    <div id="timesModal" class="modal" style="display: none">
+                        <div class="modal-content">
+                            <span id="closeModal" class="close">&times;</span>
+                            <h3>Horários Detalhados</h3>
+                            <ul id="timesList"></ul>
+                        </div>
                     </div>
                 </div>
-                
-                <div id="timesModal" class="modal" style="display: none;">
-                    <div class="modal-content">
-                        <span id="closeModal" class="close">&times;</span>
-                        <h3>Horários Detalhados</h3>
-                        <ul id="timesList"></ul>
-                    </div>
+            </section>
+        </main>
+
+        <footer>
+            <div class="footer-container">
+                <div class="footer-logo-container">
+                    <img
+                        src="assets/images/teste-footer.png"
+                        alt="Logo Sobremídia"
+                        class="footer-logo"
+                    />
                 </div>
-                
+                <p class="footer-message">
+                    Transformamos ideias em espetáculos luminosos
+                </p>
+                <div class="footer-social">
+                    <a
+                        href="https://www.instagram.com/sobremidiace"
+                        target="_blank"
+                        class="social-icon"
+                        ><i class="fab fa-instagram"></i
+                    ></a>
+                    <a
+                        href="https://www.facebook.com/p/Sobremidia-61558538060640/"
+                        target="_blank"
+                        class="social-icon"
+                        ><i class="fab fa-facebook-f"></i
+                    ></a>
+                    <a
+                        href="https://wa.me/5585991080611"
+                        target="_blank"
+                        class="social-icon"
+                        ><i class="fab fa-whatsapp"></i
+                    ></a>
+                </div>
+                <p class="footer-copyright">
+                    &copy; <span id="current-year"></span> Sobremídia. Todos os
+                    direitos reservados.
+                </p>
             </div>
-        </section>  
-    </main>
+        </footer>
 
-    <footer>
-        <div class="footer-container">
-            <div class="footer-logo-container">
-                <img src="assets/images/teste-footer.png" alt="Logo Sobremídia" class="footer-logo">
-            </div>
-            <p class="footer-message">Transformamos ideias em espetáculos luminosos</p>
-            <div class="footer-social">
-                <a href="https://www.instagram.com/sobremidiace" target="_blank" class="social-icon"><i class="fab fa-instagram"></i></a>
-                <a href="https://www.facebook.com/p/Sobremidia-61558538060640/" target="_blank" class="social-icon"><i class="fab fa-facebook-f"></i></a>
-                <a href="https://wa.me/5585991080611" target="_blank" class="social-icon"><i class="fab fa-whatsapp"></i></a>
-            </div>
-             <p class="footer-copyright">&copy; <span id="current-year"></span> Sobremídia. Todos os direitos reservados.</p>
-        </div>
-    </footer>
+        <script>
+            document.getElementById("current-year").textContent =
+                new Date().getFullYear();
+        </script>
 
-    <script>
-        document.getElementById('current-year').textContent = new Date().getFullYear();
-    </script>
-
-    <script src="https://www.gstatic.com/firebasejs/3.7.4/firebase.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/5.4.1/firebase-firestore.js"></script>
-    <script src="firebase/firebase-config.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
-    <script src="assets/js/relatorios.js"></script>
-    <script src="assets/js/graficos.js"></script> 
-    <script src="assets/js/pdfExport.js"></script> 
-    <script src="assets/js/auth.js"></script>
-    <script src="assets/js/formatDate.js"></script>
-    <script src="assets/js/enviaEmail.js"></script>
-</body>
-
+        <script src="https://www.gstatic.com/firebasejs/3.7.4/firebase.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/5.4.1/firebase-firestore.js"></script>
+        <script src="firebase/firebase-config.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.2.0/chartjs-plugin-zoom.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+        <script src="assets/js/relatorios.js"></script>
+        <script src="assets/js/veiculacao.js"></script>
+        <script src="assets/js/analytics.js"></script>
+        <script src="assets/js/connectAnalytics.js"></script>
+        <script src="assets/js/graficos.js"></script>
+        <script src="assets/js/pdfExport.js"></script>
+        <script src="assets/js/auth.js"></script>
+        <script src="assets/js/formatDate.js"></script>
+        <script src="assets/js/enviaEmail.js"></script>
+    </body>
 </html>

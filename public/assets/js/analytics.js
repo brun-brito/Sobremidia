@@ -1,15 +1,18 @@
 /*
 VARIÁVEIS GLOBAIS PARA CONTROLE
 */
-const API_URL = window.location.hostname === "127.0.0.1"
-    ? "http://127.0.0.1:5001/sobremidia-ce/us-central1/v1"
-    : "https://us-central1-sobremidia-ce.cloudfunctions.net/v1";
+// const API_URL = window.location.hostname === "127.0.0.1"
+//     ? "http://127.0.0.1:5001/sobremidia-ce/us-central1/v1"
+//     : "https://us-central1-sobremidia-ce.cloudfunctions.net/v1";
 
 let currentSort = {
     tableId: '',
     column: '',
     direction: 'asc'
 };
+
+const charts = {};
+
 const diasSemanaOrdem = {
     "Domingo": 0,
     "Segunda-feira": 1,
@@ -139,7 +142,7 @@ function carregarAudienciaImpacto() {
     });
   });
 
-  new Chart(dailyCtx, {
+  charts.daily = new Chart(dailyCtx, {
     type: 'bar',
     data: {
         labels: dailyLabels,
@@ -231,7 +234,20 @@ function carregarAudienciaImpacto() {
             }
         }
     },
-    plugins: [ChartDataLabels]
+    plugins:  [
+        {
+          id: 'custom_canvas_background_color',
+          beforeDraw: (chart) => {
+            const ctx = chart.canvas.getContext('2d');
+            ctx.save();
+            ctx.globalCompositeOperation = 'destination-over';
+            ctx.fillStyle = '#a1a1a178';
+            ctx.fillRect(0, 0, chart.width, chart.height);
+            ctx.restore();
+          }
+        },
+        ChartDataLabels
+      ]
 });
 
    // Dados para o gráfico semanal
@@ -290,7 +306,7 @@ function carregarAudienciaImpacto() {
    const weeklyImpact = weeklyAggregatedData.map(d => d.impact);
    const weeklyDwellTime = weeklyAggregatedData.map(d => d.dwell_time / 60);
    
-   new Chart(weeklyCtx, {
+   charts.weekly = new Chart(weeklyCtx, {
        type: 'bar',
        data: {
            labels: weeklyLabels,
@@ -394,7 +410,20 @@ function carregarAudienciaImpacto() {
                }
            }
        },
-       plugins: [ChartDataLabels]
+       plugins: [
+        {
+          id: 'custom_canvas_background_color',
+          beforeDraw: (chart) => {
+            const ctx = chart.canvas.getContext('2d');
+            ctx.save();
+            ctx.globalCompositeOperation = 'destination-over';
+            ctx.fillStyle = '#a1a1a178';
+            ctx.fillRect(0, 0, chart.width, chart.height);
+            ctx.restore();
+          }
+        },
+        ChartDataLabels
+      ]
    });
 }
 
@@ -432,7 +461,7 @@ function carregarAvg() {
        }
    });
 
-   new Chart(hourCtx, {
+   charts.hour = new Chart(hourCtx, {
        type: 'bar',
        data: {
            labels: horasFormatadas,
@@ -510,10 +539,23 @@ function carregarAvg() {
             }
         }
     },
-    plugins: [ChartDataLabels]
+    plugins: [
+        {
+          id: 'custom_canvas_background_color',
+          beforeDraw: (chart) => {
+            const ctx = chart.canvas.getContext('2d');
+            ctx.save();
+            ctx.globalCompositeOperation = 'destination-over';
+            ctx.fillStyle = '#a1a1a178';
+            ctx.fillRect(0, 0, chart.width, chart.height);
+            ctx.restore();
+          }
+        },
+        ChartDataLabels
+      ]
    });
 
-    new Chart(shiftCtx, {
+   charts.shift = new Chart(shiftCtx, {
         type: 'bar',
         data: {
             labels: periodos,
@@ -598,7 +640,20 @@ function carregarAvg() {
                 }
             }
         },
-        plugins: [ChartDataLabels]
+        plugins: [
+        {
+          id: 'custom_canvas_background_color',
+          beforeDraw: (chart) => {
+            const ctx = chart.canvas.getContext('2d');
+            ctx.save();
+            ctx.globalCompositeOperation = 'destination-over';
+            ctx.fillStyle = '#a1a1a178';
+            ctx.fillRect(0, 0, chart.width, chart.height);
+            ctx.restore();
+          }
+        },
+        ChartDataLabels
+      ]
     });
 }
 
@@ -645,7 +700,7 @@ function carregarRecurrence() {
         });
     });
 
-    new Chart(recurrenceCtx, {
+    charts.recurrence = new Chart(recurrenceCtx, {
         type: 'bar',
         data: {
             labels: recurrenceLabels,
@@ -690,7 +745,20 @@ function carregarRecurrence() {
                 }
             }
         },
-        plugins: [ChartDataLabels]
+        plugins: [
+        {
+          id: 'custom_canvas_background_color',
+          beforeDraw: (chart) => {
+            const ctx = chart.canvas.getContext('2d');
+            ctx.save();
+            ctx.globalCompositeOperation = 'destination-over';
+            ctx.fillStyle = '#a1a1a178';
+            ctx.fillRect(0, 0, chart.width, chart.height);
+            ctx.restore();
+          }
+        },
+        ChartDataLabels
+      ]
     });
 }
 
@@ -776,12 +844,29 @@ document.getElementById('nextPage').addEventListener('click', () => {
 });
 
 function carregarCameras() {
-    const camerasCtx = document.getElementById('camerasChart').getContext('2d');
+    const hasData = dadosApi.cameras?.per_type?.length > 0;
+  
+    const noDataEl = document.getElementById('cameras-no-data');
+    const contentEl = document.getElementById('cameras-content');
+  
+    if (!hasData) {
+      noDataEl.style.display = 'block';
+      contentEl.style.display = 'none';
+      return;
+    } else {
+      noDataEl.style.display = 'none';
+      contentEl.style.display = 'block';
+    }
+  
+    const canvasEl = document.getElementById('camerasChart');
+    if (!canvasEl) return;
+  
+    const camerasCtx = canvasEl.getContext('2d');
     const camerasDataTable = document.getElementById('camerasDataTable');
     camerasDataTable.innerHTML = '';
 
-    // Agrupar os impactos por data e local
     const groupedData = {};
+
     dadosApi.cameras.per_type.forEach(item => {
         const date = item.date.split("-").reverse().join("/");
         if (!groupedData[date]) {
@@ -811,7 +896,7 @@ function carregarCameras() {
         backgroundColor: generateColor(index),
     }));
 
-    new Chart(camerasCtx, {
+    charts.cameras = new Chart(camerasCtx, {
         type: 'bar',
         data: {
             labels: allDates,
@@ -861,7 +946,20 @@ function carregarCameras() {
                 }
             }
         },
-        plugins: [ChartDataLabels] 
+        plugins: [
+        {
+          id: 'custom_canvas_background_color',
+          beforeDraw: (chart) => {
+            const ctx = chart.canvas.getContext('2d');
+            ctx.save();
+            ctx.globalCompositeOperation = 'destination-over';
+            ctx.fillStyle = '#a1a1a178';
+            ctx.fillRect(0, 0, chart.width, chart.height);
+            ctx.restore();
+          }
+        },
+        ChartDataLabels
+      ] 
     });
 
     // Ajustar o tamanho do container do gráfico para permitir rolagem horizontal
@@ -958,7 +1056,6 @@ function sortTable(tableId, column, isNumeric) {
         }
     });
 
-    // Reanexa as linhas
     rows.forEach(row => table.querySelector("tbody").appendChild(row));
 }
 
@@ -966,16 +1063,13 @@ function updateSortIcons(tableId, currentHeader, column) {
     const table = document.getElementById(tableId);
     const headers = table.querySelectorAll("th");
 
-    // Remove classes e ícones existentes
     headers.forEach(header => {
         header.classList.remove('asc', 'desc');
         header.querySelector('.sort-icon')?.remove();
     });
 
-    // Adiciona classe (asc ou desc) ao cabeçalho atual
     currentHeader.classList.add(currentSort.direction);
 
-    // Cria ícone
     const sortIcon = document.createElement('span');
     sortIcon.classList.add('sort-icon');
     sortIcon.innerHTML = currentSort.direction === 'asc'
@@ -985,63 +1079,81 @@ function updateSortIcons(tableId, currentHeader, column) {
     currentHeader.appendChild(sortIcon);
 }
 
-// function inicializarDashboard(dados) {
-//     dadosApi = dados;
-//     esconderLoading();
-//     carregarTotal();
-//     carregarEnderecos();
-//     carregarAvg();
-//     carregarAudienciaImpacto();
-//     carregarRecurrence();
-//     carregarCameras();
-// }
+function inicializarDashboard(dados) {
+    destruirGraficos();
+    
+    dadosApi = dados;
+    const isVazio = (
+        (!dados.total || !dados.total.audience) &&
+        (!dados.audience_x_impact || (dados.audience_x_impact.daily?.length === 0 && dados.audience_x_impact.weekly?.length === 0)) &&
+        (!dados.impacts_per_hour || (dados.impacts_per_hour.average?.length === 0 && dados.impacts_per_hour.period?.length === 0)) &&
+        (!dados.cameras || dados.cameras.per_type?.length === 0) &&
+        (!dados.recurrence || dados.recurrence?.length === 0) &&
+        (!dados.locations || dados.locations?.length === 0)
+    );
 
-// function mostrarLoading(texto = 'Carregando dados, por favor aguarde...') {
-//     document.getElementById('loading').style.display = 'flex';
-//     document.getElementById('loading-text').innerText = texto;
-//     document.getElementById('error-message').style.display = 'none';
-//     document.getElementById('retry-button').style.display = 'none';
-//     document.querySelector('.spinner').style.display = 'block';
-// }
-
-// function esconderLoading() {
-//     document.getElementById('loading').style.display = 'none';
-// }
-
-// function mostrarErro(mensagem) {
-//     document.querySelector('.spinner').style.display = 'none';
-//     document.getElementById('loading-text').innerText = 'Erro ao carregar dados';
-//     document.getElementById('error-message').innerText = `Detalhes: ${mensagem}`;
-//     document.getElementById('error-message').style.display = 'block';
-//     document.getElementById('retry-button').style.display = 'inline-block';
-// }
-
-// document.addEventListener("DOMContentLoaded", () => {
-//     const retryBtn = document.getElementById('retry-button');
-
-//     async function iniciarDashboard() {
-//         mostrarLoading();
-
-//         try {
-//             const dados = await buscarDadosDoAnalytics('2025-03-01', '2025-03-20');
-//             if (!dados) throw new Error('Nenhum dado retornado da API.');
-//             inicializarDashboard(dados);
-//         } catch (err) {
-//             mostrarErro(err.message);
-//         }
-//     }
-
-//     retryBtn.addEventListener('click', iniciarDashboard);
-//     iniciarDashboard();
-// });
-
-document.addEventListener("DOMContentLoaded", () => {
+    if (isVazio) {
+        document.getElementById('impact-result').innerHTML = `
+            <div style="padding: 2rem; font-size: 1.5rem; color: black;">Sem dados</div>
+        `;
+        return;
+    }
     carregarTotal();
     carregarEnderecos();
     carregarAvg();
     carregarAudienciaImpacto();
     carregarRecurrence();
     carregarCameras();
+}
+
+function destruirGraficos() {
+    for (const key in charts) {
+      if (charts[key]) {
+        charts[key].destroy();
+        charts[key] = null;
+      }
+    }
+  }
+
+function mostrarLoading(texto = 'Carregando dados, por favor aguarde...') {
+    document.getElementById('loading').style.display = 'flex';
+    document.getElementById('loading-text').innerText = texto;
+    document.getElementById('error-message').style.display = 'none';
+    document.getElementById('retry-button').style.display = 'none';
+    document.querySelector('.spinner').style.display = 'block';
+}
+
+function esconderLoading() {
     document.getElementById('loading').style.display = 'none';
- });
- 
+}
+
+async function gerarRelatorioImpacto(filtros) {
+  const start = filtros.startDate;
+  const end = filtros.endDate;
+  const panels = filtros.selectedPanels.map(Number);
+
+  try {
+    mostrarLoading("Carregando relatório de impacto...");
+    const dados = await buscarDadosDoAnalytics(start, end, panels);
+    if (!dados) throw new Error("Nenhum dado retornado da API.");
+    inicializarDashboard(dados);
+  } catch (err) {
+    console.error(err);
+  } finally {
+    esconderLoading();
+  }
+}
+
+/*
+PARA VOLTAR AO MODO MANUAL, DESCOMENTAR O BLOCO ABAIXO (E O DADOSAPI) E COMENTE O BLOCO ACIMA
+
+*/ 
+// document.addEventListener("DOMContentLoaded", () => {
+//     carregarTotal();
+//     carregarEnderecos();
+//     carregarAvg();
+//     carregarAudienciaImpacto();
+//     carregarRecurrence();
+//     carregarCameras();
+//     document.getElementById('loading').style.display = 'none';
+//  });

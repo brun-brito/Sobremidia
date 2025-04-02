@@ -509,9 +509,9 @@ header {
     background-color: #0056b3;
 }
 
-#report-result {
+/* #report-result {
     margin-top: 20px;
-}
+} */
 
 #report-result #download-link {
     display: block;
