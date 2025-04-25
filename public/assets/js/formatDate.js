@@ -27,3 +27,14 @@ const formatDate = (date) => {
     console.warn("[WARN] Data inválida detectada:", date);
     return "Data inválida";
 };
+
+function parseDateString(dateStr, endOfDay = false) {
+    const [year, month, day] = dateStr.split("-").map(Number);
+    const date = new Date(year, month - 1, day);
+    if (endOfDay) {
+        date.setHours(23, 59, 59, 999);
+    } else {
+        date.setHours(0, 0, 0, 0);
+    }
+    return date;
+}

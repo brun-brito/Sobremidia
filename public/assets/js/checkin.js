@@ -182,8 +182,8 @@ async function handlePanelSelection(event) {
         // Caso o item contenha uma lista de mídias não vencidas
         return item.items.filter(media => {
             const now = new Date();
-            const startDate = media?.contentSchedule?.startDate ? new Date(media.contentSchedule.startDate) : null;
-            const endDate = media?.contentSchedule?.endDate ? new Date(media.contentSchedule.endDate) : null;
+            const startDate = media?.contentSchedule?.startDate ? parseDateString(media.contentSchedule.startDate) : null;
+            const endDate = media?.contentSchedule?.endDate ? parseDateString(media.contentSchedule.endDate, true) : null;
             return (!startDate || now >= startDate) && (!endDate || now <= endDate);
         });
     });

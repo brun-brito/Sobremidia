@@ -214,11 +214,8 @@ footer {
     }
 }
 
-@media (max-width: 768px) {
-    .logo img {
-        width: 80px;
-        height: auto;
-    }
+@media (max-width: 1020px) {
+    
     header nav ul {
         display: none;
     }
@@ -262,6 +259,14 @@ footer {
         text-align: right;
         display: block;
     }
+
+}
+
+@media (max-width: 768px) {
+    /* .logo img {
+        width: 80px;
+        height: auto;
+    } */
 
     .hero-bg {
         height: 100vh;
