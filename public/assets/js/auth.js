@@ -55,6 +55,7 @@ async function handleUserPermissions(user) {
             usuarios: document.getElementById('usuarios-id'),
             relatorios: document.getElementById('reports-id'),
             checkin: document.getElementById('checkin-id'),
+            paineis: document.getElementById('paineis-id'),
             realizarCheckin: document.getElementById('realizar-checkin-button'),
             historicoCheckin: document.getElementById('view-checkins-button')
         };
@@ -69,6 +70,7 @@ async function handleUserPermissions(user) {
                 if (sections.usuarios) sections.usuarios.style.display = 'block';
                 if (sections.relatorios) sections.relatorios.style.display = 'block';
                 if (sections.checkin) sections.checkin.style.display = 'block';
+                if (sections.paineis) sections.paineis.style.display = 'block';
                 if (sections.realizarCheckin) sections.realizarCheckin.style.display = 'block';
                 if (sections.historicoCheckin) sections.historicoCheckin.style.display = 'block';
                 break;
@@ -76,6 +78,7 @@ async function handleUserPermissions(user) {
             case "OPEC":
                 if (sections.relatorios) sections.relatorios.style.display = 'block';
                 if (sections.checkin) sections.checkin.style.display = 'block';
+                if (sections.paineis) sections.paineis.style.display = 'block';
                 if (sections.historicoCheckin) sections.historicoCheckin.style.display = 'block';
                 break;
 
