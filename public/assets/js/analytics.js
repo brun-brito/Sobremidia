@@ -1,10 +1,3 @@
-/*
-VARIÁVEIS GLOBAIS PARA CONTROLE
-*/
-// const API_URL = window.location.hostname === "127.0.0.1"
-//     ? "http://127.0.0.1:5001/sobremidia-ce/us-central1/v1"
-//     : "https://us-central1-sobremidia-ce.cloudfunctions.net/v1";
-
 let currentSort = {
     tableId: '',
     column: '',
@@ -47,7 +40,7 @@ FUNÇÕES PARA A SEÇÃO ADDRESS
 async function carregarEnderecos() {
   const addressesList = document.getElementById("addressesList");
 
-  const response = await fetch(`${API_URL}/analytics/paineis`);
+  const response = await fetch(`${API_URL}/paineis`);
   const paineis = await response.json();
 
   address = dadosApi.locations.map(loc => {
@@ -724,7 +717,13 @@ function carregarRecurrence() {
                 }
             },
             plugins: {
-                legend: { labels: { color: '#ffffff', font: { size: 18 } } },
+                legend: {
+                    labels: {
+                        font: { size: 18 },
+                        usePointStyle: true,
+                        pointStyle: 'line'
+                    }
+                },
                 datalabels: {
                     anchor: 'end',
                     align: 'right',
@@ -766,45 +765,70 @@ function carregarRecurrence() {
 FUNÇÃO PARA A SEÇÃO CÂMERAS
 */
 function renderCamerasTable(page = 1) {
-    const startIndex = (page - 1) * rowsPerPage;
-    const endIndex = startIndex + rowsPerPage;
     const camerasDataTable = document.getElementById('camerasDataTable');
     camerasDataTable.innerHTML = '';
 
-    camerasData.slice(startIndex, endIndex).forEach(item => {
-        camerasDataTable.innerHTML += `<tr>
-            <td>${item.name}</td>
-            <td>${item.cars.toLocaleString('pt-BR')}</td>
-            <td>${item.buses.toLocaleString('pt-BR')}</td>
-            <td>${item.trucks.toLocaleString('pt-BR')}</td>
-            <td>${item.vans.toLocaleString('pt-BR')}</td>
-            <td>${item.motorcycles.toLocaleString('pt-BR')}</td>
-            <td>${item.people.toLocaleString('pt-BR')}</td>
-            <td>${item.impact_total.toLocaleString('pt-BR')}</td>
-            <td>${item.id}</td>
-            <td>${item.date}</td>
-        </tr>`;
+    // Agrupar camerasData por name (localização)
+    const grouped = {};
+    camerasData.forEach(item => {
+        if (!grouped[item.name]) grouped[item.name] = [];
+        grouped[item.name].push(item);
     });
 
-    document.getElementById('pageInfo').innerText = `Página ${page} de ${Math.ceil(camerasData.length / rowsPerPage)}`;
+    const groupedKeys = Object.keys(grouped).sort();
+    const startIndex = (page - 1) * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    const paginated = groupedKeys.slice(startIndex, endIndex);
+
+    paginated.forEach(name => {
+        const group = grouped[name];
+        if (group.length === 1) {
+            const item = group[0];
+            camerasDataTable.innerHTML += `<tr>
+                <td>${item.name}</td>
+                <td>${item.cars.toLocaleString('pt-BR')}</td>
+                <td>${item.buses.toLocaleString('pt-BR')}</td>
+                <td>${item.trucks.toLocaleString('pt-BR')}</td>
+                <td>${item.vans.toLocaleString('pt-BR')}</td>
+                <td>${item.motorcycles.toLocaleString('pt-BR')}</td>
+                <td>${item.people.toLocaleString('pt-BR')}</td>
+                <td>${item.impact_total.toLocaleString('pt-BR')}</td>
+                <td>${item.id}</td>
+                <td>${item.date}</td>
+            </tr>`;
+        } else {
+            // Somar os campos numéricos
+            const sum = (key) => group.reduce((acc, curr) => acc + (curr[key] || 0), 0);
+            camerasDataTable.innerHTML += `<tr>
+                <td>${name}</td>
+                <td>${sum('cars').toLocaleString('pt-BR')}</td>
+                <td>${sum('buses').toLocaleString('pt-BR')}</td>
+                <td>${sum('trucks').toLocaleString('pt-BR')}</td>
+                <td>${sum('vans').toLocaleString('pt-BR')}</td>
+                <td>${sum('motorcycles').toLocaleString('pt-BR')}</td>
+                <td>${sum('people').toLocaleString('pt-BR')}</td>
+                <td>${sum('impact_total').toLocaleString('pt-BR')}</td>
+                <td>${group[0].id}</td>
+                <td><a href="#" onclick="mostrarModalDetalhes('${name.replace(/'/g, "\\'")}');return false;">Detalhes</a></td>
+            </tr>`;
+        }
+    });
+
+    document.getElementById('pageInfo').innerText = `Página ${page} de ${Math.ceil(groupedKeys.length / rowsPerPage)}`;
 
     document.querySelectorAll('.cameras-table th').forEach(header => {
         header.removeEventListener('click', header._sortHandler);
-        
         const handler = () => {
             const column = header.dataset.column;
             const isNumeric = ['cars', 'buses', 'trucks', 'vans', 'motorcycles', 'people', 'impact_total'].includes(column);
-
             if (currentSort.tableId === 'camerasTable' && currentSort.column === column) {
                 currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
             } else {
                 currentSort = { tableId: 'camerasTable', column, direction: 'asc' };
             }
-
             camerasData.sort((a, b) => {
                 let aValue = a[column];
                 let bValue = b[column];
-
                 if (column.toLowerCase().includes("date")) {
                     aValue = new Date(aValue.split("/").reverse().join("-"));
                     bValue = new Date(bValue.split("/").reverse().join("-"));
@@ -815,20 +839,78 @@ function renderCamerasTable(page = 1) {
                     aValue = aValue.toString().toLowerCase();
                     bValue = bValue.toString().toLowerCase();
                 }
-
                 if (aValue < bValue) return currentSort.direction === 'asc' ? -1 : 1;
                 if (aValue > bValue) return currentSort.direction === 'asc' ? 1 : -1;
                 return 0;
             });
-
             updateSortIcons('camerasTable', header, column);
             renderCamerasTable(currentPage);
         };
-
         header._sortHandler = handler;
         header.addEventListener('click', handler);
     });
 }
+
+// Função para mostrar modal de detalhes agrupados por local
+function mostrarModalDetalhes(localName) {
+    let modal = document.getElementById('modal-detalhes');
+    if (!modal) {
+        // Cria o div do modal se não existir
+        modal = document.createElement('div');
+        modal.id = 'modal-detalhes';
+        document.body.appendChild(modal);
+    }
+    // Ordena por data ascendente
+    const conteudo = camerasData
+        .filter(d => d.name === localName)
+        .sort((a, b) => new Date(a.date.split('/').reverse().join('-')) - new Date(b.date.split('/').reverse().join('-')))
+        .map(item => `
+            <tr>
+                <td style="text-align:left;padding:8px;">${item.date}</td>
+                <td style="text-align:right;padding:8px;">${item.cars.toLocaleString('pt-BR')}</td>
+                <td style="text-align:right;padding:8px;">${item.buses.toLocaleString('pt-BR')}</td>
+                <td style="text-align:right;padding:8px;">${item.trucks.toLocaleString('pt-BR')}</td>
+                <td style="text-align:right;padding:8px;">${item.vans.toLocaleString('pt-BR')}</td>
+                <td style="text-align:right;padding:8px;">${item.motorcycles.toLocaleString('pt-BR')}</td>
+                <td style="text-align:right;padding:8px;">${item.people.toLocaleString('pt-BR')}</td>
+                <td style="text-align:right;padding:8px;">${item.impact_total.toLocaleString('pt-BR')}</td>
+            </tr>
+        `).join('');
+    modal.innerHTML = `
+        <div class="modal-overlay" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:10000;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;">
+            <div class="modal-content" style="color:black;background:#fff;padding:30px 20px 20px 20px;max-width:90vw;max-height:90vh;overflow:auto;border-radius:10px;box-shadow:0 2px 16px #0006;position:relative;">
+                <button onclick="document.getElementById('modal-detalhes').innerHTML = '';" 
+                    style="position:absolute;top:10px;right:15px;font-size:24px;font-weight:bold;background:none;border:none;color:#444;cursor:pointer;">×</button>
+                <h3 style="text-align:center;font-size:22px;margin:0 0 16px 0;">Detalhes para ${localName}</h3>
+                <table style="border-collapse:collapse;width:100%;margin-top:8px;font-size:15px;">
+                    <thead>
+                        <tr>
+                            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">Data</th>
+                            <th style="text-align:right;padding:8px;border-bottom:1px solid #ccc;">Carros</th>
+                            <th style="text-align:right;padding:8px;border-bottom:1px solid #ccc;">Ônibus</th>
+                            <th style="text-align:right;padding:8px;border-bottom:1px solid #ccc;">Caminhões</th>
+                            <th style="text-align:right;padding:8px;border-bottom:1px solid #ccc;">Vans</th>
+                            <th style="text-align:right;padding:8px;border-bottom:1px solid #ccc;">Motos</th>
+                            <th style="text-align:right;padding:8px;border-bottom:1px solid #ccc;">Pessoas</th>
+                            <th style="text-align:right;padding:8px;border-bottom:1px solid #ccc;">Impacto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${conteudo}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+
+    const tbody = modal.querySelector("tbody");
+    Array.from(tbody.rows).forEach((row, index) => {
+        row.style.backgroundColor = index % 2 === 0 ? '#f9f9f9' : '#ffffff';
+        row.addEventListener("mouseenter", () => row.style.backgroundColor = "#eef");
+        row.addEventListener("mouseleave", () => row.style.backgroundColor = index % 2 === 0 ? '#f9f9f9' : '#ffffff');
+    });
+}
+
 document.getElementById('prevPage').addEventListener('click', () => {
     if (currentPage > 1) {
         currentPage--;
@@ -1083,21 +1165,28 @@ function inicializarDashboard(dados) {
     destruirGraficos();
     
     dadosApi = dados;
+
     const isVazio = (
-        (!dados.total || !dados.total.audience) &&
-        (!dados.audience_x_impact || (dados.audience_x_impact.daily?.length === 0 && dados.audience_x_impact.weekly?.length === 0)) &&
-        (!dados.impacts_per_hour || (dados.impacts_per_hour.average?.length === 0 && dados.impacts_per_hour.period?.length === 0)) &&
-        (!dados.cameras || dados.cameras.per_type?.length === 0) &&
-        (!dados.recurrence || dados.recurrence?.length === 0) &&
-        (!dados.locations || dados.locations?.length === 0)
+    (!dadosApi.total || !dadosApi.total.audience) &&
+    (!dadosApi.audience_x_impact || (dadosApi.audience_x_impact.daily?.length === 0 && dadosApi.audience_x_impact.weekly?.length === 0)) &&
+    (!dadosApi.impacts_per_hour || (dadosApi.impacts_per_hour.average?.length === 0 && dadosApi.impacts_per_hour.period?.length === 0)) &&
+    (!dadosApi.cameras || dadosApi.cameras.per_type?.length === 0) &&
+    (!dadosApi.recurrence || dadosApi.recurrence?.length === 0) &&
+    (!dadosApi.locations || dadosApi.locations?.length === 0)
     );
 
+    const semDadosEl = document.getElementById('impact-no-data');
+    const conteudoEl = document.querySelector('#impact-result .dashboard-container');
+
     if (isVazio) {
-        document.getElementById('impact-result').innerHTML = `
-            <div style="padding: 2rem; font-size: 1.5rem; color: black;">Sem dados</div>
-        `;
+        if (semDadosEl) semDadosEl.style.display = 'block';
+        if (conteudoEl) conteudoEl.style.display = 'none';
         return;
+    } else {
+        if (semDadosEl) semDadosEl.style.display = 'none';
+        if (conteudoEl) conteudoEl.style.display = 'block';
     }
+
     carregarTotal();
     carregarEnderecos();
     carregarAvg();
@@ -1127,14 +1216,15 @@ function esconderLoading() {
     document.getElementById('loading').style.display = 'none';
 }
 
-async function gerarRelatorioImpacto(filtros) {
+async function gerarRelatorioImpacto(filtros, reportId) {
   const start = filtros.startDate;
   const end = filtros.endDate;
-  const panels = filtros.selectedPanels.map(Number);
 
   try {
-    mostrarLoading("Carregando relatório de impacto...");
-    const dados = await buscarDadosDoAnalytics(start, end, panels);
+    mostrarLoading("Carregando Relatório de Métricas...");
+    
+    const dados = await buscarDadosDoAnalytics(start, end, reportId);
+
     if (!dados) throw new Error("Nenhum dado retornado da API.");
     inicializarDashboard(dados);
   } catch (err) {
@@ -1143,17 +1233,3 @@ async function gerarRelatorioImpacto(filtros) {
     esconderLoading();
   }
 }
-
-/*
-PARA VOLTAR AO MODO MANUAL, DESCOMENTAR O BLOCO ABAIXO (E O DADOSAPI) E COMENTE O BLOCO ACIMA
-
-*/ 
-// document.addEventListener("DOMContentLoaded", () => {
-//     carregarTotal();
-//     carregarEnderecos();
-//     carregarAvg();
-//     carregarAudienciaImpacto();
-//     carregarRecurrence();
-//     carregarCameras();
-//     document.getElementById('loading').style.display = 'none';
-//  });

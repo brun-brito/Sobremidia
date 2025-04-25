@@ -1,4 +1,4 @@
-async function buscarDadosDoAnalytics(startDate, endDate, panels) {
+async function buscarDadosDoAnalytics(startDate, endDate, reportId) {
   try {
     const response = await fetch(`${API_URL}/analytics`, {
       method: 'POST',
@@ -8,7 +8,7 @@ async function buscarDadosDoAnalytics(startDate, endDate, panels) {
       body: JSON.stringify({
         start_date: startDate,
         end_date: endDate,
-        locations: panels
+        reportId: reportId
       })
     });
 

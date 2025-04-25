@@ -263,6 +263,10 @@ section h2 {
 
 
 /* ===================== SECTION AVG ===================== */
+.avg-container h3 {
+    color: black;
+}
+
 #avg {
     padding: 20px;
     border-radius: 10px;
@@ -303,6 +307,10 @@ section h2 {
 
 
 /* ===================== SECTION AUDIENCE-IMPACT ===================== */
+.audience-impact-container h3 {
+    color: black;
+}
+
 #audience-impact {
     padding: 20px;
     border-radius: 10px;
@@ -500,6 +508,10 @@ section h2 {
     align-items: center;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     width: fit-content;
+}
+
+#cameras-content {
+    justify-self: center;
 }
 
 .cameras-container {

@@ -378,6 +378,13 @@ function showTab(tabName) {
 function mostrarAbasRelatorio() {
   document.getElementById('tabs-wrapper').style.display = 'block';
   document.getElementById('tab-veiculacao').style.display = 'block';
+  document.getElementById('tab-impacto').style.display = 'block';
+}
+
+function esconderAbasRelatorio() {
+  document.getElementById('tabs-wrapper').style.display = 'none';
+  document.getElementById('tab-veiculacao').style.display = 'none';
+  document.getElementById('tab-impacto').style.display = 'none';
 }
 
 function getFiltrosSelecionados() {
@@ -407,6 +414,8 @@ function getFiltrosSelecionados() {
   };
 }
 
+let relatorioJaGerado = false;
+
 document
   .getElementById("report-form")
   .addEventListener("submit", async function (event) {
@@ -414,12 +423,16 @@ document
 
     const filtros = getFiltrosSelecionados();
 
-    try{
-      await Promise.all([
-        gerarRelatorioVeiculacao(filtros),
-        gerarRelatorioImpacto(filtros)
-      ]);
+    try {
+      if (relatorioJaGerado) {
+        esconderAbasRelatorio();
+      }
+      
+      const reportId = await gerarRelatorioVeiculacao(filtros);
       mostrarAbasRelatorio();
+      await gerarRelatorioImpacto(filtros, reportId);
+      
+      relatorioJaGerado = true;
     } catch (error) {
       console.error("[ERROR] Falha ao gerar relatórios:", error);
     } 

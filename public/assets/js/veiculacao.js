@@ -84,6 +84,8 @@ async function gerarRelatorioVeiculacao(filtros) {
 
     // Agora verifica periodicamente o status
     await checkReportStatus(reportId);
+
+    return reportId;
   } catch (error) {
     console.error("[ERROR] Falha ao gerar relatório:", error);
 
