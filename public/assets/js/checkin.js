@@ -398,7 +398,7 @@ function updateModalMediaGrid(mediaId, type) {
   
         if (type === 'video-proof') {
           gridItem.innerHTML = `
-            <video width="125px" height="90px" controls>
+            <video width="125px" height="90px" controls muted>
               <source src="${item.url}" type="${item.file.type}">
             </video>
             <span class="delete-media" data-index="${index}">&times;</span>
@@ -465,7 +465,7 @@ function updateMainPreview(mediaId, type) {
   
         // Atualiza a pré-visualização do vídeo com a nova URL
         container.innerHTML = `
-          <video id="${previewId}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 5px;" controls>
+          <video id="${previewId}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 5px;" controls muted>
             <source src="${items[0].url}" type="${items[0].file.type}">
           </video>
           <span id="${counterElem ? counterElem.id : counterId}" class="media-counter" style="display: ${items.length > 1 ? 'block' : 'none'};">+${items.length - 1}</span>

@@ -525,7 +525,7 @@ function toggleCheckInDetails(checkIn, listItem, detailsButton) {
                             <div class="media-gallery-video">
                                 ${photo.videosMidia.map(video => `
                                     <div class="media-item-video">
-                                        <video controls class="video-element">
+                                        <video controls muted class="video-element">
                                             <source src="${API_URL}/proxy?url=${video.url}" type="video/mp4">
                                         </video>
                                         <div class="timestamp-overlay">${new Date(video.timestamp).toLocaleString()}</div>
