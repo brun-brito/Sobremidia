@@ -677,6 +677,14 @@ async function deleteCheckin(checkinId) {
         });
 
         if (response.ok) {
+            const checkinItem = document.querySelector(`li[data-checkin-id="${checkinId}"]`);
+            if (checkinItem) {
+                const nextSibling = checkinItem.nextElementSibling;
+                if (nextSibling && nextSibling.classList.contains("checkin-details")) {
+                    nextSibling.remove();
+                }
+                checkinItem.remove();
+            }
         } else {
             const errorData = await response.json();
             alert(`Erro ao excluir check-in: ${errorData.error || "Erro desconhecido."}`);

@@ -242,6 +242,36 @@ async function handlePanelSelection(event) {
         document.getElementById("media-checkin-list").style.display = "block";
     }
 
+    const searchInput = document.getElementById("media-search-input");
+    searchInput.addEventListener("input", () => {
+        const query = searchInput.value.toLowerCase();
+        const items = mediaList.querySelectorAll("li");
+        let anyVisible = false;
+
+        items.forEach(item => {
+            const text = item.innerText.toLowerCase();
+            const match = text.includes(query);
+            item.style.display = match ? "" : "none";
+            if (match) anyVisible = true;
+        });
+
+        const noResultMessageId = "no-media-found";
+        let noResultElem = document.getElementById(noResultMessageId);
+
+        if (!anyVisible) {
+            if (!noResultElem) {
+                noResultElem = document.createElement("p");
+                noResultElem.id = noResultMessageId;
+                noResultElem.innerText = "Nenhuma mídia encontrada com esse nome.";
+                noResultElem.style.color = "#a94442";
+                noResultElem.style.fontWeight = "bold";
+                mediaList.parentElement.appendChild(noResultElem);
+            }
+        } else if (noResultElem) {
+            noResultElem.remove();
+        }
+    });
+
     document.getElementById("selected-panel-name").innerText = `Painel Selecionado: ${panelName} (${activeMedia.length} mídias)`;
     document.getElementById("selected-panel-name").setAttribute("data-panel-id", panelId);
     document.getElementById("selected-panel-name").setAttribute("data-panel-name", panelName);
