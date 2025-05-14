@@ -57,7 +57,8 @@ async function handleUserPermissions(user) {
             checkin: document.getElementById('checkin-id'),
             paineis: document.getElementById('paineis-id'),
             realizarCheckin: document.getElementById('realizar-checkin-button'),
-            historicoCheckin: document.getElementById('view-checkins-button')
+            historicoCheckin: document.getElementById('view-checkins-button'),
+            dashboardMidias: document.getElementById('dashboardMidias-id'),
         };
 
         Object.values(sections).forEach(el => {
@@ -73,6 +74,7 @@ async function handleUserPermissions(user) {
                 if (sections.paineis) sections.paineis.style.display = 'block';
                 if (sections.realizarCheckin) sections.realizarCheckin.style.display = 'block';
                 if (sections.historicoCheckin) sections.historicoCheckin.style.display = 'block';
+                if (sections.dashboardMidias) sections.dashboardMidias.style.display = 'block';
                 break;
 
             case "OPEC":
@@ -80,6 +82,7 @@ async function handleUserPermissions(user) {
                 if (sections.checkin) sections.checkin.style.display = 'block';
                 if (sections.paineis) sections.paineis.style.display = 'block';
                 if (sections.historicoCheckin) sections.historicoCheckin.style.display = 'block';
+                if (sections.dashboardMidias) sections.dashboardMidias.style.display = 'block';
                 break;
 
             case "tecnico":
@@ -89,6 +92,22 @@ async function handleUserPermissions(user) {
 
             default:
                 console.warn("Função do usuário não reconhecida.");
+        }
+
+        const currentPage = window.location.pathname;
+
+        const restrictedPaths = {
+            tecnico: ['/relatorios.html', '/usuarios.html', '/dashboardMidias.html', 'paineis.html'],
+            OPEC: ['/usuarios.html'],
+            administrador: [],
+        };
+
+        const isRestricted = restrictedPaths[userRole]?.some(path => currentPage.includes(path));
+
+        if (isRestricted) {
+            alert("Você não tem permissão para acessar esta página.");
+            window.location.href = 'profile.html';
+            return;
         }
 
     } catch (error) {
