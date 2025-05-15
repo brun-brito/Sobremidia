@@ -54,49 +54,19 @@
         </div>
         <div class="filtros-avancados" id="filtrosAvancados">
 
-        <div class="filtro-grupo">
-          <label for="filtroCliente"><i class="fas fa-users"></i> Clientes:</label>
-          <select id="filtroCliente" multiple>
-            <option value="__ALL__" selected>Todos</option>
-            <!-- -->
-          </select>
+        <div class="filtro-grupo" id="grupoFiltroCliente">
+          <label><i class="fas fa-users"></i> Clientes:</label>
+          <div class="checkbox-container" id="checkboxFiltroCliente"></div>
         </div>
 
-        <div class="filtro-grupo">
-          <label for="filtroPainel"><i class="fas fa-tv"></i> Painéis:</label>
-          <select id="filtroPainel" multiple>
-            <option value="__ALL__" selected>Todos</option>
-            <!-- -->
-          </select>
+        <div class="filtro-grupo" id="grupoFiltroPainel">
+          <label><i class="fas fa-tv"></i> Painéis:</label>
+          <div class="checkbox-container" id="checkboxFiltroPainel"></div>
         </div>
 
-        <div class="filtro-grupo">
-            <label for="filtroTexto"><i class="fas fa-filter"></i> Filtrar por mídia:</label>
-            <select id="filtroTexto" multiple>
-              <option value="__ALL__" selected>Todos</option>
-              <!-- -->
-            </select>
-          </div>
-
-        <div class="filtro-grupo">
-          <label for="filtroDataInicio"><i class="fas fa-calendar-alt"></i> Início:</label>
-          <select id="filtroDataInicio" multiple>
-            <option value="__ALL__" selected>Todos</option>
-            <!-- -->
-          </select>
-        </div>
-
-        <div class="filtro-grupo">
-          <label for="filtroDataFim"><i class="fas fa-calendar-check"></i> Fim:</label>
-          <select id="filtroDataFim" multiple>
-            <option value="__ALL__" selected>Todos</option>
-            <!-- -->
-          </select>
-        </div>
-
-        <div class="filtro-grupo">
-            <label>Limpar Filtros</label>
-            <button id="limparFiltrosBtn" title="Limpar filtros"><i class="fas fa-times-circle"></i></button>
+        <div class="filtro-grupo" id="grupoFiltroTexto">
+          <label><i class="fas fa-filter"></i> Mídias:</label>
+          <div class="checkbox-container" id="checkboxFiltroTexto"></div>
         </div>
 
         <div class="filtro-grupo">
@@ -108,6 +78,10 @@
             <option value="50">50</option>
           </select>
         </div>
+
+        <div class="filtro-grupo">
+          <button id="limparFiltrosBtn" title="Limpar filtros"><i class="fas fa-times-circle"></i>Limpar Filtros</button>
+      </div>
       </div>
     </div>
   </div>

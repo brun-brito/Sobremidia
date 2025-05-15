@@ -17,11 +17,26 @@ let allMedias = [];
 
 function aplicarFiltros() {
   const textoLivre = document.getElementById('barraPesquisa').value.toLowerCase();
-  const textoSelecionado = Array.from(document.getElementById('filtroTexto').selectedOptions).map(opt => opt.value.toLowerCase());
-  const clientesSelecionados = Array.from(document.getElementById('filtroCliente').selectedOptions).map(opt => opt.value);
-  const paineisSelecionados = Array.from(document.getElementById('filtroPainel').selectedOptions).map(opt => opt.value);
-  const datasInicio = Array.from(document.getElementById('filtroDataInicio').selectedOptions).map(opt => opt.value);
-  const datasFim = Array.from(document.getElementById('filtroDataFim').selectedOptions).map(opt => opt.value);
+  const getChecked = (containerId) => {
+    return Array.from(document.querySelectorAll(`#${containerId} input[type="checkbox"]:checked`)).map(cb => cb.value);
+  };
+
+  // Garante que pelo menos "Todos" esteja marcado em cada filtro se nenhum estiver marcado
+  ['checkboxFiltroTexto', 'checkboxFiltroCliente', 'checkboxFiltroPainel'].forEach(containerId => {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+    const checked = Array.from(checkboxes).some(cb => cb.checked);
+    const todosCb = container.querySelector('input[type="checkbox"][value="__ALL__"]');
+    if (!checked && todosCb) {
+      todosCb.checked = true;
+      todosCb.closest('label')?.classList.add('checked');
+    }
+  });
+
+  const textoSelecionado = getChecked('checkboxFiltroTexto').map(v => v.toLowerCase());
+  const clientesSelecionados = getChecked('checkboxFiltroCliente');
+  const paineisSelecionados = getChecked('checkboxFiltroPainel');
 
   const filtrado = allMedias.filter(media => {
     const cliente = media.name?.split('-')[0]?.trim() || '';
@@ -29,58 +44,126 @@ function aplicarFiltros() {
     const inicio = media.schedule.startDate || '';
     const fim = media.schedule.endDate || '';
 
-    const matchTexto = textoSelecionado.includes('__all__') || textoSelecionado.includes('__ALL__') || textoSelecionado.includes('__all__') || textoSelecionado.some(t => texto.includes(t));
-    const matchCliente = clientesSelecionados.includes('__ALL__') || clientesSelecionados.includes(cliente);
-    const matchPainel = paineisSelecionados.includes('__ALL__') || paineisSelecionados.includes(media.painel);
-    const matchInicio = datasInicio.includes('__ALL__') || datasInicio.includes(inicio);
-    const matchFim = datasFim.includes('__ALL__') || datasFim.includes(fim);
+    const matchTexto = textoSelecionado.includes('__all__') || textoSelecionado.length === 0 || textoSelecionado.some(t => texto.includes(t));
+    const matchCliente = clientesSelecionados.includes('__ALL__') || clientesSelecionados.length === 0 || clientesSelecionados.includes(cliente);
+    const matchPainel = paineisSelecionados.includes('__ALL__') || paineisSelecionados.length === 0 || paineisSelecionados.includes(media.painel);
     const matchLivre = textoLivre === '' || texto.includes(textoLivre);
 
-    return matchTexto && matchCliente && matchPainel && matchInicio && matchFim && matchLivre;
+    return matchTexto && matchCliente && matchPainel && matchLivre;
   });
 
-  preencherFiltros(filtrado);
+  // Sempre mostrar todas as opções possíveis nos filtros (não filtrar as opções)
+  preencherFiltros(allMedias);
   paginateAndRender(filtrado);
 }
 
 function preencherFiltros(medias, reset = false) {
   const unicos = (array) => [...new Set(array.filter(Boolean))];
-  const addOptions = (selectId, values) => {
-    const select = document.getElementById(selectId);
-    const currentSelected = Array.from(select.selectedOptions).map(opt => opt.value);
-    select.innerHTML = '';
+  const getChecked = (containerId) =>
+    Array.from(document.querySelectorAll(`#${containerId} input[type="checkbox"]:checked`)).map(cb => cb.value);
+  // Add checkboxes to container
+  const addCheckboxes = (containerId, values, selectedValues = []) => {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = '';
+    // "Todos" checkbox
+    const inputAll = document.createElement('input');
+    inputAll.type = 'checkbox';
+    inputAll.value = '__ALL__';
+    inputAll.id = `${containerId}__ALL__`;
+    inputAll.name = `${containerId}[]`;
+    inputAll.checked = reset || selectedValues.includes('__ALL__') || selectedValues.length === 0;
 
-    const allOption = document.createElement('option');
-    allOption.value = '__ALL__';
-    allOption.textContent = 'Todos';
-    allOption.selected = false;
-    select.appendChild(allOption);
-    if (reset || currentSelected.includes('__ALL__')) {
-      allOption.selected = true;
-    }
+    const labelAll = document.createElement('label');
+    labelAll.htmlFor = inputAll.id;
+    const spanAll = document.createElement('span');
+    spanAll.textContent = 'Todos';
+    if (inputAll.checked) labelAll.classList.add('checked');
 
-    values.sort((a, b) => a.localeCompare(b)); // ordena alfabeticamente
+    inputAll.addEventListener('change', () => {
 
+      const allLabels = container.querySelectorAll('label');
+      const otherCheckboxes = container.querySelectorAll('input[type="checkbox"]:not([value="__ALL__"])');
+
+      if (inputAll.checked) {
+        // Marca todos
+        otherCheckboxes.forEach(cb => {
+          cb.checked = true;
+          cb.closest('label')?.classList.add('checked');
+        });
+        inputAll.indeterminate = false;
+        labelAll.classList.add('checked');
+      } else {
+        // Desmarca todos
+        otherCheckboxes.forEach(cb => {
+          cb.checked = false;
+          cb.closest('label')?.classList.remove('checked');
+        });
+        inputAll.indeterminate = true;
+        labelAll.classList.remove('checked');
+      }
+
+      const checkedNow = Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+
+      aplicarFiltros();
+    });
+    labelAll.appendChild(inputAll);
+    labelAll.appendChild(spanAll);
+    container.appendChild(labelAll);
+    // Ordem alfabetica
+    values = values.filter(v => v && v !== '__ALL__').sort((a, b) => a.localeCompare(b));
     values.forEach(val => {
-      const opt = document.createElement('option');
-      opt.value = val;
-      opt.textContent = val;
-      opt.selected = reset || currentSelected.includes(val);
-      select.appendChild(opt);
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.value = val;
+      input.id = `${containerId}_${val}`;
+      input.name = `${containerId}[]`;
+
+      const label = document.createElement('label');
+      label.htmlFor = input.id;
+      const span = document.createElement('span');
+      span.textContent = val;
+      const isTodos = selectedValues.includes('__ALL__') || selectedValues.length === 0;
+      input.checked = !isTodos && selectedValues.includes(val);
+      
+      if (input.checked) {
+        label.classList.add('checked');
+      }
+        input.addEventListener('change', () => {
+        // Remove "Todos" se algum checkbox individual for clicado
+        const todosCb = container.querySelector('input[type="checkbox"][value="__ALL__"]');
+        if (input.value !== '__ALL__' && todosCb && todosCb.checked) {
+          todosCb.checked = false;
+          todosCb.closest('label').classList.remove('checked');
+        }
+
+        if (input.checked) {
+          label.classList.add('checked');
+        } else {
+          label.classList.remove('checked');
+        }
+
+        // Se nenhum estiver marcado, ativa novamente o "Todos"
+        const outrosMarcados = Array.from(container.querySelectorAll('input[type="checkbox"]')).filter(cb => cb.checked && cb.value !== '__ALL__');
+        if (outrosMarcados.length === 0 && todosCb) {
+          todosCb.checked = true;
+          todosCb.closest('label').classList.add('checked');
+        }
+
+        aplicarFiltros();
+      });
+      label.appendChild(input);
+      label.appendChild(span);
+      container.appendChild(label);
     });
   };
-
   const textos = unicos(medias.map(m => m.name));
   const clientes = unicos(medias.map(m => m.name?.split('-')[0]?.trim()));
   const paineis = unicos(medias.map(m => m.painel));
-  const datasInicio = unicos(medias.map(m => m.schedule.startDate));
-  const datasFim = unicos(medias.map(m => m.schedule.endDate));
 
-  addOptions('filtroTexto', textos);
-  addOptions('filtroCliente', clientes);
-  addOptions('filtroPainel', paineis);
-  addOptions('filtroDataInicio', datasInicio);
-  addOptions('filtroDataFim', datasFim);
+  addCheckboxes('checkboxFiltroTexto', textos, reset ? ['__ALL__'] : getChecked('checkboxFiltroTexto'));
+  addCheckboxes('checkboxFiltroCliente', clientes, reset ? ['__ALL__'] : getChecked('checkboxFiltroCliente'));
+  addCheckboxes('checkboxFiltroPainel', paineis, reset ? ['__ALL__'] : getChecked('checkboxFiltroPainel'));
 }
 
 function renderPaginationControls(totalPages) {
@@ -322,7 +405,7 @@ function renderTable(medias) {
     let totalPages = 1;
 
     while (currentPage <= totalPages) {
-      const res = await fetchWithRetries(`${baseUrl}`);
+      const res = await fetchWithRetries(`${baseUrl}?page=${currentPage}`);
       totalPages = res.totalPages || 1;
       results = results.concat(res.results || []);
       currentPage++;
@@ -418,16 +501,25 @@ function renderTable(medias) {
     aplicarFiltros();
   });
 
-  ['filtroTexto', 'filtroCliente', 'filtroPainel', 'filtroDataInicio', 'filtroDataFim'].forEach(configurarComportamentoFiltro);
-
   document.getElementById('limparFiltrosBtn').addEventListener('click', () => {
-    ['filtroTexto', 'filtroCliente', 'filtroPainel', 'filtroDataInicio', 'filtroDataFim'].forEach(id => {
-      const el = document.getElementById(id);
-      Array.from(el.options).forEach(opt => opt.selected = false);
-      const optTodos = el.querySelector('option[value="__ALL__"]');
-      if (optTodos) optTodos.selected = true;
-      document.getElementById('barraPesquisa').value = '';
+    [
+      'checkboxFiltroTexto',
+      'checkboxFiltroCliente',
+      'checkboxFiltroPainel',
+    ].forEach(containerId => {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      Array.from(container.querySelectorAll('input[type="checkbox"]')).forEach(cb => {
+        cb.checked = false;
+        cb.closest('label')?.classList.remove('checked');
+      });
+      const todosCb = container.querySelector('input[type="checkbox"][value="__ALL__"]');
+      if (todosCb) {
+        todosCb.checked = true;
+        todosCb.closest('label')?.classList.add('checked');
+      }
     });
+    document.getElementById('barraPesquisa').value = '';
     aplicarFiltros();
   });
 
@@ -449,11 +541,6 @@ function renderTable(medias) {
     });
 
     preencherFiltros(painelMedias, true);
-    ['filtroTexto', 'filtroCliente', 'filtroPainel', 'filtroDataInicio', 'filtroDataFim'].forEach(id => {
-      const el = document.getElementById(id);
-      const optTodos = el.querySelector('option[value="__ALL__"]');
-      if (optTodos) optTodos.selected = true;
-    });
     aplicarFiltros();
     loadingElement.style.display = 'none';
   }, 300);
