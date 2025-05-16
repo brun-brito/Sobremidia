@@ -543,6 +543,91 @@ function renderTable(medias) {
     preencherFiltros(painelMedias, true);
     aplicarFiltros();
     loadingElement.style.display = 'none';
+
+    // Adiciona o listener de exportação XLS após carregar a tabela
+    document.getElementById('exportarXLS').addEventListener('click', async () => {
+      const loading = document.getElementById('loading');
+      const loadingMsg = document.getElementById('loading-message');
+      loading.style.display = 'flex';
+      loadingMsg.textContent = 'Gerando planilha XLS...';
+
+      // Exporta todos os dados filtrados, não apenas os paginados
+      const dadosExportar = paginatedMedias.map((media, index) => ({
+        painel: media.painel,
+        cliente: media.name?.split('-')?.[0]?.trim() || 'Desconhecido',
+        midia: media.name,
+        inicio: media.schedule?.startDate || 'N/A',
+        fim: media.schedule?.endDate || 'N/A',
+        slots: media.slotsAtivos || 0,
+        ocupacao: `${media.ocupacao || 0}%`,
+      }));
+
+      try {
+        const response = await fetch(`${API_URL}/xls/midias/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(dadosExportar)
+        });
+
+        if (!response.ok) {
+          throw new Error('Erro ao gerar XLS');
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'midias-ativas.xlsx';
+        a.click();
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        alert('Erro ao exportar XLS: ' + error.message);
+      } finally {
+        loading.style.display = 'none';
+      }
+    });
+
+    // Adiciona o listener de exportação PDF
+    document.getElementById('exportarPDF').addEventListener('click', async () => {
+      const loading = document.getElementById('loading');
+      const loadingMsg = document.getElementById('loading-message');
+      loading.style.display = 'flex';
+      loadingMsg.textContent = 'Gerando relatório PDF...';
+
+      const dadosExportar = paginatedMedias.map((media, index) => ({
+        painel: media.painel,
+        cliente: media.name?.split('-')?.[0]?.trim() || 'Desconhecido',
+        midia: media.name,
+        inicio: media.schedule?.startDate || 'N/A',
+        fim: media.schedule?.endDate || 'N/A',
+        slots: media.slotsAtivos || 0,
+        ocupacao: `${media.ocupacao || 0}%`,
+      }));
+
+      try {
+        const response = await fetch(`${API_URL}/pdf/midias/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(dadosExportar)
+        });
+
+        if (!response.ok) {
+          throw new Error('Erro ao gerar PDF');
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'midias-ativas.pdf';
+        a.click();
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        alert('Erro ao exportar PDF: ' + error.message);
+      } finally {
+        loading.style.display = 'none';
+      }
+    });
   }, 300);
 })();
 

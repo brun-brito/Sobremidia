@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/profile-style.css">
   <link rel="stylesheet" href="assets/css/paineis.css">
-  <link rel="stylesheet" href="assets/css/dashboardMidias.css">
+  <link rel="stylesheet" href="assets/css/midias.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
@@ -20,7 +20,7 @@
           </div>
           <nav>
               <ul class="nav-links">
-                  <li id="dashboardMidias-id"><a href="#" class="nav-link active">Mídias</a></li>
+                  <li id="midias-id"><a href="#" class="nav-link active">Mídias</a></li>
                   <li id="paineis-id"><a href="paineis.html" class="nav-link active">Painéis</a></li>
                   <li id="usuarios-id"><a href="usuarios.html" class="nav-link active">Usuários</a></li>
                   <li id="checkin-id"><a href="checkin.html" class="nav-link">Check-in</a></li>
@@ -48,6 +48,7 @@
         <div class="spinner"></div>
         <div class="loading-message" id="loading-message">Carregando...</div>
       </div>
+
       <div class="filtros-wrapper">
         <div class="filtros-header collapsed" onclick="toggleFiltros()">
           <i class="fas fa-chevron-down" id="filtrosIcon"></i> Filtros Avançados
@@ -81,10 +82,17 @@
 
         <div class="filtro-grupo">
           <button id="limparFiltrosBtn" title="Limpar filtros"><i class="fas fa-times-circle"></i>Limpar Filtros</button>
+        </div>
       </div>
+
+      <div class="botoes-exportacao">
+        <button id="exportarPDF" title="Exportar como PDF">
+          <i class="fas fa-file-pdf"></i> PDF
+        </button>
+        <button id="exportarXLS" title="Exportar como XLSX">
+          <i class="fas fa-file-excel"></i> XLSX
+        </button>
       </div>
-    </div>
-  </div>
 
       <div class="tabela-container">
         <table id="mediaTable" class="tabela">
@@ -136,7 +144,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
   <script src="firebase/firebase-config.js"></script>
   <script src="assets/js/auth.js"></script>
-  <script src="assets/js/dashboardMidias.js"></script>
+  <script src="assets/js/midias.js"></script>
 
 </body>
 </html>

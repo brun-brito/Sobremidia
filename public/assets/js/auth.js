@@ -58,7 +58,7 @@ async function handleUserPermissions(user) {
             paineis: document.getElementById('paineis-id'),
             realizarCheckin: document.getElementById('realizar-checkin-button'),
             historicoCheckin: document.getElementById('view-checkins-button'),
-            dashboardMidias: document.getElementById('dashboardMidias-id'),
+            midias: document.getElementById('midias-id'),
         };
 
         Object.values(sections).forEach(el => {
@@ -74,7 +74,7 @@ async function handleUserPermissions(user) {
                 if (sections.paineis) sections.paineis.style.display = 'block';
                 if (sections.realizarCheckin) sections.realizarCheckin.style.display = 'block';
                 if (sections.historicoCheckin) sections.historicoCheckin.style.display = 'block';
-                if (sections.dashboardMidias) sections.dashboardMidias.style.display = 'block';
+                if (sections.midias) sections.midias.style.display = 'block';
                 break;
 
             case "OPEC":
@@ -82,7 +82,7 @@ async function handleUserPermissions(user) {
                 if (sections.checkin) sections.checkin.style.display = 'block';
                 if (sections.paineis) sections.paineis.style.display = 'block';
                 if (sections.historicoCheckin) sections.historicoCheckin.style.display = 'block';
-                if (sections.dashboardMidias) sections.dashboardMidias.style.display = 'block';
+                if (sections.midias) sections.midias.style.display = 'block';
                 break;
 
             case "tecnico":
@@ -97,7 +97,7 @@ async function handleUserPermissions(user) {
         const currentPage = window.location.pathname;
 
         const restrictedPaths = {
-            tecnico: ['/relatorios.html', '/usuarios.html', '/dashboardMidias.html', 'paineis.html'],
+            tecnico: ['/relatorios.html', '/usuarios.html', '/midias.html', 'paineis.html'],
             OPEC: ['/usuarios.html'],
             administrador: [],
         };
