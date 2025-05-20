@@ -141,6 +141,7 @@ async function editarUsuario(id, nome, email, funcao) {
                 <option value="administrador" ${funcao === "administrador" ? "selected" : ""}>Administrador</option>
                 <option value="tecnico" ${funcao === "tecnico" ? "selected" : ""}>Técnico</option>
                 <option value="OPEC" ${funcao === "OPEC" ? "selected" : ""}>OPEC</option>
+                <option value="comercial" ${funcao === "comercial" ? "selected" : ""}>Comercial</option>
             </select>
         </td>
         <td>

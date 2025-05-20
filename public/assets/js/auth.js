@@ -90,15 +90,24 @@ async function handleUserPermissions(user) {
                 if (sections.realizarCheckin) sections.realizarCheckin.style.display = 'block';
                 break;
 
+            case "comercial":
+                if (sections.relatorios) sections.relatorios.style.display = 'block';
+                if (sections.checkin) sections.checkin.style.display = 'block';
+                if (sections.paineis) sections.paineis.style.display = 'block';
+                if (sections.historicoCheckin) sections.historicoCheckin.style.display = 'block';
+                if (sections.midias) sections.midias.style.display = 'block';
+                break;
+
             default:
                 console.warn("Função do usuário não reconhecida.");
         }
 
         const currentPage = window.location.pathname;
 
-        const restrictedPaths = {
+        const restrictedPaths = { // restricoes de cada usuário
             tecnico: ['/relatorios.html', '/usuarios.html', '/midias.html', 'paineis.html'],
             OPEC: ['/usuarios.html'],
+            comercial: ['/usuarios.html'],
             administrador: [],
         };
 
